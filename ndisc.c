@@ -341,6 +341,7 @@ recvpayload (int fd, const struct in6_addr *tgt, unsigned wait_ms,
 {
 	/* computes dead-line time */
 	struct timeval end;
+	int responses = 0;
 
 	gettimeofday (&end, NULL);
 	{
@@ -389,11 +390,7 @@ recvpayload (int fd, const struct in6_addr *tgt, unsigned wait_ms,
 			return -1;
 
 		if (val == 0)
-#ifndef RDISC
-			return 0;
-#else
-			return 1;
-#endif
+			return responses ? 1 : 0;
 		else
 		{
 			/* receives an ICMPv6 packet */
@@ -413,7 +410,11 @@ recvpayload (int fd, const struct in6_addr *tgt, unsigned wait_ms,
 						sizeof (str)) != NULL)
 					printf (" from %s\n", str);
 			}
+
+			responses++;
 #ifndef RDISC
+			/* TODO: option to show duplicate responses
+			 * with ndisc */
 			return 1;
 #endif
 		}
@@ -428,7 +429,6 @@ ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
 	unsigned wait_ms)
 {
 	struct in6_addr tgt;
-	int i;
 
 	fd = socket (PF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
 	if (fd == -1)
@@ -457,7 +457,7 @@ ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
 		close (fd);
 		return -1;
 	}
-	else
+
 	{
 		char s[INET6_ADDRSTRLEN];
 
@@ -467,7 +467,7 @@ ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
 				ifname);
 	}
 
-	for (i = 0; i < retry; i++)
+	while (retry > 0)
 	{
 		int val;
 
@@ -477,6 +477,7 @@ ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
 			close (fd);
 			return -1;
 		}
+		retry--;
 
 		/* receives a Neighbor Advertisement */
 		val = recvpayload (fd, &tgt, wait_ms, verbose);
