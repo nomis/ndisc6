@@ -23,14 +23,20 @@
 # include <config.h>
 #endif
 
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h> /* div() */
+#include <inttypes.h>
 
 #include <sys/types.h>
 #include <sys/select.h> /* select() */
 #include <sys/socket.h>
 #include <unistd.h> /* close() */
 #include <sys/ioctl.h>
+
+#include <getopt.h>
 
 #include <netdb.h> /* getaddrinfo() */
 #include <arpa/inet.h> /* inet_ntop() */
@@ -147,13 +153,17 @@ sendns (int fd, const struct in6_addr *tgt, const char *ifname)
 
 
 static int
-recvna (int fd, struct in6_addr *tgt)
+recvna (int fd, struct in6_addr *tgt, unsigned wait_ms, int verbose)
 {
 	struct timeval tv;
 
-	/* waits at most 1 second for positive reply */
-	tv.tv_sec = 1;
-	tv.tv_usec = 0;
+	{
+		div_t d;
+		
+		d = div (wait_ms, 1000);
+		tv.tv_sec = d.quot;
+		tv.tv_usec = d.rem;
+	}
 
 	while (1)
 	{
@@ -175,17 +185,11 @@ recvna (int fd, struct in6_addr *tgt)
 		/* NOTE: Linux-like semantics assumed for select() */
 		val = select (fd + 1, &set, NULL, NULL, &tv);
 
-		if (val == -1)
-		{
-			perror ("select");
+		if (val < 0)
 			return -1;
-		}
 
 		if (val == 0)
-		{
-			puts ("Timed out.");
-			return -1;
-		}
+			return 0;
 
 		/* receives an ICMPv6 packet */
 		len = sizeof (addr);
@@ -207,7 +211,6 @@ recvna (int fd, struct in6_addr *tgt)
 
 		while (val >= 8)
 		{
-			char s[INET6_ADDRSTRLEN];
 			uint16_t optlen;
 
 			optlen = ((uint16_t)(ptr[1])) << 3;
@@ -228,7 +231,8 @@ recvna (int fd, struct in6_addr *tgt)
 
 			/* Found! displays link-layer address */
 			ptr += 2;
-			fputs ("Target link-layer address: ", stdout);
+			if (verbose)
+				fputs ("Target link-layer address: ", stdout);
 
 			for (optlen -= 2; optlen > 1; optlen--)
 			{
@@ -237,10 +241,16 @@ recvna (int fd, struct in6_addr *tgt)
 			}
 			printf ("%02X\n", *ptr);
 
-			inet_ntop (AF_INET6, &addr.sin6_addr, s, sizeof (s));
-			printf (" from %s\n", s);
+			if (verbose)
+			{
+				char str[INET6_ADDRSTRLEN];
 
-			return 0;
+				if (inet_ntop (AF_INET6, &addr.sin6_addr, str,
+						sizeof (str)) != NULL)
+					printf (" from %s\n", str);
+			}
+
+			return 1;
 		}
 	}
 
@@ -249,7 +259,8 @@ recvna (int fd, struct in6_addr *tgt)
 
 
 static int
-ndisc (const char *name, const char *ifname)
+ndisc (const char *name, const char *ifname, int verbose, unsigned retry,
+	unsigned wait_ms)
 {
 	struct in6_addr tgt;
 	int i;
@@ -275,11 +286,15 @@ ndisc (const char *name, const char *ifname)
 		char s[INET6_ADDRSTRLEN];
 
 		inet_ntop (AF_INET6, &tgt, s, sizeof (s));
-		printf ("Looking up %s (%s) on %s...\n", name, s, ifname);
+		if (verbose)
+			printf ("Looking up %s (%s) on %s...\n", name, s,
+				ifname);
 	}
 
-	for (i = 0; i < 3; i++)
+	for (i = 0; i < retry; i++)
 	{
+		int val;
+
 		/* sends a Neigbor Solitication */
 		if (sendns (fd, &tgt, ifname))
 		{
@@ -287,15 +302,30 @@ ndisc (const char *name, const char *ifname)
 			return -1;
 		}
 
-		if (recvna (fd, &tgt) == 0)
+		/* receives a Neighbor Advertisement */
+		val = recvna (fd, &tgt, wait_ms, verbose);
+		if (val > 0)
 		{
 			close (fd);
 			return 0;
 		}
+		else
+		if (val == 0)
+		{
+			if (verbose)
+				puts ("Timed out.");
+		}
+		else
+		{
+			close (fd);
+			perror ("Receiving ICMPv6 Neighbor Advertisement");
+			return -1;
+		}
 	}
 
 	close (fd);
-	puts ("No response.");
+	if (verbose)
+		puts ("No response.");
 	return -1;
 }
 
@@ -311,29 +341,89 @@ quick_usage (void)
 static int
 version (void)
 {
-        puts (
+	puts (
 "ndisc : IPv6 Neighbor Discovery userland tool $Rev$\n"
 " built "__DATE__"\n"
 "Copyright (C) 2004 Remi Denis-Courmont");
-        puts (
+	puts (
 "This is free software; see the source for copying conditions.\n"
 "There is NO warranty; not even for MERCHANTABILITY or\n"
 "FITNESS FOR A PARTICULAR PURPOSE.\n");
-        printf ("Written by %s.\n", "Remi Denis-Courmont");
-        return 0;
+	printf ("Written by %s.\n", "Remi Denis-Courmont");
+	return 0;
 }
+
+
+
+static struct option opts[] = 
+{
+	{ "help",	no_argument,		NULL, 'h' },
+	{ "quiet",	no_argument,		NULL, 'q' },
+	{ "retry",	required_argument,	NULL, 'r' },
+	{ "version",	no_argument,		NULL, 'V' },
+	{ "wait",	required_argument,	NULL, 'w' }
+};
 
 
 int
 main (int argc, char *argv[])
 {
-	if (argc != 3)
+	int val, verbose = 1;
+	unsigned retry = 3, wait_ms = 1000;
+	const char *hostname, *ifname = NULL;
+
+	while ((val = getopt_long (argc, argv, "hqr:Vw:", opts, NULL)) != EOF)
 	{
-		version ();
-		puts ("");
-		return quick_usage ();
+		switch (val)
+		{
+			case 'h':
+				quick_usage ();
+				return 0;
+
+			case 'q':
+				verbose = 0;
+				break;
+
+			case 'r':
+			{
+				unsigned long l;
+				char *end;
+
+				l = strtoul (optarg, &end, 0);
+				if (*end || l > UINT_MAX)
+					return quick_usage ();
+				retry = l;
+				break;
+			}
+				
+			case 'V':
+				return version ();
+
+			case 'w':
+			{
+				unsigned long l;
+				char *end;
+
+				l = strtoul (optarg, &end, 0);
+				if (*end || l > UINT_MAX)
+					return quick_usage ();
+				wait_ms = l;
+				break;
+			}
+
+			case '?':
+			default:
+				return quick_usage ();
+		}
 	}
 
-	return ndisc (argv[1], argv[2]) ? 1 : 0;
+	if (optind < argc)
+		hostname = argv[optind++];
+	if (optind < argc)
+		ifname = argv[optind++];
+	if ((optind < argc) || (ifname == NULL))
+		return quick_usage ();
+
+	return ndisc (hostname, ifname, verbose, retry, wait_ms) ? 1 : 0;
 }
 
