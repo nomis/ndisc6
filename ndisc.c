@@ -307,12 +307,11 @@ parsera (const uint8_t *buf, size_t len, int verbose)
 			return -1;
 
 		if (verbose)
-			fputc (' ', stdout);
-		printf ("Prefix         : %s/%u\n", str,
-			pi->nd_opt_pi_prefix_len);
+			fputs (" Prefix        : ", stdout);
+		printf ("%s/%u\n", str, pi->nd_opt_pi_prefix_len);
 		if (verbose)
-			printf ("  Valid time     : %12u (0x%08x) second(s)\n"
-				"  Preferred time : %12u (0x%08x) second(s)\n"
+			printf ("  Valid time   : %12u (0x%08x) second(s)\n"
+				"  Pref. time   : %12u (0x%08x) second(s)\n"
 				,
 				(unsigned)ntohl (pi->nd_opt_pi_valid_time),
 				(unsigned)ntohl (pi->nd_opt_pi_valid_time),
