@@ -183,8 +183,8 @@ ndisc (const char *name, const char *ifname)
 		return -1;
 	}
 
-	/* waits at most 3 seconds for positive reply */
-	tv.tv_sec = 3;
+	/* waits at most 1 second for positive reply */
+	tv.tv_sec = 1;
 	tv.tv_usec = 0;
 	do
 	{
