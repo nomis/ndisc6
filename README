@@ -3,8 +3,13 @@ NDisc : ICMPv6 Discovery tool
 $Id$
 Copyright (C) 2005 Remi Denis-Courmont.
 
+  That package is made of a single source code file which produces two
+different binary executables :
+- ndisc6, which performs ICMPv6 Neighbor Discovery in userland,
+- rdisc6, which performs ICMPv6 Router Discovery in userland.
+
   For detailled usage instructions, you should refer to the Unix manual
-pages ndisc(8) and rdisc(8) which should be provided with your copy of
+pages ndisc6(8) and rdisc6(8) which should be provided with your copy of
 the program.
 
   A Makefile is provided. It supports the common targets to build
