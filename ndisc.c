@@ -88,6 +88,14 @@ getmacaddress (const char *ifname, uint8_t *addr)
 
 
 static int
+setmcasthoplimit (int fd, int value)
+{
+	return setsockopt (fd, SOL_IPV6, IPV6_MULTICAST_HOPS,
+				&value, sizeof (value));
+}
+
+
+static int
 ndisc (const char *name, const char *ifname)
 {
 	struct sockaddr_in6 addr;
@@ -159,12 +167,8 @@ ndisc (const char *name, const char *ifname)
 	/* payload.ns.hw_addr already set */
 
 	/* sets Hop-by-hop limit to 255 */
-	{
-		int val = 255;
-		setsockopt (fd, SOL_IPV6, IPV6_MULTICAST_HOPS, &val,
-				sizeof (val));
-	}
-	
+	setmcasthoplimit (fd, 255);
+
 	if (sendto (fd, &payload.ns, sizeof (payload.ns), 0,
 			(const struct sockaddr *)&addr, sizeof (addr))
 		!= sizeof (payload.ns))
@@ -186,7 +190,7 @@ ndisc (const char *name, const char *ifname)
 		if (payload.na.adv.nd_na_type == ND_NEIGHBOR_ADVERT
 		 && !memcmp (&payload.na.adv.nd_na_target, &tgt, 16))
 		{
-			printf ("Hardware address: "
+			printf ("Source link-layer address: "
 				"%02X:%02X:%02X:%02X:%02X:%02X\n",
 				payload.na.hw_addr[0],
 				payload.na.hw_addr[1],
@@ -197,8 +201,7 @@ ndisc (const char *name, const char *ifname)
 
 			close (fd);
 			fd = -1;
-		}
-		
+		}	
 	}
 	while (fd != -1);
 
