@@ -300,15 +300,40 @@ ndisc (const char *name, const char *ifname)
 }
 
 
+static int
+quick_usage (void)
+{
+	fputs ("Usage: ndisc <IPv6 address> <interface>\n", stderr);
+	return 2;
+}
+
+
+static int
+version (void)
+{
+        puts (
+"ndisc : IPv6 Neighbor Discovery userland tool $Rev$\n"
+" built "__DATE__"\n"
+"Copyright (C) 2004 Remi Denis-Courmont");
+        puts (
+"This is free software; see the source for copying conditions.\n"
+"There is NO warranty; not even for MERCHANTABILITY or\n"
+"FITNESS FOR A PARTICULAR PURPOSE.\n");
+        printf ("Written by %s.\n", "Remi Denis-Courmont");
+        return 0;
+}
+
+
 int
 main (int argc, char *argv[])
 {
 	if (argc != 3)
 	{
-		fputs ("Usage: ndisc <IPv6 address> <interface>\n", stderr);
-		return 1;
+		version ();
+		puts ("");
+		return quick_usage ();
 	}
 
-	return ndisc (argv[1], argv[2]) ? 2 : 0;
+	return ndisc (argv[1], argv[2]) ? 1 : 0;
 }
 
