@@ -65,9 +65,9 @@ clean:
 
 dist:
 	mkdir -v ndisc-$(VERSION)
-	cp ndisc.c $(TARGETS:%=%.8) Makefile ndisc-$(VERSION)/
-	tar c ndisc-$(VERSION) > ndisc-$(VERSION).tar
-	bzip2 ndisc-$(VERSION).tar
+	cp ndisc.c $(TARGETS:%=%.8) Makefile README ndisc-$(VERSION)/
+	cp /usr/share/common-licenses/GPL-2 ndisc-$(VERSION)/COPYING
+	tar c ndisc-$(VERSION) | bzip2 > ndisc-$(VERSION).tar.bz2
 	rm -Rf ndisc-$(VERSION)
 
 .PHONY: clean all install install-man install-strip
