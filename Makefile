@@ -27,7 +27,7 @@ prefix = /usr/local
 
 
 TARGETS = ndisc rdisc
-VERSION = 0.1.0
+VERSION = 0.1.1
 DEFS = -DPACKAGE_VERSION=\"$(VERSION)\"
 ndisc_DEFS =
 rdisc_DEFS = -DRDISC
