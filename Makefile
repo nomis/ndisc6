@@ -32,11 +32,15 @@ all: $(TARGETS)
 $(TARGETS): %: %.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
 
-install: all
+install: all install-man
 	$(INSTALL) -m 04755 ndisc $(DESTDIR)$(prefix)/bin/ndisc
 
-install-strip: all
+install-strip: all install-man
 	$(INSTALL) -s -m 04755 ndisc $(DESTDIR)$(prefix)/bin/ndisc
+
+install-man:
+	mkdir -p $(DESTDIR)$(prefix)/man/man8
+	$(INSTALL) -m 0644 ndisc.8 $(DESTDIR)$(prefix)/man/man8/
 
 uninstall:
 	rm -f $(DESTDIR)$(prefix)/bin/ndisc
@@ -46,10 +50,10 @@ clean:
 
 dist:
 	mkdir -v ndisc-0.0.1
-	cp ndisc.c Makefile ndisc-0.0.1/
+	cp ndisc.c ndisc.8 Makefile ndisc-0.0.1/
 	tar c ndisc-0.0.1 > ndisc-0.0.1.tar
 	bzip2 ndisc-0.0.1.tar
 	rm -Rf ndisc-0.0.1
 
-.PHONY: clean all install
+.PHONY: clean all install install-man install-strip
 
