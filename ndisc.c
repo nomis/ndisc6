@@ -259,7 +259,7 @@ recvna (int fd, struct in6_addr *tgt, unsigned wait_ms, int verbose)
 
 
 static int
-ndisc (const char *name, const char *ifname, int verbose, unsigned retry,
+ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
 	unsigned wait_ms)
 {
 	struct in6_addr tgt;
@@ -333,8 +333,26 @@ ndisc (const char *name, const char *ifname, int verbose, unsigned retry,
 static int
 quick_usage (void)
 {
-	fputs ("Usage: ndisc <IPv6 address> <interface>\n", stderr);
+	fputs ("Try \"ndisc -h\" for more information.\n", stderr);
 	return 2;
+}
+
+
+static int
+usage (void)
+{
+	fputs (
+"Usage: ndisc [options] <IPv6 address> <interface>\n"
+"Looks up an on-link IPv6 node link-layer address (Neighbor Discovery)\n"
+"\n"
+"  -h, --help     display this help and exit\n"
+"  -q, --quiet    only print the link-layer address (useful for scripts)\n"
+"  -r, --retry    number of attempts (default: 3)\n"
+"  -V, --version  display program version and exit\n"
+"  -v, --verbose  verbose display (this is the default)\n"
+"  -w, --wait     how to long wait for a response [ms] (default: 1000)\n"
+		"\n", stderr);
+	return 0;
 }
 
 
@@ -361,6 +379,7 @@ static struct option opts[] =
 	{ "quiet",	no_argument,		NULL, 'q' },
 	{ "retry",	required_argument,	NULL, 'r' },
 	{ "version",	no_argument,		NULL, 'V' },
+	{ "verbose",	no_argument,		NULL, 'v' },
 	{ "wait",	required_argument,	NULL, 'w' }
 };
 
@@ -368,8 +387,8 @@ static struct option opts[] =
 int
 main (int argc, char *argv[])
 {
-	int val, verbose = 1;
-	unsigned retry = 3, wait_ms = 1000;
+	int val;
+	unsigned retry = 3, verbose = 1, wait_ms = 1000;
 	const char *hostname, *ifname = NULL;
 
 	while ((val = getopt_long (argc, argv, "hqr:Vw:", opts, NULL)) != EOF)
@@ -377,8 +396,7 @@ main (int argc, char *argv[])
 		switch (val)
 		{
 			case 'h':
-				quick_usage ();
-				return 0;
+				return usage ();
 
 			case 'q':
 				verbose = 0;
@@ -398,6 +416,11 @@ main (int argc, char *argv[])
 				
 			case 'V':
 				return version ();
+
+			case 'v':
+				if (verbose < UINT_MAX)
+					verbose++;
+				break;
 
 			case 'w':
 			{
