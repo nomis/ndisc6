@@ -1,6 +1,6 @@
 NDisc : ICMPv6 Discovery tool
 ==============================
-$Id: README 387 2005-01-08 00:26:19Z remi $
+$Id$
 Copyright (C) 2005 Remi Denis-Courmont.
 
   For detailled usage instructions, you should refer to the Unix manual
