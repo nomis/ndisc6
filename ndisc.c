@@ -257,7 +257,8 @@ parsera (const uint8_t *buf, size_t len, int verbose)
 
 	if (verbose)
 	{
-		printf ("Hop limit      :          %3u (      0x%02x)\n"
+		printf ("\n"
+			"Hop limit      :          %3u (      0x%02x)\n"
 			"Router lifetime: %12u (0x%08x) second(s)\n"
 			"Reachable time : %12u (0x%08x) second(s)\n"
 			"Retrans. time  : %12u (0x%08x) second(s)\n",
@@ -305,11 +306,14 @@ parsera (const uint8_t *buf, size_t len, int verbose)
 				sizeof (str)) == NULL)
 			return -1;
 
+		if (verbose)
+			fputc (' ', stdout);
 		printf ("Prefix         : %s/%u\n", str,
 			pi->nd_opt_pi_prefix_len);
 		if (verbose)
-			printf ("Valid time     : %12u (0x%08x) second(s)\n"
-				"Preferred time : %12u (0x%08x) second(s)\n",
+			printf ("  Valid time     : %12u (0x%08x) second(s)\n"
+				"  Preferred time : %12u (0x%08x) second(s)\n"
+				,
 				(unsigned)ntohl (pi->nd_opt_pi_valid_time),
 				(unsigned)ntohl (pi->nd_opt_pi_valid_time),
 				(unsigned)ntohl(pi->nd_opt_pi_preferred_time),
