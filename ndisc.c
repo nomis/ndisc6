@@ -147,10 +147,62 @@ sendns (int fd, const struct in6_addr *tgt, const char *ifname)
 
 
 static int
+recvna (int fd, struct in6_addr *tgt)
+{
+	struct timeval tv;
+	int val;
+
+	/* waits at most 1 second for positive reply */
+	tv.tv_sec = 1;
+	tv.tv_usec = 0;
+
+	do
+	{
+		struct
+		{
+			struct nd_neighbor_advert adv;
+			struct nd_opt_hdr ohdr;
+			uint8_t hw_addr[6];
+		} na;
+		fd_set set;
+
+		/* waits for reply for at most 3 seconds */
+		FD_ZERO (&set);
+		FD_SET (fd, &set);
+
+		/* NOTE: Linux-like semantics assumed for select() */
+		val = select (fd + 1, &set, NULL, NULL, &tv);
+
+		if (val == -1)
+		{
+			perror ("select");
+			return -1;
+		}
+
+		if (val == 1
+		 && recvfrom (fd, &na, sizeof (na), 0, NULL, 0) == sizeof (na)
+		 && na.adv.nd_na_type == ND_NEIGHBOR_ADVERT
+		 && !memcmp (&na.adv.nd_na_target, tgt, 16))
+		{
+			printf ("Source link-layer address: "
+				"%02X:%02X:%02X:%02X:%02X:%02X\n",
+				na.hw_addr[0], na.hw_addr[1],
+				na.hw_addr[2], na.hw_addr[3],
+				na.hw_addr[4], na.hw_addr[5]);
+			return 0;
+		}
+	}
+	while (val);
+
+	return -1; /* time out */
+}
+
+
+static int
 ndisc (const char *name, const char *ifname)
 {
 	struct in6_addr tgt;
-	struct timeval tv;
+	int i;
 
 	fd = socket (PF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
 	if (fd == -1)
@@ -176,65 +228,25 @@ ndisc (const char *name, const char *ifname)
 		printf ("Looking up %s (%s) on %s...\n", name, s, ifname);
 	}
 
-	/* sends a Neigbor Solitication */
-	if (sendns (fd, &tgt, ifname))
+	for (i = 0; i < 3; i++)
 	{
-		close (fd);
-		return -1;
-	}
-
-	/* waits at most 1 second for positive reply */
-	tv.tv_sec = 1;
-	tv.tv_usec = 0;
-	do
-	{
-		struct
+		/* sends a Neigbor Solitication */
+		if (sendns (fd, &tgt, ifname))
 		{
-			struct nd_neighbor_advert adv;
-			struct nd_opt_hdr ohdr;
-			uint8_t hw_addr[6];
-		} na;
-		int val;
-		fd_set set;
-
-		/* waits for reply for at most 3 seconds */
-		FD_ZERO (&set);
-		FD_SET (fd, &set);
-
-		/* NOTE: Linux-like semantics assumed for select() */
-		val = select (fd + 1, &set, NULL, NULL, &tv);
-		switch (val)
-		{
-			case 0:
-				puts ("No response.");
-				close (fd);
-				return -1;
-
-			case -1:
-				perror ("select");
-				close (fd);
-				return -1;
+			close (fd);
+			return -1;
 		}
 
-		val = recvfrom (fd, &na, sizeof (na), 0, NULL, 0);
-		if (val != sizeof (na))
-			continue;
-
-		if (na.adv.nd_na_type == ND_NEIGHBOR_ADVERT
-		 && !memcmp (&na.adv.nd_na_target, &tgt, 16))
+		if (recvna (fd, &tgt) == 0)
 		{
-			printf ("Source link-layer address: "
-				"%02X:%02X:%02X:%02X:%02X:%02X\n",
-				na.hw_addr[0], na.hw_addr[1],
-				na.hw_addr[2], na.hw_addr[3],
-				na.hw_addr[4], na.hw_addr[5]);
 			close (fd);
-			fd = -1;
-		}	
+			return 0;
+		}
 	}
-	while (fd != -1);
 
-	return 0;
+	close (fd);
+	puts ("No response.");
+	return -1;
 }
 
 
