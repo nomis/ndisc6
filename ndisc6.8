@@ -1,5 +1,5 @@
 .\" ***********************************************************************
-.\" *  Copyright (C) 2004 Remi Denis-Courmont.                            *
+.\" *  Copyright (C) 2004-2005 Remi Denis-Courmont.                       *
 .\" *  This program is free software; you can redistribute and/or modify  *
 .\" *  it under the terms of the GNU General Public License as published  *
 .\" *  by the Free Software Foundation; version 2 of the license.         *
@@ -13,15 +13,15 @@
 .\" *  along with this program; if not, you can get it from:              *
 .\" *  http://www.gnu.org/copyleft/gpl.html                               *
 .\" ***********************************************************************
-.TH "NDISC" "8" "$Date$" "ndisc" "System Manager's Manual"
+.TH "NDISC6" "8" "$Date$" "ndisc6" "System Manager's Manual"
 .SH NAME
-ndisc \- ICMPv6 Neighbor Discovery tool
+ndisc6 \- ICMPv6 Neighbor Discovery tool
 .SH SYNOPSIS
-.BR "ndisc" " [" "-qv" "] [" "-r attempts" "] [" "-w wait_ms" "] <"
+.BR "ndisc6" " [" "-qv" "] [" "-r attempts" "] [" "-w wait_ms" "] <"
 .BR "IPv6 address" "> <" "iface" ">"
 
 .SH DESCRIPTON
-.B NDisc
+.B NDisc6
 is an Unix program which implements the ICMPv6 Neighbor Discovery in
 userland (it is normally done by the kernel). It is used to lookup the
 link-layer address (layer 2 address, MAC in the case of Ethernet) of
@@ -44,12 +44,12 @@ That is mostly useful when calling the program from a shell script.
 .TP
 .BR "\-r attempts" " or " "\-\-retry attempts"
 Send ICMPv6 Neighbor Discovery that many times until a reply is
-received, or abort. By default, ndisc will try 3 times before aborting.
+received, or abort. By default, ndisc6 will try 3 times before aborting.
 
 .TP
 .BR "\-w wait_ms" " or " "\-\-wait wait_ms"
 .RI "Waits " "wait_ms" " milliseconds for a response before retrying."
-By default, ndisc waits 1 second between each attempts.
+By default, ndisc6 waits 1 second between each attempts.
 
 .TP
 .BR "\-V" " or " "\-\-version"
@@ -68,17 +68,17 @@ Neighbor Discovery packets received from nodes not on the same link
 (i.e. Ethernet segment), for the sake of security. Technically, that is
 done by ensuring that the Hop limit (TTL) is 255.
 
-Note that you cannot use ndisc to lookup the local host's link-layer
+Note that you cannot use ndisc6 to lookup the local host's link-layer
 address.
 
 .SH SECURITY
-.RI "ndisc should be " "setuid" " " "root" " to allow use by non "
+.RI "ndisc6 should be " "setuid" " " "root" " to allow use by non "
 privileged users. It will drop its root privileges before any attempt
 is made to send or receive data from the network to reduce the possible
 impact of a security vulnerability.
 
 .SH "SEE ALSO"
-ping6(8), ipv6(7)
+ping6(8), rdisc6(8), ipv6(7)
 
 .SH AUTHOR
 Remi Denis-Courmont <rdenis at simphalempin.com>

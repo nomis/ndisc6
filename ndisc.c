@@ -52,6 +52,11 @@
 # define NAME "rdisc"
 #endif
 
+static void drop_priv (void)
+{
+	setuid (getuid ());
+}
+
 static int fd;
 
 static int
@@ -438,7 +443,7 @@ ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
 	}
 
 	/* leaves root privileges if the program is setuid */
-	setuid (getuid ());
+	drop_priv ();
 
 	/* sets Hop-by-hop limit to 255 */
 	setmcasthoplimit (fd, 255);
@@ -508,22 +513,26 @@ ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
 
 
 static int
-quick_usage (void)
+quick_usage (const char *path)
 {
-	fputs ("Try \""NAME" -h\" for more information.\n", stderr);
+	drop_priv ();
+
+	fprintf (stderr, "Try \"%s -h\" for more information.\n", path);
 	return 2;
 }
 
 
 static int
-usage (void)
+usage (const char *path)
 {
-	fputs (
+	drop_priv ();
+
+	fprintf (stderr,
 #ifndef RDISC
-"Usage: ndisc [options] <IPv6 address> <interface>\n"
+"Usage: %s [options] <IPv6 address> <interface>\n"
 "Looks up an on-link IPv6 node link-layer address (Neighbor Discovery)\n"
 #else
-"Usage: rdisc [options] [IPv6 address] <interface>\n"
+"Usage: %s [options] [IPv6 address] <interface>\n"
 "Solicits on-link IPv6 routers (Router Discovery)\n"
 #endif
 "\n"
@@ -537,7 +546,7 @@ usage (void)
 "  -V, --version  display program version and exit\n"
 "  -v, --verbose  verbose display (this is the default)\n"
 "  -w, --wait     how to long wait for a response [ms] (default: 1000)\n"
-		"\n", stderr);
+		"\n", path);
 	return 0;
 }
 
@@ -545,11 +554,13 @@ usage (void)
 static int
 version (void)
 {
+	drop_priv ();
+
 	puts (
 #ifndef RDISC
-"ndisc : IPv6 Neighbor"
+"ndisc6 : IPv6 Neighbor"
 #else
-"rdisc : IPv6 Router"
+"rdisc6 : IPv6 Router"
 #endif
 " Discovery userland tool "PACKAGE_VERSION"\n"
 " ($Rev$) built "__DATE__"\n"
@@ -587,7 +598,7 @@ main (int argc, char *argv[])
 		switch (val)
 		{
 			case 'h':
-				return usage ();
+				return usage (argv[0]);
 
 			case 'q':
 				verbose = 0;
@@ -600,7 +611,7 @@ main (int argc, char *argv[])
 
 				l = strtoul (optarg, &end, 0);
 				if (*end || l > UINT_MAX)
-					return quick_usage ();
+					return quick_usage (argv[0]);
 				retry = l;
 				break;
 			}
@@ -620,14 +631,14 @@ main (int argc, char *argv[])
 
 				l = strtoul (optarg, &end, 0);
 				if (*end || l > UINT_MAX)
-					return quick_usage ();
+					return quick_usage (argv[0]);
 				wait_ms = l;
 				break;
 			}
 
 			case '?':
 			default:
-				return quick_usage ();
+				return quick_usage (argv[0]);
 		}
 	}
 
@@ -641,7 +652,7 @@ main (int argc, char *argv[])
 			ifname = NULL;
 	}
 	else
-		return quick_usage ();
+		return quick_usage (argv[0]);
 
 #ifdef RDISC
 	if (ifname == NULL)
@@ -652,7 +663,7 @@ main (int argc, char *argv[])
 	else
 #endif
 	if ((optind != argc) || (ifname == NULL))
-		return quick_usage ();
+		return quick_usage (argv[0]);
 
 	return -ndisc (hostname, ifname, verbose, retry, wait_ms);
 }

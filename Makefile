@@ -26,11 +26,11 @@ INSTALL = install -c
 prefix = /usr/local
 
 
-TARGETS = ndisc rdisc
-VERSION = 0.1.1
+TARGETS = ndisc6 rdisc6
+VERSION = 0.1.2
 DEFS = -DPACKAGE_VERSION=\"$(VERSION)\"
-ndisc_DEFS =
-rdisc_DEFS = -DRDISC
+ndisc6_DEFS =
+rdisc6_DEFS = -DRDISC
 
 all: $(TARGETS)
 
