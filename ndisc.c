@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include <sys/types.h>
+#include <sys/select.h> /* select() */
 #include <sys/socket.h>
 #include <unistd.h> /* close() */
 #include <sys/ioctl.h>
@@ -149,6 +150,7 @@ static int
 ndisc (const char *name, const char *ifname)
 {
 	struct in6_addr tgt;
+	struct timeval tv;
 
 	fd = socket (PF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
 	if (fd == -1)
@@ -174,12 +176,16 @@ ndisc (const char *name, const char *ifname)
 		printf ("Looking up %s (%s) on %s...\n", name, s, ifname);
 	}
 
+	/* sends a Neigbor Solitication */
 	if (sendns (fd, &tgt, ifname))
 	{
 		close (fd);
 		return -1;
 	}
 
+	/* waits at most 3 seconds for positive reply */
+	tv.tv_sec = 3;
+	tv.tv_usec = 0;
 	do
 	{
 		struct
@@ -188,10 +194,30 @@ ndisc (const char *name, const char *ifname)
 			struct nd_opt_hdr ohdr;
 			uint8_t hw_addr[6];
 		} na;
-		int size;
+		int val;
+		fd_set set;
 
-		size = recvfrom (fd, &na, sizeof (na), 0, NULL, 0);
-		if (size != sizeof(na))
+		/* waits for reply for at most 3 seconds */
+		FD_ZERO (&set);
+		FD_SET (fd, &set);
+
+		/* NOTE: Linux-like semantics assumed for select() */
+		val = select (fd + 1, &set, NULL, NULL, &tv);
+		switch (val)
+		{
+			case 0:
+				puts ("No response.");
+				close (fd);
+				return -1;
+
+			case -1:
+				perror ("select");
+				close (fd);
+				return -1;
+		}
+
+		val = recvfrom (fd, &na, sizeof (na), 0, NULL, 0);
+		if (val != sizeof (na))
 			continue;
 
 		if (na.adv.nd_na_type == ND_NEIGHBOR_ADVERT
