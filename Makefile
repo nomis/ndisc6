@@ -37,9 +37,11 @@ rdisc: ndisc.c
 
 install: all install-man
 	$(INSTALL) -m 04755 ndisc $(DESTDIR)$(prefix)/bin/ndisc
+	$(INSTALL) -m 04755 rdisc $(DESTDIR)$(prefix)/bin/rdisc
 
 install-strip: all install-man
 	$(INSTALL) -s -m 04755 ndisc $(DESTDIR)$(prefix)/bin/ndisc
+	$(INSTALL) -s -m 04755 rdisc $(DESTDIR)$(prefix)/bin/rdisc
 
 install-man:
 	mkdir -p $(DESTDIR)$(prefix)/man/man8
