@@ -46,6 +46,12 @@
 
 #include <netinet/icmp6.h>
 
+#ifndef RDISC
+# define NAME "ndisc"
+#else
+# define NAME "rdisc"
+#endif
+
 static int fd;
 
 static int
@@ -503,7 +509,7 @@ ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
 static int
 quick_usage (void)
 {
-	fputs ("Try \"ndisc -h\" for more information.\n", stderr);
+	fputs ("Try \""NAME" -h\" for more information.\n", stderr);
 	return 2;
 }
 
@@ -539,8 +545,13 @@ static int
 version (void)
 {
 	puts (
-"ndisc : IPv6 Neighbor Discovery userland tool $Rev$\n"
-" built "__DATE__"\n"
+#ifndef RDISC
+"ndisc : IPv6 Neighbor"
+#else
+"rdisc : IPv6 Router"
+#endif
+" Discovery userland tool "PACKAGE_VERSION"\n"
+" ($Rev$) built "__DATE__"\n"
 "Copyright (C) 2004-2005 Remi Denis-Courmont");
 	puts (
 "This is free software; see the source for copying conditions.\n"
