@@ -4,7 +4,7 @@
  */
 
 /***********************************************************************
- *  Copyright (C) 2004 Remi Denis-Courmont.                            *
+ *  Copyright (C) 2004-2005 Remi Denis-Courmont.                       *
  *  This program is free software; you can redistribute and/or modify  *
  *  it under the terms of the GNU General Public License as published  *
  *  by the Free Software Foundation; version 2 of the license.         *
@@ -75,6 +75,15 @@ getipv6byname (const char *name, struct in6_addr *addr)
 
 
 static int
+setmcasthoplimit (int fd, int value)
+{
+	return setsockopt (fd, SOL_IPV6, IPV6_MULTICAST_HOPS,
+				&value, sizeof (value));
+}
+
+
+#ifndef RDISC
+static int
 getmacaddress (const char *ifname, uint8_t *addr)
 {
 	struct ifreq req;
@@ -93,14 +102,6 @@ getmacaddress (const char *ifname, uint8_t *addr)
 
 	memcpy (addr, req.ifr_hwaddr.sa_data, 6);
 	return 0;
-}
-
-
-static int
-setmcasthoplimit (int fd, int value)
-{
-	return setsockopt (fd, SOL_IPV6, IPV6_MULTICAST_HOPS,
-				&value, sizeof (value));
 }
 
 
@@ -155,7 +156,177 @@ sendns (int fd, const struct in6_addr *tgt, const char *ifname)
 
 
 static int
-recvna (int fd, struct in6_addr *tgt, unsigned wait_ms, int verbose)
+parsena (const uint8_t *buf, size_t len, const struct in6_addr *tgt,
+		int verbose)
+{
+	const struct nd_neighbor_advert *na =
+		(const struct nd_neighbor_advert *)buf;
+	const uint8_t *ptr;
+	
+	/* checks if the packet is a Neighbor Advertisement, and
+	 * if the target IPv6 address is the right one */
+	if ((len < sizeof (struct nd_neighbor_advert))
+	 || (na->nd_na_type != ND_NEIGHBOR_ADVERT)
+	 || (na->nd_na_code != 0)
+	 || memcmp (&na->nd_na_target, tgt, 16))
+		return -1;
+
+	len -= sizeof (struct nd_neighbor_advert);
+
+	/* looks for Target Link-layer address option */
+	ptr = buf + sizeof (struct nd_neighbor_advert);
+
+	while (len >= 8)
+	{
+		uint16_t optlen;
+
+		optlen = ((uint16_t)(ptr[1])) << 3;
+		if (optlen == 0)
+			break; /* invalid length */
+
+		len -= optlen;
+
+		if (len < 0) /* length > remaining bytes */
+			break;
+
+		/* skips unrecognized option */
+		if (ptr[0] != ND_OPT_TARGET_LINKADDR)
+		{
+			ptr += optlen;
+			continue;
+		}
+
+		/* Found! displays link-layer address */
+		ptr += 2;
+		if (verbose)
+			fputs ("Target link-layer address: ", stdout);
+
+		for (optlen -= 2; optlen > 1; optlen--)
+		{
+			printf ("%02X:", *ptr);
+			ptr ++;
+		}
+		printf ("%02X\n", *ptr);
+
+		return 0;
+	}
+
+	return -1;
+}
+#else
+static int
+sendrs (int fd, const struct in6_addr *tgt, const char *ifname)
+{
+	struct sockaddr_in6 addr;
+	struct nd_router_solicit rs;
+
+	/* determines multicast address */
+	memset (&addr, 0, sizeof (addr));
+	addr.sin6_family = AF_INET6;
+	addr.sin6_scope_id = if_nametoindex (ifname);
+	memcpy (addr.sin6_addr.s6_addr, tgt->s6_addr,  16);
+
+	/* builds ICMPv6 Neighbor Solicitation packet */
+	rs.nd_rs_type = ND_ROUTER_SOLICIT;
+	rs.nd_rs_code = 0;
+	rs.nd_rs_cksum = 0; /* computed by the kernel */
+
+	if (sendto (fd, &rs, sizeof (rs), 0, (const struct sockaddr *)&addr,
+			sizeof (addr)) != sizeof (rs))
+	{
+		perror ("Sending ICMPv6 neighbor solicitation");
+		return -1;
+	}
+
+	return 0;
+}
+
+
+static int
+parsera (const uint8_t *buf, size_t len, int verbose)
+{
+	const struct nd_router_advert *ra =
+		(const struct nd_router_advert *)buf;
+	const uint8_t *ptr;
+	
+	/* checks if the packet is a Router Advertisement */
+	if ((len < sizeof (struct nd_router_advert))
+	 || (ra->nd_ra_type != ND_ROUTER_ADVERT)
+	 || (ra->nd_ra_code != 0))
+		return -1;
+
+	if (verbose)
+	{
+		printf ("Hop limit      :          %3u (      0x%02x)\n"
+			"Router lifetime: %12u (0x%08x) second(s)\n"
+			"Reachable time : %12u (0x%08x) second(s)\n"
+			"Retrans. time  : %12u (0x%08x) second(s)\n",
+			(unsigned)ra->nd_ra_curhoplimit,
+			(unsigned)ra->nd_ra_curhoplimit,
+			(unsigned)ntohl (ra->nd_ra_router_lifetime),
+			(unsigned)ntohl (ra->nd_ra_router_lifetime),
+			(unsigned)ntohl (ra->nd_ra_reachable),
+			(unsigned)ntohl (ra->nd_ra_reachable),
+			(unsigned)ntohl (ra->nd_ra_retransmit),
+			(unsigned)ntohl (ra->nd_ra_retransmit));
+	}
+	len -= sizeof (struct nd_router_advert);
+
+	/* looks for Target Link-layer address option */
+	ptr = buf + sizeof (struct nd_router_advert);
+
+	while (len >= 8)
+	{
+		uint16_t optlen;
+		char str[INET6_ADDRSTRLEN];
+
+		optlen = ((uint16_t)(ptr[1])) << 3;
+		if (optlen == 0)
+			break; /* invalid length */
+
+		len -= optlen;
+
+		if (len < 0) /* length > remaining bytes */
+			break;
+
+		/* skips unrecognized option */
+		/* FIXME: support for other option!! */
+		if (ptr[0] != ND_OPT_PREFIX_INFORMATION)
+		{
+			ptr += optlen;
+			continue;
+		}
+
+		const struct nd_opt_prefix_info *pi =
+			(const struct nd_opt_prefix_info *)ptr;
+
+		/* displays prefix informations */
+		if (inet_ntop (AF_INET6, &pi->nd_opt_pi_prefix, str,
+				sizeof (str)) == NULL)
+			return -1;
+
+		printf ("Prefix         : %s/%u\n"
+			"Valid time     : %12u (0x%08x) second(s)\n"
+			"Preferred time : %12u (0x%08x) second(s)\n",
+			str, pi->nd_opt_pi_prefix_len,
+			(unsigned)ntohl (pi->nd_opt_pi_valid_time),
+			(unsigned)ntohl (pi->nd_opt_pi_valid_time),
+			(unsigned)ntohl (pi->nd_opt_pi_preferred_time),
+			(unsigned)ntohl (pi->nd_opt_pi_preferred_time));
+
+		return 0;
+	}
+
+	return 0;
+}
+# define sendns sendrs
+# define parsena( a, b, c, d ) parsera (a, b, d)
+#endif
+
+
+static int
+recvpayload (int fd, const struct in6_addr *tgt, unsigned wait_ms,
+		int verbose)
 {
 	/* computes dead-line time */
 	struct timeval end;
@@ -172,16 +343,10 @@ recvna (int fd, struct in6_addr *tgt, unsigned wait_ms, int verbose)
 	/* receive loop */
 	while (1)
 	{
-		struct
-		{
-			struct nd_neighbor_advert na;
-			uint8_t b[1500 - sizeof (struct nd_neighbor_advert)];
-		} buf;
+		uint8_t buf[1500];
 		struct sockaddr_in6 addr;
 		fd_set set;
 		int val;
-		uint8_t *ptr;
-		socklen_t len;
 		struct timeval left, now;
 
 		/* waits for reply for at most 3 seconds */
@@ -208,64 +373,27 @@ recvna (int fd, struct in6_addr *tgt, unsigned wait_ms, int verbose)
 			}
 		}
 
-		/* NOTE: Linux-like semantics assumed for select() */
 		val = select (fd + 1, &set, NULL, NULL, &left);
 		if (val < 0)
 			return -1;
 
 		if (val == 0)
+#ifndef RDISC
 			return 0;
-
-		/* receives an ICMPv6 packet */
-		len = sizeof (addr);
-		val = recvfrom (fd, &buf, sizeof (buf), 0,
-				(struct sockaddr *)&addr, &len);
-
-		/* checks if the packet is a Neighbor Advertisement, and
-		 * if the target IPv6 address is the right one */
-		if ((val < sizeof (buf.na))
-		 || (buf.na.nd_na_type != ND_NEIGHBOR_ADVERT)
-		 || (buf.na.nd_na_code != 0)
-		 || memcmp (&buf.na.nd_na_target, tgt, 16))
-			continue;
-
-		val -= sizeof (buf.na);
-
-		/* looks for Target Link-layer address option */
-		ptr = buf.b;
-
-		while (val >= 8)
+#else
+			return 1;
+#endif
+		else
 		{
-			uint16_t optlen;
+			/* receives an ICMPv6 packet */
+			socklen_t len = sizeof (addr);
 
-			optlen = ((uint16_t)(ptr[1])) << 3;
-			if (optlen == 0)
-				break; /* invalid length */
+			val = recvfrom (fd, &buf, sizeof (buf), 0,
+					(struct sockaddr *)&addr, &len);
+		}
 
-			val -= optlen;
-
-			if (val < 0) /* length > remaining bytes */
-				break;
-
-			/* skips unrecognized option */
-			if (ptr[0] != ND_OPT_TARGET_LINKADDR)
-			{
-				ptr += optlen;			
-				continue;
-			}
-
-			/* Found! displays link-layer address */
-			ptr += 2;
-			if (verbose)
-				fputs ("Target link-layer address: ", stdout);
-
-			for (optlen -= 2; optlen > 1; optlen--)
-			{
-				printf ("%02X:", *ptr);
-				ptr ++;
-			}
-			printf ("%02X\n", *ptr);
-
+		if ((val >= 0) && parsena (buf, val, tgt, verbose) == 0)
+		{
 			if (verbose)
 			{
 				char str[INET6_ADDRSTRLEN];
@@ -274,8 +402,9 @@ recvna (int fd, struct in6_addr *tgt, unsigned wait_ms, int verbose)
 						sizeof (str)) != NULL)
 					printf (" from %s\n", str);
 			}
-
+#ifndef RDISC
 			return 1;
+#endif
 		}
 	}
 
@@ -300,6 +429,17 @@ ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
 	/* leaves root privileges if the program is setuid */
 	setuid (getuid ());
 
+	/* sets Hop-by-hop limit to 255 */
+	setmcasthoplimit (fd, 255);
+
+#ifndef RDISC
+# define LOOKING_UP "Looking up"
+#else
+	if (name == NULL)
+		name = "ff02::2";
+# define LOOKING_UP "Soliciting"
+#endif
+
 	/* resolves target's IPv6 address */
 	if (getipv6byname (name, &tgt))
 	{
@@ -312,7 +452,7 @@ ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
 
 		inet_ntop (AF_INET6, &tgt, s, sizeof (s));
 		if (verbose)
-			printf ("Looking up %s (%s) on %s...\n", name, s,
+			printf (LOOKING_UP" %s (%s) on %s...\n", name, s,
 				ifname);
 	}
 
@@ -328,7 +468,7 @@ ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
 		}
 
 		/* receives a Neighbor Advertisement */
-		val = recvna (fd, &tgt, wait_ms, verbose);
+		val = recvpayload (fd, &tgt, wait_ms, verbose);
 		if (val > 0)
 		{
 			close (fd);
@@ -351,7 +491,7 @@ ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
 	close (fd);
 	if (verbose)
 		puts ("No response.");
-	return -1;
+	return -2;
 }
 
 
@@ -367,11 +507,20 @@ static int
 usage (void)
 {
 	fputs (
+#ifndef RDISC
 "Usage: ndisc [options] <IPv6 address> <interface>\n"
 "Looks up an on-link IPv6 node link-layer address (Neighbor Discovery)\n"
+#else
+"Usage: rdisc [options] [IPv6 address] <interface>\n"
+"Solicits on-link IPv6 routers (Router Discovery)\n"
+#endif
 "\n"
 "  -h, --help     display this help and exit\n"
+#ifndef RDISC
 "  -q, --quiet    only print the link-layer address (useful for scripts)\n"
+#else
+"  -q, --quiet    only print the advertised prefixes (useful for scripts)\n"
+#endif
 "  -r, --retry    number of attempts (default: 3)\n"
 "  -V, --version  display program version and exit\n"
 "  -v, --verbose  verbose display (this is the default)\n"
@@ -387,7 +536,7 @@ version (void)
 	puts (
 "ndisc : IPv6 Neighbor Discovery userland tool $Rev$\n"
 " built "__DATE__"\n"
-"Copyright (C) 2004 Remi Denis-Courmont");
+"Copyright (C) 2004-2005 Remi Denis-Courmont");
 	puts (
 "This is free software; see the source for copying conditions.\n"
 "There is NO warranty; not even for MERCHANTABILITY or\n"
@@ -416,7 +565,7 @@ main (int argc, char *argv[])
 	unsigned retry = 3, verbose = 1, wait_ms = 1000;
 	const char *hostname, *ifname = NULL;
 
-	while ((val = getopt_long (argc, argv, "hqr:Vw:", opts, NULL)) != EOF)
+	while ((val = getopt_long (argc, argv, "hqr:Vvw:", opts, NULL)) != EOF)
 	{
 		switch (val)
 		{
@@ -469,9 +618,19 @@ main (int argc, char *argv[])
 		hostname = argv[optind++];
 	if (optind < argc)
 		ifname = argv[optind++];
+#ifndef RDISC
 	if ((optind < argc) || (ifname == NULL))
 		return quick_usage ();
+#else
+	if (ifname == NULL)
+	{
+		ifname = hostname;
+		hostname = NULL;
+	}
+	if (optind < argc)
+		return quick_usage ();
+#endif
 
-	return ndisc (hostname, ifname, verbose, retry, wait_ms) ? 1 : 0;
+	return -ndisc (hostname, ifname, verbose, retry, wait_ms);
 }
 

@@ -25,12 +25,15 @@ LDFLAGS =
 INSTALL = install -c
 prefix = /usr/local
 
-TARGETS = ndisc
+TARGETS = ndisc rdisc
 
 all: $(TARGETS)
 
-$(TARGETS): %: %.c
+ndisc: ndisc.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
+
+rdisc: ndisc.c
+	$(CC) -DRDISC $(CFLAGS) $(LDFLAGS) -o $@ $<
 
 install: all install-man
 	$(INSTALL) -m 04755 ndisc $(DESTDIR)$(prefix)/bin/ndisc
