@@ -44,5 +44,12 @@ uninstall:
 clean:
 	rm -f $(TARGETS)
 
+dist:
+	mkdir -v ndisc-0.0.1
+	cp ndisc.c Makefile ndisc-0.0.1/
+	tar c ndisc-0.0.1 > ndisc-0.0.1.tar
+	bzip2 ndisc-0.0.1.tar
+	rm -Rf ndisc-0.0.1
+
 .PHONY: clean all install
 
