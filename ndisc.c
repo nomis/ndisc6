@@ -150,21 +150,21 @@ static int
 recvna (int fd, struct in6_addr *tgt)
 {
 	struct timeval tv;
-	int val;
 
 	/* waits at most 1 second for positive reply */
 	tv.tv_sec = 1;
 	tv.tv_usec = 0;
 
-	do
+	while (1)
 	{
 		struct
 		{
-			struct nd_neighbor_advert adv;
-			struct nd_opt_hdr ohdr;
-			uint8_t hw_addr[6];
-		} na;
+			struct nd_neighbor_advert na;
+			uint8_t b[1500 - sizeof (struct nd_neighbor_advert)];
+		} buf;
 		fd_set set;
+		int val;
+		uint8_t *ptr;
 
 		/* waits for reply for at most 3 seconds */
 		FD_ZERO (&set);
@@ -179,22 +179,64 @@ recvna (int fd, struct in6_addr *tgt)
 			return -1;
 		}
 
-		if (val == 1
-		 && recvfrom (fd, &na, sizeof (na), 0, NULL, 0) == sizeof (na)
-		 && na.adv.nd_na_type == ND_NEIGHBOR_ADVERT
-		 && !memcmp (&na.adv.nd_na_target, tgt, 16))
+		if (val == 0)
 		{
-			printf ("Source link-layer address: "
-				"%02X:%02X:%02X:%02X:%02X:%02X\n",
-				na.hw_addr[0], na.hw_addr[1],
-				na.hw_addr[2], na.hw_addr[3],
-				na.hw_addr[4], na.hw_addr[5]);
+			puts ("Timed out.");
+			return -1;
+		}
+
+		/* receives an ICMPv6 packet */
+		val = recvfrom (fd, &buf, sizeof (buf), 0, NULL, 0);
+
+		/* checks if the packet is a Neighbor Advertisement, and
+		 * if the target IPv6 address is the right one */
+		if ((val < sizeof (buf.na))
+		 || (buf.na.nd_na_type != ND_NEIGHBOR_ADVERT)
+		 || (buf.na.nd_na_code != 0)
+		 || memcmp (&buf.na.nd_na_target, tgt, 16))
+			continue;
+
+		val -= sizeof (buf.na);
+
+		/* looks for Target Link-layer address option */
+		ptr = buf.b;
+
+		while (val >= 8)
+		{
+			uint16_t optlen;
+
+			optlen = ((uint16_t)(ptr[1])) << 3;
+			if (optlen == 0)
+				break; /* invalid length */
+
+			val -= optlen;
+
+			if (val < 0) /* length > remaining bytes */
+				break;
+
+			/* skips unrecognized option */
+			if (ptr[0] != ND_OPT_TARGET_LINKADDR)
+			{
+				ptr += optlen;			
+				continue;
+			}
+
+			/* Found! displays link-layer address */
+			ptr += 2;
+			fputs ("Target link-layer address: ", stdout);
+
+			for (optlen -= 2; optlen > 1; optlen--)
+			{
+				printf ("%02X:", *ptr);
+				ptr ++;
+			}
+			printf ("%02X\n", *ptr);
+
 			return 0;
 		}
 	}
-	while (val);
 
-	return -1; /* time out */
+	return -1; /* dead code */
 }
 
 
