@@ -96,25 +96,59 @@ setmcasthoplimit (int fd, int value)
 
 
 static int
-ndisc (const char *name, const char *ifname)
+sendns (int fd, const struct in6_addr *tgt, const char *ifname)
 {
 	struct sockaddr_in6 addr;
-	struct in6_addr tgt;
-	union
+	struct
 	{
-		struct
-		{
-			struct nd_neighbor_solicit sol;
-			struct nd_opt_hdr ohdr;
-			uint8_t hw_addr[6];
-		} ns;
-		struct
-		{
-			struct nd_neighbor_advert adv;
-			struct nd_opt_hdr ohdr;
-			uint8_t hw_addr[6];
-		} na;
-	} payload;
+		struct nd_neighbor_solicit hdr;
+		struct nd_opt_hdr opt;
+		uint8_t hw_addr[6];
+	} ns;
+
+	/* determines multicast address */
+	memset (&addr, 0, sizeof (addr));
+	addr.sin6_family = AF_INET6;
+	addr.sin6_scope_id = if_nametoindex (ifname);
+	memcpy (&addr.sin6_addr.s6_addr, "\xff\x02\x00\x00\x00\x00\x00\x00"
+		"\x00\x00\x00\x01\xff", 13);
+	memcpy (addr.sin6_addr.s6_addr + 13, tgt->s6_addr + 13,  3);
+
+	/* builds ICMPv6 Neighbor Solicitation packet */
+	ns.hdr.nd_ns_type = ND_NEIGHBOR_SOLICIT;
+	ns.hdr.nd_ns_code = 0;
+	ns.hdr.nd_ns_cksum = 0; /* computed by the kernel */
+	ns.hdr.nd_ns_reserved = 0;
+	memcpy (&ns.hdr.nd_ns_target, tgt, 16);
+
+	ns.opt.nd_opt_type = ND_OPT_SOURCE_LINKADDR;
+	ns.opt.nd_opt_len = 1; /* 8 bytes */
+
+	/* gets our own interface's link-layer address (MAC) */
+	if (getmacaddress (ifname, ns.hw_addr))
+	{
+		close (fd);
+		return -1;
+	}
+
+	/* sets Hop-by-hop limit to 255 */
+	setmcasthoplimit (fd, 255);
+
+	if (sendto (fd, &ns, sizeof (ns), 0, (const struct sockaddr *)&addr,
+			sizeof (addr)) != sizeof (ns))
+	{
+		perror ("Sending ICMPv6 neighbor solicitation");
+		return -1;
+	}
+
+	return 0;
+}
+
+
+static int
+ndisc (const char *name, const char *ifname)
+{
+	struct in6_addr tgt;
 
 	fd = socket (PF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
 	if (fd == -1)
@@ -126,13 +160,6 @@ ndisc (const char *name, const char *ifname)
 	/* leaves root privileges if the program is setuid */
 	setuid (getuid ());
 
-	/* resolves interface's link-layer address (MAC) */
-	if (getmacaddress (ifname, payload.ns.hw_addr))
-	{
-		close (fd);
-		return -1;
-	}
-
 	/* resolves target's IPv6 address */
 	if (getipv6byname (name, &tgt))
 	{
@@ -141,64 +168,40 @@ ndisc (const char *name, const char *ifname)
 	}
 	else
 	{
-		char in6str[INET6_ADDRSTRLEN];
+		char s[INET6_ADDRSTRLEN];
 
-		inet_ntop (AF_INET6, &tgt, in6str, sizeof (in6str));
-		printf ("Looking up %s (%s) ...\n", name, in6str);
+		inet_ntop (AF_INET6, &tgt, s, sizeof (s));
+		printf ("Looking up %s (%s) on %s...\n", name, s, ifname);
 	}
 
-	/* determines multicast address */
-	memset (&addr, 0, sizeof (addr));
-	addr.sin6_family = AF_INET6;
-	addr.sin6_scope_id = if_nametoindex (ifname);
-	/* FIXME: not sure if that is correct, check appropriate RFC: */
-	memcpy (&addr.sin6_addr.s6_addr, "\xff\x02\x00\x00\x00\x00\x00\x00"
-		"\x00\x00\x00\x01\xff", 13);
-	memcpy (addr.sin6_addr.s6_addr + 13, tgt.s6_addr + 13,  3);
-
-	/* builds ICMPv6 Neighbor Solicitation packet */
-	payload.ns.sol.nd_ns_type = ND_NEIGHBOR_SOLICIT;
-	payload.ns.sol.nd_ns_code = 0;
-	payload.ns.sol.nd_ns_cksum = 0; /* computed by the kernel */
-	payload.ns.sol.nd_ns_reserved = 0;
-	memcpy (&payload.ns.sol.nd_ns_target, &tgt, 16);
-	payload.ns.ohdr.nd_opt_type = ND_OPT_SOURCE_LINKADDR;
-	payload.ns.ohdr.nd_opt_len = 1;
-	/* payload.ns.hw_addr already set */
-
-	/* sets Hop-by-hop limit to 255 */
-	setmcasthoplimit (fd, 255);
-
-	if (sendto (fd, &payload.ns, sizeof (payload.ns), 0,
-			(const struct sockaddr *)&addr, sizeof (addr))
-		!= sizeof (payload.ns))
+	if (sendns (fd, &tgt, ifname))
 	{
-		perror ("Sending ICMPv6 neighbor solicitation");
 		close (fd);
 		return -1;
 	}
 
 	do
 	{
+		struct
+		{
+			struct nd_neighbor_advert adv;
+			struct nd_opt_hdr ohdr;
+			uint8_t hw_addr[6];
+		} na;
 		int size;
-		socklen_t len = sizeof (addr);
-		size = recvfrom (fd, &payload.na, sizeof (payload.na), 0,
-				 (struct sockaddr *)&addr, &len);
-		if (size != sizeof(payload.na))
+
+		size = recvfrom (fd, &na, sizeof (na), 0, NULL, 0);
+		if (size != sizeof(na))
 			continue;
 
-		if (payload.na.adv.nd_na_type == ND_NEIGHBOR_ADVERT
-		 && !memcmp (&payload.na.adv.nd_na_target, &tgt, 16))
+		if (na.adv.nd_na_type == ND_NEIGHBOR_ADVERT
+		 && !memcmp (&na.adv.nd_na_target, &tgt, 16))
 		{
 			printf ("Source link-layer address: "
 				"%02X:%02X:%02X:%02X:%02X:%02X\n",
-				payload.na.hw_addr[0],
-				payload.na.hw_addr[1],
-				payload.na.hw_addr[2],
-				payload.na.hw_addr[3],
-				payload.na.hw_addr[4],
-				payload.na.hw_addr[5]);
-
+				na.hw_addr[0], na.hw_addr[1],
+				na.hw_addr[2], na.hw_addr[3],
+				na.hw_addr[4], na.hw_addr[5]);
 			close (fd);
 			fd = -1;
 		}	
