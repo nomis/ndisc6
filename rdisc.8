@@ -1,0 +1,77 @@
+.\" ***********************************************************************
+.\" *  Copyright (C) 2004-2005 Remi Denis-Courmont.                       *
+.\" *  This program is free software; you can redistribute and/or modify  *
+.\" *  it under the terms of the GNU General Public License as published  *
+.\" *  by the Free Software Foundation; version 2 of the license.         *
+.\" *                                                                     *
+.\" *  This program is distributed in the hope that it will be useful,    *
+.\" *  but WITHOUT ANY WARRANTY; without even the implied warranty of     *
+.\" *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.               *
+.\" *  See the GNU General Public License for more details.               *
+.\" *                                                                     *
+.\" *  You should have received a copy of the GNU General Public License  *
+.\" *  along with this program; if not, you can get it from:              *
+.\" *  http://www.gnu.org/copyleft/gpl.html                               *
+.\" ***********************************************************************
+.TH "RDISC" "8" "$Date: 2005-01-09 12:42:19 +0100 (dim, 09 jan 2005) $" "ndisc" "System Manager's Manual"
+.SH NAME
+rdisc \- ICMPv6 Router Discovery tool
+.SH SYNOPSIS
+.BR "rdisc" " [" "-qv" "] [" "-r attempts" "] [" "-w wait_ms" "] ["
+.BR "IPv6 address" "] <" "iface" ">"
+
+.SH DESCRIPTON
+.B RDisc
+is an Unix program which implements the ICMPv6 Router Discovery in
+userland (it is normally done by the kernel). It is used to lookup the
+list of on-link routers and IPv6 prefixes.
+
+It can also be used to force the kernel to update the state of a given
+IPv6-autoconfigured network interface.
+
+The name of the network interface to probe routers for must be
+specified.
+
+.SH OPTIONS
+
+.TP
+.BR "\-h" " or " "\-\-help"
+Display some help and exit.
+
+.TP
+.BR "\-q" " or " "\-\-quiet"
+Only display advertised IPv6 prefixes. Display nothing in case of failure.
+That is mostly useful when calling the program from a shell script.
+
+.TP
+.BR "\-r attempts" " or " "\-\-retry attempts"
+Send ICMPv6 Router Discovery that many times until a reply is
+received, or abort. By default, rdisc will try 3 times before aborting.
+
+.TP
+.BR "\-w wait_ms" " or " "\-\-wait wait_ms"
+.RI "Waits " "wait_ms" " milliseconds for a response before retrying."
+By default, rdisc waits 1 second between each attempts.
+
+.TP
+.BR "\-V" " or " "\-\-version"
+Display program version and license and exit.
+
+.TP
+.BR "\-v" " or " "\-\-verbose"
+Display verbose information. That is the default.
+
+.SH SECURITY
+.RI "rdisc must be " "setuid" " " "root" " to allow use by non "
+privileged users. It will drop its root privileges before any attempt
+is made to send or receive data from the network to reduce the possible
+impact of a security vulnerability.
+
+.SH "SEE ALSO"
+ndisc(8), ipv6(7)
+
+.SH AUTHOR
+Remi Denis-Courmont <rdenis at simphalempin.com>
+
+$Id: ndisc.8 20 2005-01-09 11:42:19Z remi $
+
