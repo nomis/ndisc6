@@ -1,0 +1,92 @@
+.\" ***********************************************************************
+.\" *  Copyright (C) 2004 Remi Denis-Courmont.                            *
+.\" *  This program is free software; you can redistribute and/or modify  *
+.\" *  it under the terms of the GNU General Public License as published  *
+.\" *  by the Free Software Foundation; version 2 of the license.         *
+.\" *                                                                     *
+.\" *  This program is distributed in the hope that it will be useful,    *
+.\" *  but WITHOUT ANY WARRANTY; without even the implied warranty of     *
+.\" *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.               *
+.\" *  See the GNU General Public License for more details.               *
+.\" *                                                                     *
+.\" *  You should have received a copy of the GNU General Public License  *
+.\" *  along with this program; if not, you can get it from:              *
+.\" *  http://www.gnu.org/copyleft/gpl.html                               *
+.\" ***********************************************************************
+.TH "NDISC" "8" "$Date$" "ndisc" "System Manager's Manual"
+.SH NAME
+ndisc \- ICMPv6 Neighbor Discovery tool
+.SH SYNOPSIS
+.BR "ndisc" " [" "-qv" "] [" "-r attempts" "] [" "-w wait_ms" "] <"
+.BR "IPv6 address" "> <" "iface" ">"
+
+.SH DESCRIPTON
+.B NDisc
+is an Unix program which implements the ICMPv6 Neighbor Discovery in
+userland (it is normally done by the kernel). It is used to lookup the
+link-layer address (layer 2 address, MAC in the case of Ethernet) of
+any on-link IPv6 node.
+
+The IPv6 address of the node must specified, as well as the networking
+interface on which to perform the lookup.
+
+.SH OPTIONS
+
+.TP
+.BR "\-h" " or " "\-\-help"
+Display some help and exit.
+
+.TP
+.BR "\-q" " or " "\-\-quiet"
+Only display link-layer address. Display nothing in case of failure.
+That is mostly useful when calling the program from a shell script.
+
+.TP
+.BR "\-r attempts" " or " "\-\-retry attempts"
+Send ICMPv6 Neighbor Discovery that many times until a reply is
+received, or abort. By default, ndisc will try 3 times before aborting.
+
+.TP
+.BR "\-w wait_ms" " or " "\-\-wait wait_ms"
+.RI "Waits " "wait_ms" " milliseconds for a response before retrying."
+By default, ndisc waits 1 second between each attempts.
+
+.TP
+.BR "\-V" " or " "\-\-version"
+Display program version and license and exit.
+
+.TP
+.BR "\-v" " or " "\-\-verbose"
+Display verbose information. That is the default.
+
+.SH DIAGNOSTICS
+
+If you get no response while you know the remote host is up, it is
+most likely that it is not on-link, that is to say, you must cross one
+or more routers to reach it. By design, IPv6 nodes ignore ICMPv6
+Neighbor Discovery packets received from nodes not on the same link
+(i.e. Ethernet segment), for the sake of security. Technically, that is
+done by ensuring that the Hop limit (TTL) is 255.
+
+Note that you cannot use ndisc to lookup the local host's link-layer
+address.
+
+.SH BUGS
+In the case of very high traffic on the networking interface, ndisc may
+wait for more than 1 second (or the time specified through the \-\-wait
+option).
+
+.SH SECURITY
+.RI "ndisc should be " "setuid" " " "root" " to allow use by non "
+privileged users. It will drop its root privileges before any attempt
+is made to send or receive data from the network to reduce the possible
+impact of a security vulnerability.
+
+.SH "SEE ALSO"
+ping6(8), ipv6(7)
+
+.SH AUTHOR
+Remi Denis-Courmont <rdenis at simphalempin.com>
+
+$Id$
+
