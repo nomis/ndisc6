@@ -162,9 +162,11 @@ recvna (int fd, struct in6_addr *tgt)
 			struct nd_neighbor_advert na;
 			uint8_t b[1500 - sizeof (struct nd_neighbor_advert)];
 		} buf;
+		struct sockaddr_in6 addr;
 		fd_set set;
 		int val;
 		uint8_t *ptr;
+		socklen_t len;
 
 		/* waits for reply for at most 3 seconds */
 		FD_ZERO (&set);
@@ -186,7 +188,9 @@ recvna (int fd, struct in6_addr *tgt)
 		}
 
 		/* receives an ICMPv6 packet */
-		val = recvfrom (fd, &buf, sizeof (buf), 0, NULL, 0);
+		len = sizeof (addr);
+		val = recvfrom (fd, &buf, sizeof (buf), 0,
+				(struct sockaddr *)&addr, &len);
 
 		/* checks if the packet is a Neighbor Advertisement, and
 		 * if the target IPv6 address is the right one */
@@ -203,6 +207,7 @@ recvna (int fd, struct in6_addr *tgt)
 
 		while (val >= 8)
 		{
+			char s[INET6_ADDRSTRLEN];
 			uint16_t optlen;
 
 			optlen = ((uint16_t)(ptr[1])) << 3;
@@ -231,6 +236,9 @@ recvna (int fd, struct in6_addr *tgt)
 				ptr ++;
 			}
 			printf ("%02X\n", *ptr);
+
+			inet_ntop (AF_INET6, &addr.sin6_addr, s, sizeof (s));
+			printf (" from %s\n", s);
 
 			return 0;
 		}
