@@ -305,16 +305,18 @@ parsera (const uint8_t *buf, size_t len, int verbose)
 				sizeof (str)) == NULL)
 			return -1;
 
-		printf ("Prefix         : %s/%u\n"
-			"Valid time     : %12u (0x%08x) second(s)\n"
-			"Preferred time : %12u (0x%08x) second(s)\n",
-			str, pi->nd_opt_pi_prefix_len,
-			(unsigned)ntohl (pi->nd_opt_pi_valid_time),
-			(unsigned)ntohl (pi->nd_opt_pi_valid_time),
-			(unsigned)ntohl (pi->nd_opt_pi_preferred_time),
-			(unsigned)ntohl (pi->nd_opt_pi_preferred_time));
+		printf ("Prefix         : %s/%u\n", str,
+			pi->nd_opt_pi_prefix_len);
+		if (verbose)
+			printf ("Valid time     : %12u (0x%08x) second(s)\n"
+				"Preferred time : %12u (0x%08x) second(s)\n",
+				(unsigned)ntohl (pi->nd_opt_pi_valid_time),
+				(unsigned)ntohl (pi->nd_opt_pi_valid_time),
+				(unsigned)ntohl(pi->nd_opt_pi_preferred_time),
+				(unsigned)ntohl (pi->nd_opt_pi_preferred_time)
+				);
 
-		return 0;
+		ptr += optlen;
 	}
 
 	return 0;
