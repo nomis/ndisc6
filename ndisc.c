@@ -565,7 +565,7 @@ main (int argc, char *argv[])
 {
 	int val;
 	unsigned retry = 3, verbose = 1, wait_ms = 1000;
-	const char *hostname, *ifname = NULL;
+	const char *hostname, *ifname;
 
 	while ((val = getopt_long (argc, argv, "hqr:Vvw:", opts, NULL)) != EOF)
 	{
@@ -617,21 +617,27 @@ main (int argc, char *argv[])
 	}
 
 	if (optind < argc)
+	{
 		hostname = argv[optind++];
-	if (optind < argc)
-		ifname = argv[optind++];
-#ifndef RDISC
-	if ((optind < argc) || (ifname == NULL))
+
+		if (optind < argc)
+			ifname = argv[optind++];
+		else
+			ifname = NULL;
+	}
+	else
 		return quick_usage ();
-#else
+
+#ifdef RDISC
 	if (ifname == NULL)
 	{
 		ifname = hostname;
 		hostname = NULL;
 	}
-	if (optind < argc)
-		return quick_usage ();
+	else
 #endif
+	if ((optind != argc) || (ifname == NULL))
+		return quick_usage ();
 
 	return -ndisc (hostname, ifname, verbose, retry, wait_ms);
 }
