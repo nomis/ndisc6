@@ -31,6 +31,8 @@
 #include <inttypes.h>
 
 #include <sys/types.h>
+#include <sys/time.h>
+#include <time.h> /* gettimeofday() */
 #include <sys/select.h> /* select() */
 #include <sys/socket.h>
 #include <unistd.h> /* close() */
@@ -155,16 +157,19 @@ sendns (int fd, const struct in6_addr *tgt, const char *ifname)
 static int
 recvna (int fd, struct in6_addr *tgt, unsigned wait_ms, int verbose)
 {
-	struct timeval tv;
+	/* computes dead-line time */
+	struct timeval end;
 
+	gettimeofday (&end, NULL);
 	{
 		div_t d;
 		
 		d = div (wait_ms, 1000);
-		tv.tv_sec = d.quot;
-		tv.tv_usec = d.rem;
+		end.tv_sec += d.quot;
+		end.tv_usec += d.rem;
 	}
 
+	/* receive loop */
 	while (1)
 	{
 		struct
@@ -177,14 +182,34 @@ recvna (int fd, struct in6_addr *tgt, unsigned wait_ms, int verbose)
 		int val;
 		uint8_t *ptr;
 		socklen_t len;
+		struct timeval left, now;
 
 		/* waits for reply for at most 3 seconds */
 		FD_ZERO (&set);
 		FD_SET (fd, &set);
 
-		/* NOTE: Linux-like semantics assumed for select() */
-		val = select (fd + 1, &set, NULL, NULL, &tv);
+		gettimeofday (&now, NULL);
+		if (now.tv_sec > end.tv_sec
+		 || (now.tv_sec == end.tv_sec
+		  && now.tv_usec > end.tv_usec))
+		{
+			left.tv_sec = 0;
+			left.tv_usec = 0;
+		}
+		else
+		{
+			left.tv_sec = end.tv_sec - now.tv_sec;
+			left.tv_usec = end.tv_usec - now.tv_usec;
 
+			if (end.tv_usec < now.tv_usec)
+			{
+				left.tv_sec --;
+				left.tv_usec += 1000000;
+			}
+		}
+
+		/* NOTE: Linux-like semantics assumed for select() */
+		val = select (fd + 1, &set, NULL, NULL, &left);
 		if (val < 0)
 			return -1;
 

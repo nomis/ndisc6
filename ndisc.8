@@ -71,11 +71,6 @@ done by ensuring that the Hop limit (TTL) is 255.
 Note that you cannot use ndisc to lookup the local host's link-layer
 address.
 
-.SH BUGS
-In the case of very high traffic on the networking interface, ndisc may
-wait for more than 1 second (or the time specified through the \-\-wait
-option).
-
 .SH SECURITY
 .RI "ndisc should be " "setuid" " " "root" " to allow use by non "
 privileged users. It will drop its root privileges before any attempt
