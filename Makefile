@@ -67,6 +67,7 @@ dist:
 	mkdir -v ndisc-$(VERSION)
 	cp ndisc.c $(TARGETS:%=%.8) Makefile README ndisc-$(VERSION)/
 	cp /usr/share/common-licenses/GPL-2 ndisc-$(VERSION)/COPYING
+	svn -v log > ndisc-$(VERSION)/ChangeLog
 	tar c ndisc-$(VERSION) | bzip2 > ndisc-$(VERSION).tar.bz2
 	rm -Rf ndisc-$(VERSION)
 
