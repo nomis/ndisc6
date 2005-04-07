@@ -60,7 +60,8 @@ static void drop_priv (void)
 static int fd;
 
 static int
-getipv6byname (const char *name, struct in6_addr *addr)
+getipv6byname (const char *name, const char *ifname,
+               struct sockaddr_in6 *addr)
 {
 	struct addrinfo hints, *res;
 	int val;
@@ -76,11 +77,17 @@ getipv6byname (const char *name, struct in6_addr *addr)
 		return -1;
 	}
 
-	/* NOTE: we assume buffers have identical sizes */
-	memcpy (addr, &((const struct sockaddr_in6 *)res->ai_addr)->sin6_addr,
-		sizeof (struct in6_addr));
-
+	memcpy (addr, res->ai_addr, sizeof (struct sockaddr_in6));
 	freeaddrinfo (res);
+
+	val = if_nametoindex (ifname);
+	if (val == 0)
+	{
+		perror (ifname);
+		return -1;
+	}
+	addr->sin6_scope_id = val;
+
 	return 0;
 }
 
@@ -117,7 +124,7 @@ getmacaddress (const char *ifname, uint8_t *addr)
 
 
 static int
-sendns (int fd, const struct in6_addr *tgt, const char *ifname)
+sendns (int fd, const struct sockaddr_in6 *tgt, const char *ifname)
 {
 	struct sockaddr_in6 addr;
 	struct
@@ -128,19 +135,16 @@ sendns (int fd, const struct in6_addr *tgt, const char *ifname)
 	} ns;
 
 	/* determines multicast address */
-	memset (&addr, 0, sizeof (addr));
-	addr.sin6_family = AF_INET6;
-	addr.sin6_scope_id = if_nametoindex (ifname);
+	memcpy (&addr, tgt, sizeof (addr));
 	memcpy (&addr.sin6_addr.s6_addr, "\xff\x02\x00\x00\x00\x00\x00\x00"
 		"\x00\x00\x00\x01\xff", 13);
-	memcpy (addr.sin6_addr.s6_addr + 13, tgt->s6_addr + 13,  3);
 
 	/* builds ICMPv6 Neighbor Solicitation packet */
 	ns.hdr.nd_ns_type = ND_NEIGHBOR_SOLICIT;
 	ns.hdr.nd_ns_code = 0;
 	ns.hdr.nd_ns_cksum = 0; /* computed by the kernel */
 	ns.hdr.nd_ns_reserved = 0;
-	memcpy (&ns.hdr.nd_ns_target, tgt, 16);
+	memcpy (&ns.hdr.nd_ns_target, &tgt->sin6_addr, 16);
 
 	ns.opt.nd_opt_type = ND_OPT_SOURCE_LINKADDR;
 	ns.opt.nd_opt_len = 1; /* 8 bytes */
@@ -167,8 +171,8 @@ sendns (int fd, const struct in6_addr *tgt, const char *ifname)
 
 
 static int
-parsena (const uint8_t *buf, size_t len, const struct in6_addr *tgt,
-		int verbose)
+parsena (const uint8_t *buf, size_t len, const struct sockaddr_in6 *tgt,
+         int verbose)
 {
 	const struct nd_neighbor_advert *na =
 		(const struct nd_neighbor_advert *)buf;
@@ -179,7 +183,7 @@ parsena (const uint8_t *buf, size_t len, const struct in6_addr *tgt,
 	if ((len < sizeof (struct nd_neighbor_advert))
 	 || (na->nd_na_type != ND_NEIGHBOR_ADVERT)
 	 || (na->nd_na_code != 0)
-	 || memcmp (&na->nd_na_target, tgt, 16))
+	 || memcmp (&na->nd_na_target, &tgt->sin6_addr, 16))
 		return -1;
 
 	len -= sizeof (struct nd_neighbor_advert);
@@ -226,24 +230,17 @@ parsena (const uint8_t *buf, size_t len, const struct in6_addr *tgt,
 }
 #else
 static int
-sendrs (int fd, const struct in6_addr *tgt, const char *ifname)
+sendrs (int fd, const struct sockaddr_in6 *tgt)
 {
-	struct sockaddr_in6 addr;
 	struct nd_router_solicit rs;
-
-	/* determines multicast address */
-	memset (&addr, 0, sizeof (addr));
-	addr.sin6_family = AF_INET6;
-	addr.sin6_scope_id = if_nametoindex (ifname);
-	memcpy (addr.sin6_addr.s6_addr, tgt->s6_addr,  16);
 
 	/* builds ICMPv6 Neighbor Solicitation packet */
 	rs.nd_rs_type = ND_ROUTER_SOLICIT;
 	rs.nd_rs_code = 0;
 	rs.nd_rs_cksum = 0; /* computed by the kernel */
 
-	if (sendto (fd, &rs, sizeof (rs), 0, (const struct sockaddr *)&addr,
-			sizeof (addr)) != sizeof (rs))
+	if (sendto (fd, &rs, sizeof (rs), 0, (const struct sockaddr *)tgt,
+	            sizeof (struct sockaddr_in6)) != sizeof (rs))
 	{
 		perror ("Sending ICMPv6 neighbor solicitation");
 		return -1;
@@ -335,14 +332,14 @@ parsera (const uint8_t *buf, size_t len, int verbose)
 
 	return 0;
 }
-# define sendns sendrs
+# define sendns( a, b, c ) sendrs (a, b)
 # define parsena( a, b, c, d ) parsera (a, b, d)
 #endif
 
 
 static int
-recvpayload (int fd, const struct in6_addr *tgt, unsigned wait_ms,
-		int verbose)
+recvpayload (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
+             int verbose)
 {
 	/* computes dead-line time */
 	struct timeval end;
@@ -403,9 +400,19 @@ recvpayload (int fd, const struct in6_addr *tgt, unsigned wait_ms,
 
 			val = recvfrom (fd, &buf, sizeof (buf), 0,
 					(struct sockaddr *)&addr, &len);
+			if (val < 0)
+			{
+				perror ("recvfrom failed");
+				continue;
+			}
 		}
 
-		if ((val >= 0) && parsena (buf, val, tgt, verbose) == 0)
+		/* ensures the response came through the right interface */
+		if (addr.sin6_scope_id
+		 && (addr.sin6_scope_id != tgt->sin6_scope_id))
+			continue;
+
+		if (parsena (buf, val, tgt, verbose) == 0)
 		{
 			if (verbose)
 			{
@@ -433,7 +440,7 @@ static int
 ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
 	unsigned wait_ms)
 {
-	struct in6_addr tgt;
+	struct sockaddr_in6 tgt;
 
 	fd = socket (PF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
 	if (fd == -1)
@@ -457,7 +464,7 @@ ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
 #endif
 
 	/* resolves target's IPv6 address */
-	if (getipv6byname (name, &tgt))
+	if (getipv6byname (name, ifname, &tgt))
 	{
 		close (fd);
 		return -1;
@@ -466,7 +473,7 @@ ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
 	{
 		char s[INET6_ADDRSTRLEN];
 
-		inet_ntop (AF_INET6, &tgt, s, sizeof (s));
+		inet_ntop (AF_INET6, &tgt.sin6_addr, s, sizeof (s));
 		if (verbose)
 			printf (LOOKING_UP" %s (%s) on %s...\n", name, s,
 				ifname);
