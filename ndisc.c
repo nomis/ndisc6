@@ -238,6 +238,7 @@ sendrs (int fd, const struct sockaddr_in6 *tgt)
 	rs.nd_rs_type = ND_ROUTER_SOLICIT;
 	rs.nd_rs_code = 0;
 	rs.nd_rs_cksum = 0; /* computed by the kernel */
+	rs.nd_rs_reserved = 0;
 
 	if (sendto (fd, &rs, sizeof (rs), 0, (const struct sockaddr *)tgt,
 	            sizeof (struct sockaddr_in6)) != sizeof (rs))
