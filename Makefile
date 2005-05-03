@@ -27,6 +27,7 @@ prefix = /usr/local
 
 
 TARGETS = ndisc6 rdisc6
+PACKAGE = ndisc6
 VERSION = 0.1.4
 DEFS = -DPACKAGE_VERSION=\"$(VERSION)\"
 ndisc6_DEFS =
@@ -38,12 +39,14 @@ $(TARGETS): %: ndisc.c
 	$(CC) $(DEFS) $($*_DEFS) $(CFLAGS) $(LDFLAGS) -o $@ $<
 
 install: all install-man
+	mkdir -p $(DESTDIR)$(prefix)/bin
 	for f in $(TARGETS); do \
 		$(INSTALL) -m 04755 $$f $(DESTDIR)$(prefix)/bin/$$f || \
 			exit $$? ; \
 	done
 
 install-strip: all install-man
+	mkdir -p $(DESTDIR)$(prefix)/bin
 	for f in $(TARGETS); do \
 		$(INSTALL) -s -m 04755 $$f $(DESTDIR)$(prefix)/bin/$$f || \
 			exit $$? ; \
@@ -64,12 +67,12 @@ clean:
 	rm -f $(TARGETS)
 
 dist:
-	mkdir -v ndisc-$(VERSION)
-	cp ndisc.c $(TARGETS:%=%.8) Makefile README ndisc-$(VERSION)/
-	cp /usr/share/common-licenses/GPL-2 ndisc-$(VERSION)/COPYING
-	svn -v log > ndisc-$(VERSION)/ChangeLog
-	tar c ndisc-$(VERSION) | bzip2 > ndisc-$(VERSION).tar.bz2
-	rm -Rf ndisc-$(VERSION)
+	mkdir -v $(PACKAGE)-$(VERSION)
+	cp ndisc.c $(TARGETS:%=%.8) Makefile README $(PACKAGE)-$(VERSION)/
+	cp /usr/share/common-licenses/GPL-2 $(PACKAGE)-$(VERSION)/COPYING
+	svn -v log > $(PACKAGE)-$(VERSION)/ChangeLog
+	tar c $(PACKAGE)-$(VERSION) | bzip2 > $(PACKAGE)-$(VERSION).tar.bz2
+	rm -Rf $(PACKAGE)-$(VERSION)
 
 .PHONY: clean all install install-man install-strip
 
