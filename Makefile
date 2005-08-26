@@ -28,7 +28,7 @@ prefix = /usr/local
 
 TARGETS = ndisc6 rdisc6
 PACKAGE = ndisc6
-VERSION = 0.1.4
+VERSION = 0.1.5
 DEFS = -DPACKAGE_VERSION=\"$(VERSION)\"
 ndisc6_DEFS =
 rdisc6_DEFS = -DRDISC
@@ -63,8 +63,12 @@ uninstall:
 	rm -f $(TARGETS:%=$(DESTDIR)$(prefix)/bin/%) \
 		$(TARGETS:%=$(DESTDIR)$(prefix)/man/man8/%.8)
 
-clean:
+mostlyclean:
 	rm -f $(TARGETS)
+
+clean: mostlyclean
+
+distclean: clean
 
 dist:
 	mkdir -v $(PACKAGE)-$(VERSION)
@@ -74,5 +78,5 @@ dist:
 	tar c $(PACKAGE)-$(VERSION) | bzip2 > $(PACKAGE)-$(VERSION).tar.bz2
 	rm -Rf $(PACKAGE)-$(VERSION)
 
-.PHONY: clean all install install-man install-strip
+.PHONY: clean mostlyclean distclean all install install-man install-strip
 

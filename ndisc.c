@@ -48,12 +48,17 @@
 
 #ifndef RDISC
 # define NAME "ndisc"
+# define ND_TYPE_ADVERT ND_NEIGHBOR_ADVERT
+# define TYPE_NAME "Neighbor"
 #else
 # define NAME "rdisc"
+# define ND_TYPE_ADVERT ND_ROUTER_ADVERT
+# define TYPE_NAME "Router"
 #endif
 
 static void drop_priv (void)
 {
+	/* leaves root privileges if setuid not run y root */
 	setuid (getuid ());
 }
 
@@ -439,7 +444,7 @@ recvpayload (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
 
 static int
 ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
-	unsigned wait_ms)
+       unsigned wait_ms)
 {
 	struct sockaddr_in6 tgt;
 
@@ -450,19 +455,19 @@ ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
 		return -1;
 	}
 
-	/* leaves root privileges if the program is setuid */
 	drop_priv ();
+
+	/* set ICMPv6 filter */
+	{
+		struct icmp6_filter f;
+
+		ICMP6_FILTER_SETBLOCKALL (&f);
+		ICMP6_FILTER_SETPASS (ND_TYPE_ADVERT, &f);
+		setsockopt (fd, IPPROTO_ICMPV6, ICMP6_FILTER, &f, sizeof (f));
+	}
 
 	/* sets Hop-by-hop limit to 255 */
 	setmcasthoplimit (fd, 255);
-
-#ifndef RDISC
-# define LOOKING_UP "Looking up"
-#else
-	if (name == NULL)
-		name = "ff02::2";
-# define LOOKING_UP "Soliciting"
-#endif
 
 	/* resolves target's IPv6 address */
 	if (getipv6byname (name, ifname, &tgt))
@@ -476,7 +481,7 @@ ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
 
 		inet_ntop (AF_INET6, &tgt.sin6_addr, s, sizeof (s));
 		if (verbose)
-			printf (LOOKING_UP" %s (%s) on %s...\n", name, s,
+			printf ("Soliciting %s (%s) on %s...\n", name, s,
 				ifname);
 	}
 
@@ -508,7 +513,7 @@ ndisc (const char *name, const char *ifname, unsigned verbose, unsigned retry,
 		else
 		{
 			close (fd);
-			perror ("Receiving ICMPv6 Neighbor Advertisement");
+			perror ("Receiving ICMPv6 "TYPE_NAME" Advertisement");
 			return -1;
 		}
 	}
@@ -565,13 +570,8 @@ version (void)
 	drop_priv ();
 
 	puts (
-#ifndef RDISC
-"ndisc6 : IPv6 Neighbor"
-#else
-"rdisc6 : IPv6 Router"
-#endif
-" Discovery userland tool "PACKAGE_VERSION"\n"
-" ($Rev$) built "__DATE__"\n"
+NAME"6 : IPv6 "TYPE_NAME" Discovery userland tool "PACKAGE_VERSION
+" ($Rev$)\n built "__DATE__"\n"
 "Copyright (C) 2004-2005 Remi Denis-Courmont");
 	puts (
 "This is free software; see the source for copying conditions.\n"
@@ -666,7 +666,7 @@ main (int argc, char *argv[])
 	if (ifname == NULL)
 	{
 		ifname = hostname;
-		hostname = NULL;
+		hostname = "ff02::2";
 	}
 	else
 #endif
