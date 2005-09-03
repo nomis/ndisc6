@@ -45,28 +45,28 @@ COPYING: /usr/share/common-licenses/GPL-2
 
 install: all install-man
 	mkdir -p $(DESTDIR)$(prefix)/bin
-	for f in $(TARGETS); do \
+	for f in $(sbin_PROGRAMS); do \
 		$(INSTALL) -m 04755 $$f $(DESTDIR)$(prefix)/bin/$$f || \
 			exit $$? ; \
 	done
 
 install-strip: all install-man
 	mkdir -p $(DESTDIR)$(prefix)/bin
-	for f in $(TARGETS); do \
+	for f in $(sbin_PROGRAMS); do \
 		$(INSTALL) -s -m 04755 $$f $(DESTDIR)$(prefix)/bin/$$f || \
 			exit $$? ; \
 	done
 
 install-man:
 	mkdir -p $(DESTDIR)$(prefix)/man/man8
-	for f in $(TARGETS); do \
+	for f in $(sbin_PROGRAMS); do \
 		$(INSTALL) -m 0644 $$f.8 $(DESTDIR)$(prefix)/man/man8/$$f.8 || \
 			exit $$? ; \
 	done
 
 uninstall:
-	rm -f $(TARGETS:%=$(DESTDIR)$(prefix)/bin/%) \
-		$(TARGETS:%=$(DESTDIR)$(prefix)/man/man8/%.8)
+	rm -f $(sbin_PROGRAMS:%=$(DESTDIR)$(prefix)/bin/%) \
+		$(sbin_PROGRAMS:%=$(DESTDIR)$(prefix)/man/man8/%.8)
 
 mostlyclean:
 	rm -f $(sbin_PROGRAMS)
@@ -77,7 +77,7 @@ distclean: clean
 
 dist:
 	mkdir -v $(PACKAGE)-$(VERSION)
-	cp ndisc.c $(TARGETS:%=%.8) Makefile $(DOC) $(PACKAGE)-$(VERSION)/
+	cp ndisc.c $(sbin_PROGRAMS:%=%.8) Makefile $(DOC) $(PACKAGE)-$(VERSION)/
 	svn -v log > $(PACKAGE)-$(VERSION)/ChangeLog
 	tar c $(PACKAGE)-$(VERSION) | bzip2 > $(PACKAGE)-$(VERSION).tar.bz2
 	rm -Rf $(PACKAGE)-$(VERSION)
