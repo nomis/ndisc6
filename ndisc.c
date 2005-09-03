@@ -547,8 +547,10 @@ ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
 
 	{
 		solicit_packet packet;
+		struct sockaddr_in6 dst;
 
-		if (buildsol (&packet, &tgt, ifname))
+		memcpy (&dst, &tgt, sizeof (dst));
+		if (buildsol (&packet, &dst, ifname))
 			goto error;
 
 		while (retry > 0)
@@ -557,8 +559,8 @@ ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
 	
 			/* sends a Solitication */
 			if (sendto (fd, &packet, sizeof (packet), MSG_DONTROUTE,
-			            (const struct sockaddr *)&tgt,
-			            sizeof (tgt)) != sizeof (packet))
+			            (const struct sockaddr *)&dst,
+			            sizeof (dst)) != sizeof (packet))
 			{
 				perror (_("Sending ICMPv6 packet"));
 				goto error;
