@@ -277,7 +277,7 @@ parseprefix (const struct nd_opt_prefix_info *pi, int verbose)
 			fputs (_("    infinite (0xffffffff)\n"), stdout); /* FIXME: check align */
 		else
 			printf (_("%12u (0x%08x) %s\n"),
-			        v, v, ngettext ("second", "seconds", v)); /* FIXME: check align */
+			        v, v, ngettext ("second", "seconds", v));
 
 		fputs (_("  Pref. time   : "), stdout);
 		v = ntohl (pi->nd_opt_pi_preferred_time);
@@ -285,7 +285,7 @@ parseprefix (const struct nd_opt_prefix_info *pi, int verbose)
 			fputs (_("    infinite (0xffffffff)\n"), stdout); /* FIXME: check align */
 		else
 			printf (_("%12u (0x%08x) %s\n"),
-			        v, v, ngettext ("second", "seconds", v)); /* FIXME: check align */
+			        v, v, ngettext ("second", "seconds", v));
 	}
 	return 0;
 }
@@ -324,7 +324,7 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 		       "Hop limit      :    "), stdout);
 		v = ra->nd_ra_curhoplimit;
 		if (v != 0)
-			printf (_("      %3u"), v); /* FIXME: check align */
+			printf (_("      %3u"), v);
 		else
 			fputs (_("undefined"), stdout); /* FIXME: check align */
 		printf (_(" (      0x%02x)\n"), v);
@@ -333,7 +333,7 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 		fputs (_("Router lifetime: "), stdout);
 		v = ntohs (ra->nd_ra_router_lifetime);
 		printf (_("%12u (0x%08x) %s\n"), v, v,
-		        ngettext ("millisecond", "milliseconds", v)); /* FIXME: check align */
+		        ngettext ("millisecond", "milliseconds", v));
 
 		/* ND Reachable time */
 		fputs ("Reachable time : ", stdout);
@@ -342,7 +342,7 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 			printf (_("%12u (0x%08x) %s\n"), v, v,
 			        ngettext ("millisecond", "milliseconds", v));  /* FIXME: check align */
 		else
-			fputs (_(" unspecified (0x00000000)\n"), stdout);  /* FIXME: check align */
+			fputs (_(" unspecified (0x00000000)\n"), stdout);
 
 		/* ND Retransmit time */
 		fputs (_("Retrans. time  : "), stdout);
@@ -351,7 +351,7 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 			printf (_("%12u (0x%08x) %s\n"), v, v,
 			        ngettext ("millisecond", "milliseconds", v)); /* FIXME: check align */
 		else
-			fputs (_(" unspecified (0x00000000)\n"), stdout); /* FIXME: check align */
+			fputs (_(" unspecified (0x00000000)\n"), stdout);
 	}
 	len -= sizeof (struct nd_router_advert);
 
