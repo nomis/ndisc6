@@ -622,7 +622,9 @@ _("Usage: %s [options] [IPv6 address] <interface>\n"
 		, path);
 
 	fprintf (stderr, _("\n"
+"  -1, --single   display first response and exit\n"
 "  -h, --help     display this help and exit\n"
+"  -m, --multiple wait and display all responses\n"
 "  -n, --numeric  don't resolve host names\n"
 "  -q, --quiet    only print the %s (mainly for scripts)\n"
 "  -r, --retry    maximum number of attempts (default: 3)\n"
