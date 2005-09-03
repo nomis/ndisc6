@@ -274,7 +274,7 @@ parseprefix (const struct nd_opt_prefix_info *pi, int verbose)
 		fputs (_("  Valid time   : "), stdout);
 		v = ntohl (pi->nd_opt_pi_valid_time);
 		if (v == 0xffffffff)
-			fputs (_("    infinite (0xffffffff)\n"), stdout); /* FIXME: check align */
+			fputs (_("    infinite (0xffffffff)\n"), stdout);
 		else
 			printf (_("%12u (0x%08x) %s\n"),
 			        v, v, ngettext ("second", "seconds", v));
@@ -282,7 +282,7 @@ parseprefix (const struct nd_opt_prefix_info *pi, int verbose)
 		fputs (_("  Pref. time   : "), stdout);
 		v = ntohl (pi->nd_opt_pi_preferred_time);
 		if (v == 0xffffffff)
-			fputs (_("    infinite (0xffffffff)\n"), stdout); /* FIXME: check align */
+			fputs (_("    infinite (0xffffffff)\n"), stdout);
 		else
 			printf (_("%12u (0x%08x) %s\n"),
 			        v, v, ngettext ("second", "seconds", v));
@@ -326,7 +326,7 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 		if (v != 0)
 			printf (_("      %3u"), v);
 		else
-			fputs (_("undefined"), stdout); /* FIXME: check align */
+			fputs (_("undefined"), stdout);
 		printf (_(" (      0x%02x)\n"), v);
 
 		/* Router lifetime */
@@ -340,7 +340,7 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 		v = ntohl (ra->nd_ra_reachable);
 		if (v != 0)
 			printf (_("%12u (0x%08x) %s\n"), v, v,
-			        ngettext ("millisecond", "milliseconds", v));  /* FIXME: check align */
+			        ngettext ("millisecond", "milliseconds", v));
 		else
 			fputs (_(" unspecified (0x00000000)\n"), stdout);
 
@@ -349,7 +349,7 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 		v = ntohl (ra->nd_ra_retransmit);
 		if (v != 0)
 			printf (_("%12u (0x%08x) %s\n"), v, v,
-			        ngettext ("millisecond", "milliseconds", v)); /* FIXME: check align */
+			        ngettext ("millisecond", "milliseconds", v));
 		else
 			fputs (_(" unspecified (0x00000000)\n"), stdout);
 	}
