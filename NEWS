@@ -1,0 +1,32 @@
+RELEASE NOTES for NDisc6
+version 0.3.0
+=========================
+$Id$
+
+  There are no known issues at the moment.
+Please report any problem by email at address :
+rdenis (at) simphalempin (dot) com
+Thanks for your help.
+
+  You can find major changes since version 0.1.5 below. For more general
+informations on this program, see README. For syntax details, read the
+provided manual pages.
+
+=============================================================================
+BETA RELEASE 0.3.0 : Major features enhancement
+
+# New --numeric option prevents DNS lookups.
+# Removed some useless system calls.
+# rdisc6 prints advertised link MTU.
+# Milliseconds and infinite lifetimes reported properly as such.
+# Don't print error messages multiple times.
+# New --single option only prints the first advertisement with rdisc6.
+# New --multiple option prints duplicate advertisements with ndisc6.
+
+=============================================================================
+BETA RELEASE 0.1.5 : Minor features enhancement
+
+# Set appropriate ICMPv6 type filter (reduce CPU usage).
+
+=============================================================================
+

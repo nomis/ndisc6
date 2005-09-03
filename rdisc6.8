@@ -35,8 +35,21 @@ specified.
 .SH OPTIONS
 
 .TP
+.BR "\-1" " or " "\-\-single"
+Exit as soon as the first advertisement is received.
+
+.TP
 .BR "\-h" " or " "\-\-help"
 Display some help and exit.
+
+.TP
+.BR "\-m" " or " "\-\-multiple"
+Wait for possible multiple advertisements and print all of them (default).
+
+.TP
+.BR "\-n" " or " "\-\-numeric"
+If the optional parameter is not a valid IPv6 address, do not try to
+resolve it as a DNS hostname.
 
 .TP
 .BR "\-q" " or " "\-\-quiet"

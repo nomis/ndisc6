@@ -21,22 +21,27 @@
 CC = gcc
 CFLAGS = -O2 -Wall -g
 LDFLAGS =
-#LD = ld
+#LINK = $(CC)
 INSTALL = install -c
 prefix = /usr/local
 
-
-TARGETS = ndisc6 rdisc6
 PACKAGE = ndisc6
-VERSION = 0.1.5
-DEFS = -DPACKAGE_VERSION=\"$(VERSION)\"
-ndisc6_DEFS =
-rdisc6_DEFS = -DRDISC
+VERSION = 0.3.0
 
-all: $(TARGETS)
+sbin_PROGRAMS = ndisc6 rdisc6
+DOC = COPYING NEWS README
 
-$(TARGETS): %: ndisc.c
-	$(CC) $(DEFS) $($*_DEFS) $(CFLAGS) $(LDFLAGS) -o $@ $<
+AM_CPPFLAGS = -DPACKAGE_VERSION=\"$(VERSION)\"
+ndisc6_CPPFLAGS = $(AM_CPPFLAGS)
+rdisc6_CPPFLAGS = -DRDISC $(AM_CPPFLAGS)
+
+all: $(sbin_PROGRAMS) $(DOC)
+
+$(sbin_PROGRAMS): %: ndisc.c
+	$(CC) $($*_CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $<
+
+COPYING: /usr/share/common-licenses/GPL-2
+	ln -s $< $@
 
 install: all install-man
 	mkdir -p $(DESTDIR)$(prefix)/bin
@@ -64,7 +69,7 @@ uninstall:
 		$(TARGETS:%=$(DESTDIR)$(prefix)/man/man8/%.8)
 
 mostlyclean:
-	rm -f $(TARGETS)
+	rm -f $(sbin_PROGRAMS)
 
 clean: mostlyclean
 
@@ -72,8 +77,7 @@ distclean: clean
 
 dist:
 	mkdir -v $(PACKAGE)-$(VERSION)
-	cp ndisc.c $(TARGETS:%=%.8) Makefile README $(PACKAGE)-$(VERSION)/
-	cp /usr/share/common-licenses/GPL-2 $(PACKAGE)-$(VERSION)/COPYING
+	cp ndisc.c $(TARGETS:%=%.8) Makefile $(DOC) $(PACKAGE)-$(VERSION)/
 	svn -v log > $(PACKAGE)-$(VERSION)/ChangeLog
 	tar c $(PACKAGE)-$(VERSION) | bzip2 > $(PACKAGE)-$(VERSION).tar.bz2
 	rm -Rf $(PACKAGE)-$(VERSION)
