@@ -1,5 +1,5 @@
 RELEASE NOTES for NDisc6
-version 0.3.0
+version 0.3.1
 =========================
 $Id$
 
@@ -13,7 +13,14 @@ informations on this program, see README. For syntax details, read the
 provided manual pages.
 
 =============================================================================
-BETA RELEASE 0.3.0 : Major features enhancement
+BETA RELEASE 0.3.1 : Minor features enhancement, major security fixes
+
+# Print Source Link-Layer address in Router Advertisement if present.
+# Check Prefix information option length properly in Router Adverts.
+# Some spelling fixes.
+
+=============================================================================
+BETA RELEASE 0.3.0 : Major features enhancement (release cancelled)
 
 # New --numeric option prevents DNS lookups.
 # Removed some useless system calls.

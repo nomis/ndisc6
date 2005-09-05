@@ -26,7 +26,7 @@ INSTALL = install -c
 prefix = /usr/local
 
 PACKAGE = ndisc6
-VERSION = 0.3.0
+VERSION = 0.3.1
 
 sbin_PROGRAMS = ndisc6 rdisc6
 DOC = COPYING NEWS README

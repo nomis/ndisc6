@@ -124,6 +124,20 @@ setmcasthoplimit (int fd, int value)
 				&value, sizeof (value));
 }
 
+static void
+printmacaddress (const uint8_t *ptr, size_t len)
+{
+	while (len > 1)
+	{
+		printf ("%02X:", *ptr);
+		ptr++;
+		len--;
+	}
+
+	if (len == 1)
+		printf ("%02X\n", *ptr);
+}
+
 
 #ifndef RDISC
 static int
@@ -222,16 +236,11 @@ parseadv (const uint8_t *buf, size_t len, const struct sockaddr_in6 *tgt,
 
 		/* Found! displays link-layer address */
 		ptr += 2;
+		optlen -= 2;
 		if (verbose)
 			fputs (_("Target link-layer address: "), stdout);
 
-		for (optlen -= 2; optlen > 1; optlen--)
-		{
-			printf ("%02X:", *ptr);
-			ptr ++;
-		}
-		printf ("%02X\n", *ptr);
-
+		printmacaddress (ptr, optlen);
 		return 0;
 	}
 
@@ -253,9 +262,12 @@ buildsol (solicit_packet *rs)
 
 
 static int
-parseprefix (const struct nd_opt_prefix_info *pi, int verbose)
+parseprefix (const struct nd_opt_prefix_info *pi, size_t optlen, int verbose)
 {
 	char str[INET6_ADDRSTRLEN];
+
+	if (optlen < sizeof (*pi))
+		return -1;
 
 	/* displays prefix informations */
 	if (inet_ntop (AF_INET6, &pi->nd_opt_pi_prefix, str,
@@ -263,7 +275,7 @@ parseprefix (const struct nd_opt_prefix_info *pi, int verbose)
 		return -1;
 
 	if (verbose)
-		fputs (_(" Prefix        : "), stdout);
+		fputs (_(" Prefix                   : "), stdout);
 	printf ("%s/%u\n", str, pi->nd_opt_pi_prefix_len);
 
 	if (verbose)
@@ -271,7 +283,7 @@ parseprefix (const struct nd_opt_prefix_info *pi, int verbose)
 		/* INET6_ADDRSTRLEN > 13 */
 		unsigned v;
 
-		fputs (_("  Valid time   : "), stdout);
+		fputs (_("  Valid time              : "), stdout);
 		v = ntohl (pi->nd_opt_pi_valid_time);
 		if (v == 0xffffffff)
 			fputs (_("    infinite (0xffffffff)\n"), stdout);
@@ -279,7 +291,7 @@ parseprefix (const struct nd_opt_prefix_info *pi, int verbose)
 			printf (_("%12u (0x%08x) %s\n"),
 			        v, v, ngettext ("second", "seconds", v));
 
-		fputs (_("  Pref. time   : "), stdout);
+		fputs (_("  Pref. time              : "), stdout);
 		v = ntohl (pi->nd_opt_pi_preferred_time);
 		if (v == 0xffffffff)
 			fputs (_("    infinite (0xffffffff)\n"), stdout);
@@ -296,7 +308,8 @@ parsemtu (const struct nd_opt_mtu *m)
 {
 	unsigned mtu = ntohl (m->nd_opt_mtu_mtu);
 
-	printf (_(" MTU           : %u %s (%s)\n"), mtu,
+	fputs (_(" MTU                      : "), stdout);
+	printf ("       %5u %s (%s)\n", mtu,
 	        ngettext ("byte", "bytes", mtu),
 			gettext((mtu >= 1280) ? N_("valid") : N_("invalid")));
 }
@@ -321,7 +334,7 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 
 		/* Hop limit */
 		fputs (_("\n"
-		       "Hop limit      :    "), stdout);
+		         "Hop limit                 :    "), stdout);
 		v = ra->nd_ra_curhoplimit;
 		if (v != 0)
 			printf (_("      %3u"), v);
@@ -330,13 +343,13 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 		printf (_(" (      0x%02x)\n"), v);
 
 		/* Router lifetime */
-		fputs (_("Router lifetime: "), stdout);
+		fputs (_("Router lifetime           : "), stdout);
 		v = ntohs (ra->nd_ra_router_lifetime);
 		printf (_("%12u (0x%08x) %s\n"), v, v,
 		        ngettext ("millisecond", "milliseconds", v));
 
 		/* ND Reachable time */
-		fputs ("Reachable time : ", stdout);
+		fputs (_("Reachable time            : "), stdout);
 		v = ntohl (ra->nd_ra_reachable);
 		if (v != 0)
 			printf (_("%12u (0x%08x) %s\n"), v, v,
@@ -345,7 +358,7 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 			fputs (_(" unspecified (0x00000000)\n"), stdout);
 
 		/* ND Retransmit time */
-		fputs (_("Retrans. time  : "), stdout);
+		fputs (_("Retransmit time           : "), stdout);
 		v = ntohl (ra->nd_ra_retransmit);
 		if (v != 0)
 			printf (_("%12u (0x%08x) %s\n"), v, v,
@@ -373,14 +386,19 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 		switch (ptr[0])
 		{
 			case ND_OPT_SOURCE_LINKADDR:
-				break; /* TODO: implement */
+				if (verbose)
+				{
+					fputs (" Source link-layer address: ", stdout);
+					printmacaddress (ptr + 2, optlen - 2);
+				}
+				break;
 
 			case ND_OPT_TARGET_LINKADDR:
 				break; /* ignore */
 
 			case ND_OPT_PREFIX_INFORMATION:
 				if (parseprefix ((const struct nd_opt_prefix_info *)ptr,
-				                 verbose))
+				                 optlen, verbose))
 					return -1;
 
 			case ND_OPT_REDIRECTED_HEADER:
@@ -393,7 +411,7 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 
 			default:
 				if (verbose)
-					printf (_(" Unknown option of type %u\n"), ptr[0]);
+					printf (_(" Option of unknown type %u\n"), ptr[0]);
 		}
 
 		ptr += optlen;
