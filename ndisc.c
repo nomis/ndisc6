@@ -408,10 +408,6 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 				if (verbose)
 					parsemtu ((const struct nd_opt_mtu *)ptr);
 				break;
-
-			default:
-				if (verbose)
-					printf (_(" Option of unknown type %u\n"), ptr[0]);
 		}
 
 		ptr += optlen;
