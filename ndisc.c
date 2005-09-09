@@ -29,6 +29,7 @@
 #include <string.h>
 #include <stdlib.h> /* div() */
 #include <inttypes.h>
+#include <limits.h> /* UINT_MAX */
 
 #include <sys/types.h>
 #include <sys/time.h>
@@ -44,6 +45,7 @@
 #include <arpa/inet.h> /* inet_ntop() */
 #include <net/if.h> /* if_nametoindex() */
 
+#include <netinet/in.h>
 #include <netinet/icmp6.h>
 
 #define gettext( a ) (a)
