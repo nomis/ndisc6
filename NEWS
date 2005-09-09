@@ -1,5 +1,5 @@
 RELEASE NOTES for NDisc6
-version 0.3.1
+version 0.4.0
 =========================
 $Id$
 
@@ -13,7 +13,7 @@ informations on this program, see README. For syntax details, read the
 provided manual pages.
 
 =============================================================================
-BETA RELEASE 0.3.1 : Minor features enhancement, major security fix
+STABLE RELEASE 0.4.0 : Minor features enhancement, major security fix
 
 # Print Source Link-Layer address in Router Advertisement if present.
 # Check Prefix information option length properly in Router Adverts.
