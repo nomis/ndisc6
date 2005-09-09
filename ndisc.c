@@ -47,6 +47,9 @@
 
 #include <netinet/in.h>
 #include <netinet/icmp6.h>
+#ifndef SOL_IPV6
+# define SOL_IPV6 41 /* FreeBSD doesn't define this */
+#endif
 
 #define gettext( a ) (a)
 #define gettext_noop( a ) (a)

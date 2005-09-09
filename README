@@ -11,10 +11,8 @@ different binary executables :
   For detailled usage instructions, you should refer to the Unix manual
 pages ndisc6(8) and rdisc6(8) which should be provided with your copy of
 the program.
-
-  A Makefile is provided. It supports the common targets to build
-(make all), install (make install or make install-strip), and uninstall
-(make uninstall) the program from source.
+  For instructions on compilation and installation of the package,
+refer to the provided INSTALL file.
 
   This package is distributed under the terms of the General Public
 License (GPL) version 2 written by the Free Software Foundation, Inc.
@@ -22,6 +20,14 @@ for full licensing details, please read COPYING.
 
   If you have further questions, you can contact me via email at :
     rdenis (at) simphalempin (dot) com
+
+Important portability note
+==========================
+
+  ndisc6 is only known to work on Linux (with either glibc or µclibc).
+It is known NOT to compile properly on FreeBSD.
+  rdisc6 is known to run on Linux, and should also work on any BSD
+variants.
 
 -- 
 Remi Denis-Courmont <rdenis (at) simphalempin (dot) com>
