@@ -117,14 +117,22 @@ static void
 printdelay (const struct timeval *from, const struct timeval *to)
 {
 	div_t d;
-	d = div (to->tv_usec - from->tv_usec, 1000);
+	if (to->tv_usec < from->tv_usec)
+	{
+		d = div (1000000 + to->tv_usec - from->tv_usec, 1000);
+		d.quot -= 1000;
+	}
+	else
+		d = div (to->tv_usec - from->tv_usec, 1000);
+
 	printf (" %u.%03u ms ",
-	        (unsigned)(d.quot + 1000 * (to->tv_sec - from->tv_sec)), d.rem);
+	        (unsigned)(d.quot + 1000 * (to->tv_sec - from->tv_sec)),
+	        (unsigned)d.rem);
 }
 
 
 static int
-traceroute (const char *hostname, const char *service,
+traceroute (const char *hostname, const char *service, unsigned timeout,
             unsigned min_ttl, unsigned max_ttl, int niflags)
 {
 	const struct tracetype *t = types;
@@ -179,7 +187,6 @@ traceroute (const char *hostname, const char *service,
 		hints.ai_family = AF_INET6;
 		hints.ai_socktype = t->res_socktype;
 
-		fputs (_("traceroute to"), stdout);
 		val = getaddrinfo (hostname, service, &hints, &res);
 		if (val)
 		{
@@ -192,6 +199,7 @@ traceroute (const char *hostname, const char *service,
 			goto error;
 		}
 
+		fputs (_("traceroute to"), stdout);
 		printname (res->ai_addr, res->ai_addrlen, niflags);
 		/* TODO: print port number or packet length */
 		printf ("%u hops max\n", max_ttl);
@@ -211,8 +219,10 @@ traceroute (const char *hostname, const char *service,
 
 	for (ttl = min_ttl, found = 0; (ttl <= max_ttl) && !found; ttl++)
 	{
-		struct in6_addr hop = { };
-		int state = 0;
+		struct in6_addr hop = { }; /* hop if known from previous probes */
+		int state = -1; /* type of response received so far (-1: none,
+			0: normal, 1: closed, 2: open) */
+		/* see also: found (0: not found, -1: unreachable, 1: reached) */
 
 		printf ("%2d ", ttl);
 		if (setsockopt (protofd, SOL_IPV6, IPV6_UNICAST_HOPS,
@@ -222,7 +232,7 @@ traceroute (const char *hostname, const char *service,
 		for (n = 0; n < 3; n++)
 		{
 			fd_set rdset;
-			struct timeval tv = { 1, 0 }, sent, recvd;
+			struct timeval tv = { timeout, 0 }, sent, recvd;
 			unsigned pttl, pn;
 			int val;
 
@@ -242,6 +252,12 @@ traceroute (const char *hostname, const char *service,
 				val = select (maxfd, &rdset, NULL, NULL, &tv);
 				if (val < 0) /* interrupted by signal - well, not really */
 					goto error;
+
+				if (val == 0)
+				{
+					fputs (" *", stdout);
+					continue;
+				}
 
 				gettimeofday (&recvd, NULL);
 
@@ -263,7 +279,7 @@ traceroute (const char *hostname, const char *service,
 					if ((len >= 0) && (n == pn) && (pttl = ttl))
 					{
 						/* Route determination complete! */
-						if (n == 0)
+						if (state == -1)
 							printname ((struct sockaddr *)&peer, peerlen,
 							           niflags);
 
@@ -307,11 +323,12 @@ traceroute (const char *hostname, const char *service,
 
 					/* FIXME: check packet */
 					/* TODO: abort if no route */
-					if ((n == 0) || memcmp (&hop, &peer.sin6_addr, 16))
+					if ((state == -1) || memcmp (&hop, &peer.sin6_addr, 16))
 					{
 						memcpy (&hop, &peer.sin6_addr, 16);
 						printname ((struct sockaddr *)&peer, peerlen,
 						           niflags);
+						state = 0;
 					}
 					printdelay (&sent, &recvd);
 					val = 0;
@@ -324,7 +341,7 @@ traceroute (const char *hostname, const char *service,
 
 	close (protofd);
 	close (icmpfd);
-	return 0;
+	return found > 0 ? 0 : -2;
 
 error:
 	close (protofd);
@@ -340,6 +357,7 @@ int main (int argc, char *argv[])
 	/* TODO: source address specification */
 	/* TODO: numeric option */
 	/* TODO: customize retries count */
+	/* TODO: customize timeout */
 	if ((argc < 2) || (argc > 3))
 	{
 		/* TODO: syntax msg */
@@ -347,5 +365,5 @@ int main (int argc, char *argv[])
 		return 1;
 	}
 
-	return traceroute (argv[1], (argc >= 3) ? argv[2] : "80", 1, 30, 0);
+	return -traceroute (argv[1], (argc >= 3) ? argv[2] : "80", 3, 1, 30, 0);
 }
