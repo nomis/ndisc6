@@ -361,9 +361,9 @@ traceroute (const char *hostname, const char *service, unsigned timeout,
 					 || memcmp (&pkt.inhdr.ip6_dst, &dst.sin6_addr, 16)
 					 || (pkt.inhdr.ip6_nxt != t->protocol))
 						continue;
+					len -= sizeof (pkt.hdr) + sizeof (pkt.inhdr);
 
-					len = t->parse_err (pkt.buf, len - sizeof (pkt.hdr), &pttl,
-					                    &pn, dst.sin6_port);
+					len = t->parse_err (pkt.buf, &pttl, &pn, dst.sin6_port);
 					if ((len < 0) || (pttl != ttl) || (pn != n))
 						continue;
 
