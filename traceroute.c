@@ -133,7 +133,6 @@ static const struct tracetype
 static void
 printname (const struct sockaddr *addr, size_t addrlen, int flags)
 {
-	/* TODO: reverse DNS lookup */
 	char name[NI_MAXHOST];
 	int val;
 
@@ -256,9 +255,9 @@ traceroute (const char *hostname, const char *service, unsigned timeout,
 				printf (_("from %s, "), buf);
 
 			/* TODO: print port number or packet length */
-			printf (_("%u hops max\n"), max_ttl);
-
 			memcpy (&dst, res->ai_addr, res->ai_addrlen);
+			printf (_("port %u, "), ntohs (dst.sin6_port));
+			printf (_("%u hops max\n"), max_ttl);
 		}
 
 		freeaddrinfo (res);
