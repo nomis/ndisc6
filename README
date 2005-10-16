@@ -1,16 +1,16 @@
-NDisc6 : ICMPv6 Discovery tool
-===============================
+NDisc6 : IPv6 discovery tools
+==============================
 $Id$
 Copyright (C) 2005 Remi Denis-Courmont.
 
-  That package is made of a single source code file which produces two
-different binary executables :
+  This package gathers a few diagnostic tools for IPv6 networks :
 - ndisc6, which performs ICMPv6 Neighbor Discovery in userland,
-- rdisc6, which performs ICMPv6 Router Discovery in userland.
+- rdisc6, which performs ICMPv6 Router Discovery in userland,
+- tcptraceroute6, which is a TCP/IPv6-based traceroute implementation.
 
   For detailled usage instructions, you should refer to the Unix manual
-pages ndisc6(8) and rdisc6(8) which should be provided with your copy of
-the program.
+pages ndisc6(8), rdisc6(8) and tcptraceroute6(8) which should be
+provided with your copy of the program.
   For instructions on compilation and installation of the package,
 refer to the provided INSTALL file.
 
@@ -24,10 +24,9 @@ for full licensing details, please read COPYING.
 Important portability note
 ==========================
 
-  ndisc6 is only known to work on Linux (with either glibc or µclibc).
-It is known NOT to compile properly on FreeBSD.
-  rdisc6 is known to run on Linux, and should also work on any BSD
-variants.
+  All programs are known to run on Linux (with either glibc or µclibc).
+rdisc6 should also work on any BSD variant. ndisc6 won't compile on a
+BSD system. tcptraceroute6 was not tested on BSD so far.
 
 -- 
 Remi Denis-Courmont <rdenis (at) simphalempin (dot) com>

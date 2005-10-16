@@ -1,5 +1,5 @@
 RELEASE NOTES for NDisc6
-version 0.4.1
+version 0.5.0
 =========================
 $Id$
 
@@ -11,6 +11,11 @@ Thanks for your help.
   You can find major changes since version 0.1.5 below. For more general
 informations on this program, see README. For syntax details, read the
 provided manual pages.
+
+=============================================================================
+STABLE RELEASE 0.5.0 : Major feature enhancement
+
+# tcptraceroute6 was added to the package.
 
 =============================================================================
 STABLE RELEASE 0.4.1 : Minor bugfixes
