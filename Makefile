@@ -21,23 +21,28 @@
 CC = gcc
 CFLAGS = -O2 -Wall -g
 LDFLAGS =
+CPPFLAGS =
 #LINK = $(CC)
 INSTALL = install -c
 prefix = /usr/local
 
 PACKAGE = ndisc6
-VERSION = 0.4.1
+VERSION = 0.4.2
 
-sbin_PROGRAMS = ndisc6 rdisc6
+sbin_PROGRAMS = ndisc6 rdisc6 tcptraceroute6
 DOC = COPYING INSTALL NEWS README
 
-AM_CPPFLAGS = -DPACKAGE_VERSION=\"$(VERSION)\"
+AM_CPPFLAGS = -DPACKAGE_VERSION=\"$(VERSION)\" $(CPPFLAGS)
 ndisc6_CPPFLAGS = $(AM_CPPFLAGS)
 rdisc6_CPPFLAGS = -DRDISC $(AM_CPPFLAGS)
+tcptraceroute6_CPPFLAGS = $(AM_CPPFLAGS)
 
 all: $(sbin_PROGRAMS) $(DOC)
 
-$(sbin_PROGRAMS): %: ndisc.c Makefile
+ndisc6 rdisc6: %: ndisc.c Makefile
+	$(CC) $($*_CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $<
+
+tcptraceroute6: %: traceroute.c Makefile
 	$(CC) $($*_CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $<
 
 COPYING: /usr/share/common-licenses/GPL-2
@@ -72,12 +77,14 @@ mostlyclean:
 	rm -f $(sbin_PROGRAMS)
 
 clean: mostlyclean
+	rm -f *~
 
 distclean: clean
 
 dist:
 	mkdir -v $(PACKAGE)-$(VERSION)
-	cp ndisc.c $(sbin_PROGRAMS:%=%.8) Makefile $(DOC) $(PACKAGE)-$(VERSION)/
+	cp ndisc.c traceroute.c $(sbin_PROGRAMS:%=%.8) Makefile $(DOC) \
+		$(PACKAGE)-$(VERSION)/
 	svn -v log > $(PACKAGE)-$(VERSION)/ChangeLog
 	tar c $(PACKAGE)-$(VERSION) | bzip2 > $(PACKAGE)-$(VERSION).tar.bz2
 	rm -Rf $(PACKAGE)-$(VERSION)
