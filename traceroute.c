@@ -41,6 +41,13 @@
 #include <netdb.h>
 #include <arpa/inet.h> /* inet_ntop() */
 
+static void
+drop_priv (void)
+{
+	setuid (getuid ());
+}
+
+
 static int
 send_tcp_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
 {
@@ -162,7 +169,7 @@ printdelay (const struct timeval *from, const struct timeval *to)
 
 static int
 traceroute (const char *hostname, const char *service, unsigned timeout,
-            unsigned min_ttl, unsigned max_ttl, int niflags)
+            unsigned retries, unsigned min_ttl, unsigned max_ttl, int niflags)
 {
 	struct sockaddr_in6 dst = { };
 	const struct tracetype *t = types;
@@ -187,7 +194,7 @@ traceroute (const char *hostname, const char *service, unsigned timeout,
 	}
 
 	/* Drops privileges permanently */
-	setuid (getuid ());
+	drop_priv ();
 
 	/* Set ICMPv6 filter */
 	{
@@ -271,7 +278,7 @@ traceroute (const char *hostname, const char *service, unsigned timeout,
 		                &ttl, sizeof (ttl)))
 			goto error;
 
-		for (n = 0; n < 3; n++)
+		for (n = 0; n < retries; n++)
 		{
 			fd_set rdset;
 			struct timeval tv = { timeout, 0 }, sent, recvd;
@@ -435,21 +442,161 @@ error:
 	return -1;
 }
 
-int main (int argc, char *argv[])
-{
-	setvbuf (stdout, NULL, _IONBF, 0);
 
-	/* TODO: min and max TTL settings */
-	/* TODO: source address specification */
-	/* TODO: numeric option */
-	/* TODO: customize retries count */
-	/* TODO: customize timeout */
-	if ((argc < 2) || (argc > 3))
+static int
+quick_usage (const char *path)
+{
+	drop_priv ();
+
+	fprintf (stderr, _("Try \"%s -h\" for more information.\n"), path);
+	return 2;
+}
+
+
+static int
+usage (const char *path)
+{
+	drop_priv ();
+
+	fprintf (stderr,
+	         _("Usage: %s [options] <IPv6 hostname/address> [port number]\n"
+	         /* [packet len]*/
+	         "Print IPv6 network route to a host\n"), path);
+
+	fputs (_("\n"
+/*"  -A  send TCP ACK probes\n"*/
+/*"  -d  enable debugging\n"*/
+/*"  -E  enable TCP Explicit Congestion Notification\n"*/
+"  -f  specify the initial hop limit (default: 1)\n"
+"  -h  display this help and exit\n"
+/*"  -I  use ICMPv6 Echo packets as probes\n"*/
+/*"  -i  specify outgoing interface\n"*/
+/*"  -l  display incoming packets hop limit\n"*/
+"  -m  set the maximum hop limit (default: 30)\n"
+"  -n  don't perform reverse name lookup on addresses\n"
+/*"  -p  override base destination UDP port\n"*/
+/*"  -p  override source TCP port\n"*/
+"  -q  override the number of probes per hop (default: 3)\n"
+/*"  -S  send TCP SYN probes (default for TCP probes)\n"*/
+/*"  -s  specify the source IPv6 address of probe packets\n"*/
+"  -V, --version  display program version and exit\n"
+/*"  -v, --verbose  display all kind of ICMPv6 errors\n"*/
+"  -w  override the timeout for response in seconds (default: 5)\n"
+/*"  -z  specify a time to wait (in ms) between each probes (default: 0)\n"*/
+	"\n"), stderr);
+
+	return 0;
+}
+
+
+static int
+version (void)
+{
+	drop_priv ();
+
+	puts (
+"tcptraceroute6 : TCP/IPv6 traceroute tool "PACKAGE_VERSION
+" ($Rev$)\n built "__DATE__"\n"
+"Copyright (C) 2005 Remi Denis-Courmont");
+	puts (_(
+"This is free software; see the source for copying conditions.\n"
+"There is NO warranty; not even for MERCHANTABILITY or\n"
+"FITNESS FOR A PARTICULAR PURPOSE.\n"));
+	printf (_("Written by %s.\n"), "Remi Denis-Courmont");
+	return 0;
+}
+
+
+static int
+parse_hlim (const char *str)
+{
+	char *end;
+	unsigned long u;
+
+	u = strtoul (str, &end, 0);
+	if ((u > 255) || *end)
 	{
-		/* TODO: syntax msg */
-		fputs ("Syntax error\n", stderr);
-		return 1;
+		fprintf (stderr, _("%s: invalid hop limit\n"), str);
+		return -1;
+	}
+	return u;
+}
+
+
+int
+main (int argc, char *argv[])
+{
+	int val;
+	unsigned retries = 3, niflags = 0, wait = 5, minhlim = 1, maxhlim = 30;
+	const char *hostname, *port;
+
+	while ((val = getopt (argc, argv, "f:hm:nq:Vw:")) != EOF)
+	{
+		switch (val)
+		{
+			case 'f':
+				if ((minhlim = parse_hlim (optarg)) < 0)
+					return 1;
+				break;
+
+			case 'h':
+				return usage (argv[0]);
+
+			case 'm':
+				if ((maxhlim = parse_hlim (optarg)) < 0)
+					return 1;
+				break;
+
+			case 'n':
+				niflags |= NI_NUMERICHOST;
+				break;
+
+			case 'q':
+			{
+				unsigned long l;
+				char *end;
+
+				l = strtoul (optarg, &end, 0);
+				if (*end || l > UINT_MAX)
+					return quick_usage (argv[0]);
+				retries = l;
+				break;
+			}
+				
+			case 'V':
+				return version ();
+
+			case 'w':
+			{
+				unsigned long l;
+				char *end;
+
+				l = strtoul (optarg, &end, 0);
+				if (*end || l > UINT_MAX)
+					return quick_usage (argv[0]);
+				wait = l;
+				break;
+			}
+
+			case '?':
+			default:
+				return quick_usage (argv[0]);
+		}
 	}
 
-	return -traceroute (argv[1], (argc >= 3) ? argv[2] : "80", 3, 1, 30, 0);
+	if (optind < argc)
+	{
+		hostname = argv[optind++];
+
+		if (optind < argc)
+			port = argv[optind++];
+		else
+			port = "80";
+	}
+	else
+		return quick_usage (argv[0]);
+
+	setvbuf (stdout, NULL, _IONBF, 0);
+	return -traceroute (hostname, port, wait, retries, minhlim, maxhlim,
+	                    niflags);
 }
