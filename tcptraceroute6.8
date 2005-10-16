@@ -1,0 +1,78 @@
+.\" ***********************************************************************
+.\" *  Copyright (C) 2005 Rémi Denis-Courmont.                            *
+.\" *  This program is free software; you can redistribute and/or modify  *
+.\" *  it under the terms of the GNU General Public License as published  *
+.\" *  by the Free Software Foundation; version 2 of the license.         *
+.\" *                                                                     *
+.\" *  This program is distributed in the hope that it will be useful,    *
+.\" *  but WITHOUT ANY WARRANTY; without even the implied warranty of     *
+.\" *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.               *
+.\" *  See the GNU General Public License for more details.               *
+.\" *                                                                     *
+.\" *  You should have received a copy of the GNU General Public License  *
+.\" *  along with this program; if not, you can get it from:              *
+.\" *  http://www.gnu.org/copyleft/gpl.html                               *
+.\" ***********************************************************************
+.TH "TCPTRACEROUTE6" "8" "$Date$" "tcptraceroute6" "System Manager's Manual"
+.SH NAME
+tcptraceroute6 \- TCP/IPv6 traceroute tool
+.SH SYNOPSIS
+.BR "tcptraceroute6" " [" "-n" "] [" "-f min_hop" "] [" "-m max_hop" "] ["
+.BR "-q attempts" "] [" "-w wait" "] <" "hostname/address" "> [" "port" "]"
+
+.SH DESCRIPTON
+.B tcptraceroute6
+is an IPv6 traceroute implementation using TCP packets.
+
+It displays the list of hops along the network route between the local system
+and specified destination, by sending packets while incrementing their hop
+limit, until the final destination is reached.
+
+.SH OPTIONS
+
+.TP
+.BR "\-f" "
+Override the initial IPv6 packets hop limit (default: 1).
+
+.TP
+.BR "\-h"
+Display some help and exit.
+
+.TP
+.BR "\-m"
+Override the maximum hop limit (maximum number of hops).
+The default is 30 hops which should be sufficient on the IPv6 Internet for
+some time.
+
+.TP
+.BR "\-n"
+Do not try to resolve each hop's IPv6 address to a host name. That may speed
+up the traceroute significantly.
+
+.TP
+.BR "\-q"
+Override the number of probes sent to each hop (default: 3).
+
+.TP
+.BR "\-V" " or " "\-\-version"
+Display program version and license and exit.
+
+.TP
+.BR "\-w"
+Override the delay (in seconds) to wait for response once a given probe packet
+was sent (default: 5 seconds).
+
+.SH SECURITY
+.RI "tcptraceroute6 should be " "setuid" " " "root" " to allow use by non "
+privileged users. It will drop its root privileges before any attempt
+is made to send or receive data from the network so as to reduce the possible
+impact of a security vulnerability.
+
+.SH "SEE ALSO"
+traceroute6(8), tcptraceroute(8), ipv6(7)
+
+.SH AUTHOR
+Remi Denis-Courmont <rdenis at simphalempin.com>
+
+$Id$
+

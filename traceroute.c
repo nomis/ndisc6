@@ -4,7 +4,7 @@
  */
 
 /***********************************************************************
- *  Copyright (C) 2005 Remi Denis-Courmont.                            *
+ *  Copyright (C) 2005 Rémi Denis-Courmont.                            *
  *  This program is free software; you can redistribute and/or modify  *
  *  it under the terms of the GNU General Public License as published  *
  *  by the Free Software Foundation; version 2 of the license.         *
@@ -254,7 +254,6 @@ traceroute (const char *hostname, const char *service, unsigned timeout,
 			 && inet_ntop (AF_INET6, &dst.sin6_addr, buf, sizeof (buf)))
 				printf (_("from %s, "), buf);
 
-			/* TODO: print port number or packet length */
 			memcpy (&dst, res->ai_addr, res->ai_addrlen);
 			printf (_("port %u, "), ntohs (dst.sin6_port));
 			printf (_("%u hops max\n"), max_ttl);

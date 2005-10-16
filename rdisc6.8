@@ -62,17 +62,17 @@ Send ICMPv6 Router Discovery that many times until a reply is
 received, or abort. By default, rdisc6 will try 3 times before aborting.
 
 .TP
-.BR "\-w wait_ms" " or " "\-\-wait wait_ms"
-.RI "Wait " "wait_ms" " milliseconds for a response before retrying."
-By default, rdisc6 waits 1 second between each attempts.
-
-.TP
 .BR "\-V" " or " "\-\-version"
 Display program version and license and exit.
 
 .TP
 .BR "\-v" " or " "\-\-verbose"
 Display verbose information. That is the default.
+
+.TP
+.BR "\-w wait_ms" " or " "\-\-wait wait_ms"
+.RI "Wait " "wait_ms" " milliseconds for a response before retrying."
+By default, rdisc6 waits 1 second between each attempts.
 
 .SH SECURITY
 .RI "rdisc6 must be " "setuid" " " "root" " to allow use by non "
