@@ -39,6 +39,7 @@
 #include <netinet/tcp.h>
 #include <netinet/icmp6.h>
 #include <netdb.h>
+#include <arpa/inet.h> /* inet_ntop() */
 
 static int
 send_tcp_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
@@ -153,7 +154,7 @@ printdelay (const struct timeval *from, const struct timeval *to)
 	else
 		d = div (to->tv_usec - from->tv_usec, 1000);
 
-	printf (" %u.%03u ms ",
+	printf (_(" %u.%03u ms "),
 	        (unsigned)(d.quot + 1000 * (to->tv_sec - from->tv_sec)),
 	        (unsigned)d.rem);
 }
@@ -203,7 +204,7 @@ traceroute (const char *hostname, const char *service, unsigned timeout,
 	 && setsockopt (protofd, SOL_IPV6, IPV6_CHECKSUM, &t->check_offset,
 	                sizeof (int)))
 	{
-		perror (_("setsockopt(IPV6_CHECKSUM)"));
+		perror ("setsockopt(IPV6_CHECKSUM)");
 		goto error;
 	}
 	else
@@ -230,17 +231,27 @@ traceroute (const char *hostname, const char *service, unsigned timeout,
 		if (res->ai_addrlen > sizeof (dst))
 			goto error;
 
-		fputs (_("traceroute to"), stdout);
-		printname (res->ai_addr, res->ai_addrlen, niflags);
-		/* TODO: print port number or packet length */
-		printf ("%u hops max\n", max_ttl);
-
-		memcpy (&dst, res->ai_addr, res->ai_addrlen);
 		if (connect (protofd, res->ai_addr, res->ai_addrlen))
 		{
 			perror (hostname);
 			freeaddrinfo (res);
 			goto error;
+		}
+		else
+		{
+			char buf[INET6_ADDRSTRLEN];
+			socklen_t len = sizeof (dst);
+
+			fputs (_("traceroute to"), stdout);
+			printname (res->ai_addr, res->ai_addrlen, niflags);
+			if ((getsockname (protofd, (struct sockaddr *)&dst, &len) == 0)
+			 && inet_ntop (AF_INET6, &dst.sin6_addr, buf, sizeof (buf)))
+				printf (_("from %s, "), buf);
+
+			/* TODO: print port number or packet length */
+			printf (_("%u hops max\n"), max_ttl);
+
+			memcpy (&dst, res->ai_addr, res->ai_addrlen);
 		}
 
 		freeaddrinfo (res);
@@ -363,7 +374,8 @@ traceroute (const char *hostname, const char *service, unsigned timeout,
 						continue;
 					len -= sizeof (pkt.hdr) + sizeof (pkt.inhdr);
 
-					len = t->parse_err (pkt.buf, &pttl, &pn, dst.sin6_port);
+					len = t->parse_err (pkt.buf, len, &pttl, &pn,
+					                    dst.sin6_port);
 					if ((len < 0) || (pttl != ttl) || (pn != n))
 						continue;
 
