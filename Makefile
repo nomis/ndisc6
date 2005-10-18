@@ -27,7 +27,7 @@ INSTALL = install -c
 prefix = /usr/local
 
 PACKAGE = ndisc6
-VERSION = 0.5.0
+VERSION = 0.5.1
 
 sbin_PROGRAMS = ndisc6 rdisc6 tcptraceroute6
 DOC = COPYING INSTALL NEWS README
