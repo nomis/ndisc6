@@ -167,13 +167,265 @@ printdelay (const struct timeval *from, const struct timeval *to)
 
 
 static int
-traceroute (const char *hostname, const char *service, unsigned timeout,
-            unsigned retries, unsigned min_ttl, unsigned max_ttl, int niflags)
+probe_ttl (const struct tracetype *t, int protofd, int icmpfd,
+           const struct sockaddr_in6 *dst, unsigned ttl,
+           unsigned retries, unsigned timeout, int niflags)
+{
+	struct in6_addr hop = { }; /* hop if known from previous probes */
+	unsigned n;
+	int found = 0;
+	int state = -1; /* type of response received so far (-1: none,
+		0: normal, 1: closed, 2: open) */
+	/* see also: found (0: not found, <0: unreachable, >0: reached) */
+
+	printf ("%2d ", ttl);
+	setsockopt (protofd, SOL_IPV6, IPV6_UNICAST_HOPS, &ttl, sizeof (ttl));
+
+	for (n = 0; n < retries; n++)
+	{
+		fd_set rdset;
+		struct timeval tv = { timeout, 0 }, sent, recvd;
+		unsigned pttl, pn;
+		int val, maxfd;
+
+		FD_ZERO (&rdset);
+		FD_SET (protofd, &rdset);
+		FD_SET (icmpfd, &rdset);
+		maxfd = 1 + (protofd > icmpfd ? protofd : icmpfd);
+
+		gettimeofday (&sent, NULL);
+		if (t->send_probe (protofd, ttl, n, dst->sin6_port))
+		{
+			perror (_("Cannot send packet"));
+			return -1;
+		}
+
+		do
+		{
+			val = select (maxfd, &rdset, NULL, NULL, &tv);
+			if (val < 0) /* interrupted by signal - well, not really */
+				return -1;
+
+			if (val == 0)
+			{
+				fputs (" *", stdout);
+				continue;
+			}
+
+			gettimeofday (&recvd, NULL);
+
+			/* Receive final packet when host reached */
+			if (FD_ISSET (protofd, &rdset))
+			{
+				uint8_t buf[1240];
+				int len;
+
+				len = recv (protofd, buf, sizeof (buf), 0);
+				if (len < 0)
+					continue;
+
+				len = t->parse_resp (buf, len, &pttl, &pn, dst->sin6_port);
+				if ((len >= 0) && (n == pn) && (pttl = ttl))
+				{
+					/* Route determination complete! */
+					if (state == -1)
+						printname ((struct sockaddr *)dst, sizeof (*dst),
+						           niflags);
+
+					if (len != state)
+					{
+						const char *msg = NULL;
+
+						switch (len)
+						{
+							case 1:
+								msg = N_("closed");
+								break;
+
+							case 2:
+								msg = N_("open");
+								break;
+						}
+
+						if (msg != NULL)
+							printf ("[%s] ", msg);
+
+						state = len;
+					}
+
+					printdelay (&sent, &recvd);
+					val = 0;
+					found = ttl;
+				}
+			}
+
+			/* Receive ICMP errors along the way */
+			if (val && FD_ISSET (icmpfd, &rdset))
+			{
+				struct
+				{
+					struct icmp6_hdr hdr;
+					struct ip6_hdr inhdr;
+					uint8_t buf[1192];
+				} pkt;
+				struct sockaddr_in6 peer;
+				socklen_t peerlen = sizeof (peer);
+				int len;
+
+				len = recvfrom (icmpfd, &pkt, sizeof (pkt), 0,
+				                (struct sockaddr *)&peer, &peerlen);
+
+				/* FIXME: support further (all?) ICMPv6 errors */
+				if ((len < (sizeof (pkt.hdr) + sizeof (pkt.inhdr)))
+				 || ((pkt.hdr.icmp6_type != ICMP6_DST_UNREACH)
+				  && ((pkt.hdr.icmp6_type != ICMP6_TIME_EXCEEDED)
+				   || (pkt.hdr.icmp6_code != ICMP6_TIME_EXCEED_TRANSIT)))
+				 || memcmp (&pkt.inhdr.ip6_dst, &dst->sin6_addr, 16)
+				 || (pkt.inhdr.ip6_nxt != t->protocol))
+					continue;
+				len -= sizeof (pkt.hdr) + sizeof (pkt.inhdr);
+
+				len = t->parse_err (pkt.buf, len, &pttl, &pn,
+				                    dst->sin6_port);
+				if ((len < 0) || (pttl != ttl) || (pn != n))
+					continue;
+
+				/* genuine ICMPv6 error that concerns us */
+				if ((state == -1) || memcmp (&hop, &peer.sin6_addr, 16))
+				{
+					memcpy (&hop, &peer.sin6_addr, 16);
+					printname ((struct sockaddr *)&peer, peerlen,
+					           niflags);
+					state = 0;
+				}
+				printdelay (&sent, &recvd);
+				val = 0;
+
+				if (pkt.hdr.icmp6_type == ICMP6_DST_UNREACH)
+				{
+					/* No path to destination */
+					char c = '\0';
+					found = -ttl;
+
+					switch (pkt.hdr.icmp6_code)
+					{
+						case ICMP6_DST_UNREACH_NOROUTE:
+							c = 'N';
+							break;
+
+						case ICMP6_DST_UNREACH_ADMIN:
+							c = 'S';
+							break;
+
+						case ICMP6_DST_UNREACH_ADDR:
+							c = 'H';
+							break;
+
+						case ICMP6_DST_UNREACH_NOPORT:
+							found = ttl; /* success! */
+							break;
+					}
+
+					if (c)
+						printf ("!%c ", c);
+				}
+			}
+		}
+		while (val > 0);
+	}
+	puts ("");
+	return found;
+}
+
+
+static int
+getaddrinfo_err (const char *host, const char *serv,
+                 const struct addrinfo *hints, struct addrinfo **res)
+{
+	int val = getaddrinfo (host, serv, hints, res);
+	if (val)
+	{
+		fprintf (stderr, _("%s%s%s%s: %s\n"), host ?: "", host ? " " : "",
+		         serv ? _("port ") : "", serv ?: "", gai_strerror (val));
+		return val;
+	}
+	return 0;
+}
+
+static int
+connect_proto (int fd, struct sockaddr_in6 *dst, int socktype,
+               const char *dsthost, const char *dstport,
+               const char *srchost, const char *srcport, int niflags)
+{
+	struct addrinfo hints = { }, *res;
+	int val;
+
+	hints.ai_family = AF_INET6;
+	hints.ai_socktype = socktype;
+
+	if ((srchost != NULL) || (srcport != NULL))
+	{
+		hints.ai_flags |= AI_PASSIVE;
+
+		if (getaddrinfo_err (srchost, srcport, &hints, &res))
+			return -1;
+
+		val = bind (fd, res->ai_addr, res->ai_addrlen);
+		freeaddrinfo (res);
+
+		if (val)
+		{
+			perror (srchost);
+			return -1;
+		}
+		hints.ai_flags &= ~AI_PASSIVE;
+	}
+
+	if (getaddrinfo_err (dsthost, dstport, &hints, &res))
+		return -1;
+
+	if (res->ai_addrlen > sizeof (*dst))
+	{
+		freeaddrinfo (res);
+		return -1;
+	}
+
+	val = connect (fd, res->ai_addr, res->ai_addrlen);
+	if (val == 0)
+	{
+		char buf[INET6_ADDRSTRLEN];
+		socklen_t len = sizeof (*dst);
+
+		fputs (_("traceroute to"), stdout);
+		printname (res->ai_addr, res->ai_addrlen, niflags);
+		if ((getsockname (fd, (struct sockaddr *)dst, &len) == 0)
+		 && inet_ntop (AF_INET6, &dst->sin6_addr, buf, sizeof (buf)))
+			printf (_("from %s, "), buf);
+
+		memcpy (dst, res->ai_addr, res->ai_addrlen);
+	}
+	freeaddrinfo (res);
+	
+	if (val)
+	{
+		perror (dsthost);
+		return -1;
+	}
+
+	return 0;
+}
+
+
+static int
+traceroute (const char *dsthost, const char *dstport,
+            const char *srchost, const char *srcport,
+            unsigned timeout, unsigned retries,
+            unsigned min_ttl, unsigned max_ttl, int niflags)
 {
 	struct sockaddr_in6 dst = { };
 	const struct tracetype *t = types;
-	int protofd, icmpfd, maxfd, found;
-	unsigned ttl, n;
+	int protofd, icmpfd, found;
+	unsigned ttl;
 
 	/* Creates ICMPv6 socket to collect error packets */
 	icmpfd = socket (AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
@@ -213,223 +465,20 @@ traceroute (const char *hostname, const char *service, unsigned timeout,
 		perror ("setsockopt(IPV6_CHECKSUM)");
 		goto error;
 	}
-	else
-	{
-		/* Defines destination */
-		struct addrinfo hints = { }, *res;
-		int val;
 
-		hints.ai_family = AF_INET6;
-		hints.ai_socktype = t->res_socktype;
+	/* Defines destination */
+	if (connect_proto (protofd, &dst, t->res_socktype,
+	                   dsthost, dstport, srchost, srcport, niflags))
+		goto error;
+	printf (_("port %u, "), ntohs (dst.sin6_port));
+	printf (_("%u hops max\n"), max_ttl);
 
-		val = getaddrinfo (hostname, service, &hints, &res);
-		if (val)
-		{
-			if (service != NULL)
-				fprintf (stderr, _("%s port %s: %s\n"), hostname, service,
-				         gai_strerror (val));
-			else
-				fprintf (stderr, _("%s: %s\n"), hostname, gai_strerror (val));
-
-			goto error;
-		}
-
-		if (res->ai_addrlen > sizeof (dst))
-			goto error;
-
-		if (connect (protofd, res->ai_addr, res->ai_addrlen))
-		{
-			perror (hostname);
-			freeaddrinfo (res);
-			goto error;
-		}
-		else
-		{
-			char buf[INET6_ADDRSTRLEN];
-			socklen_t len = sizeof (dst);
-
-			fputs (_("traceroute to"), stdout);
-			printname (res->ai_addr, res->ai_addrlen, niflags);
-			if ((getsockname (protofd, (struct sockaddr *)&dst, &len) == 0)
-			 && inet_ntop (AF_INET6, &dst.sin6_addr, buf, sizeof (buf)))
-				printf (_("from %s, "), buf);
-
-			memcpy (&dst, res->ai_addr, res->ai_addrlen);
-			printf (_("port %u, "), ntohs (dst.sin6_port));
-			printf (_("%u hops max\n"), max_ttl);
-		}
-
-		freeaddrinfo (res);
-	}
-
-	maxfd = 1 + ((icmpfd > protofd) ? icmpfd : protofd);
-
+	/* Performs traceroute */
 	for (ttl = min_ttl, found = 0; (ttl <= max_ttl) && !found; ttl++)
-	{
-		struct in6_addr hop = { }; /* hop if known from previous probes */
-		int state = -1; /* type of response received so far (-1: none,
-			0: normal, 1: closed, 2: open) */
-		/* see also: found (0: not found, <0: unreachable, >0: reached) */
+		found = probe_ttl (t, protofd, icmpfd, &dst, ttl, retries, timeout,
+		                   niflags);
 
-		printf ("%2d ", ttl);
-		if (setsockopt (protofd, SOL_IPV6, IPV6_UNICAST_HOPS,
-		                &ttl, sizeof (ttl)))
-			goto error;
-
-		for (n = 0; n < retries; n++)
-		{
-			fd_set rdset;
-			struct timeval tv = { timeout, 0 }, sent, recvd;
-			unsigned pttl, pn;
-			int val;
-
-			FD_ZERO (&rdset);
-			FD_SET (protofd, &rdset);
-			FD_SET (icmpfd, &rdset);
-
-			gettimeofday (&sent, NULL);
-			if (t->send_probe (protofd, ttl, n, dst.sin6_port))
-			{
-				perror (_("Cannot send packet"));
-				goto error;
-			}
-
-			do
-			{
-				val = select (maxfd, &rdset, NULL, NULL, &tv);
-				if (val < 0) /* interrupted by signal - well, not really */
-					goto error;
-
-				if (val == 0)
-				{
-					fputs (" *", stdout);
-					continue;
-				}
-
-				gettimeofday (&recvd, NULL);
-
-				/* Receive final packet when host reached */
-				if (val && FD_ISSET (protofd, &rdset))
-				{
-					uint8_t buf[1240];
-					int len;
-
-					len = recv (protofd, buf, sizeof (buf), 0);
-					if (len < 0)
-						continue;
-
-					len = t->parse_resp (buf, len, &pttl, &pn, dst.sin6_port);
-					if ((len >= 0) && (n == pn) && (pttl = ttl))
-					{
-						/* Route determination complete! */
-						if (state == -1)
-							printname ((struct sockaddr *)&dst, sizeof (dst),
-							           niflags);
-
-						if (len != state)
-						{
-							const char *msg = NULL;
-
-							switch (len)
-							{
-								case 1:
-									msg = N_("closed");
-									break;
-
-								case 2:
-									msg = N_("open");
-									break;
-							}
-
-							if (msg != NULL)
-								printf ("[%s] ", msg);
-
-							state = len;
-						}
-
-						printdelay (&sent, &recvd);
-						val = 0;
-						found = ttl;
-					}
-				}
-
-				/* Receive ICMP errors along the way */
-				if (val && FD_ISSET (icmpfd, &rdset))
-				{
-					struct
-					{
-						struct icmp6_hdr hdr;
-						struct ip6_hdr inhdr;
-						uint8_t buf[1192];
-					} pkt;
-					struct sockaddr_in6 peer;
-					socklen_t peerlen = sizeof (peer);
-					int len;
-
-					len = recvfrom (icmpfd, &pkt, sizeof (pkt), 0,
-					                (struct sockaddr *)&peer, &peerlen);
-
-					/* FIXME: support further (all?) ICMPv6 errors */
-					if ((len < (sizeof (pkt.hdr) + sizeof (pkt.inhdr)))
-					 || ((pkt.hdr.icmp6_type != ICMP6_DST_UNREACH)
-					  && ((pkt.hdr.icmp6_type != ICMP6_TIME_EXCEEDED)
-					   || (pkt.hdr.icmp6_code != ICMP6_TIME_EXCEED_TRANSIT)))
-					 || memcmp (&pkt.inhdr.ip6_dst, &dst.sin6_addr, 16)
-					 || (pkt.inhdr.ip6_nxt != t->protocol))
-						continue;
-					len -= sizeof (pkt.hdr) + sizeof (pkt.inhdr);
-
-					len = t->parse_err (pkt.buf, len, &pttl, &pn,
-					                    dst.sin6_port);
-					if ((len < 0) || (pttl != ttl) || (pn != n))
-						continue;
-
-					/* genuine ICMPv6 error that concerns us */
-					if ((state == -1) || memcmp (&hop, &peer.sin6_addr, 16))
-					{
-						memcpy (&hop, &peer.sin6_addr, 16);
-						printname ((struct sockaddr *)&peer, peerlen,
-						           niflags);
-						state = 0;
-					}
-					printdelay (&sent, &recvd);
-					val = 0;
-
-					if (pkt.hdr.icmp6_type == ICMP6_DST_UNREACH)
-					{
-						/* No path to destination */
-						char c = '\0';
-						found = -ttl;
-
-						switch (pkt.hdr.icmp6_code)
-						{
-							case ICMP6_DST_UNREACH_NOROUTE:
-								c = 'N';
-								break;
-
-							case ICMP6_DST_UNREACH_ADMIN:
-								c = 'S';
-								break;
-
-							case ICMP6_DST_UNREACH_ADDR:
-								c = 'H';
-								break;
-
-							case ICMP6_DST_UNREACH_NOPORT:
-								found = ttl; /* success! */
-								break;
-						}
-
-						if (c)
-							printf ("!%c ", c);
-					}
-				}
-			}
-			while (val > 0);
-		}
-		puts ("");
-	}
-
+	/* Cleans up */
 	close (protofd);
 	close (icmpfd);
 	return found > 0 ? 0 : -2;
@@ -476,7 +525,7 @@ usage (const char *path)
 /*"  -p  override source TCP port\n"*/
 "  -q  override the number of probes per hop (default: 3)\n"
 /*"  -S  send TCP SYN probes (default for TCP probes)\n"*/
-/*"  -s  specify the source IPv6 address of probe packets\n"*/
+"  -s  specify the source IPv6 address of probe packets\n"
 "  -V, --version  display program version and exit\n"
 /*"  -v, --verbose  display all kind of ICMPv6 errors\n"*/
 "  -w  override the timeout for response in seconds (default: 5)\n"
@@ -526,9 +575,9 @@ main (int argc, char *argv[])
 {
 	int val;
 	unsigned retries = 3, niflags = 0, wait = 5, minhlim = 1, maxhlim = 30;
-	const char *hostname, *port;
+	const char *dsthost, *dstport, *srchost = NULL, *srcport = NULL;
 
-	while ((val = getopt (argc, argv, "f:hm:nq:Vw:")) != EOF)
+	while ((val = getopt (argc, argv, "f:hm:nq:s:Vw:")) != EOF)
 	{
 		switch (val)
 		{
@@ -560,7 +609,11 @@ main (int argc, char *argv[])
 				retries = l;
 				break;
 			}
-				
+
+			case 's':
+				srchost = optarg;
+				break;
+
 			case 'V':
 				return version ();
 
@@ -584,17 +637,17 @@ main (int argc, char *argv[])
 
 	if (optind < argc)
 	{
-		hostname = argv[optind++];
+		dsthost = argv[optind++];
 
 		if (optind < argc)
-			port = argv[optind++];
+			dstport = argv[optind++];
 		else
-			port = "80";
+			dstport = "80";
 	}
 	else
 		return quick_usage (argv[0]);
 
 	setvbuf (stdout, NULL, _IONBF, 0);
-	return -traceroute (hostname, port, wait, retries, minhlim, maxhlim,
-	                    niflags);
+	return -traceroute (dsthost, dstport, srchost, srcport, wait, retries,
+	                    minhlim, maxhlim, niflags);
 }

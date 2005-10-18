@@ -18,7 +18,8 @@
 tcptraceroute6 \- TCP/IPv6 traceroute tool
 .SH SYNOPSIS
 .BR "tcptraceroute6" " [" "-n" "] [" "-f min_hop" "] [" "-m max_hop" "] ["
-.BR "-q attempts" "] [" "-w wait" "] <" "hostname/address" "> [" "port" "]"
+.BR "-q attempts" "] [" "-s source" "] [" "-w wait" "] <"
+.BR "hostname/address" "> [" "port" "]"
 
 .SH DESCRIPTON
 .B tcptraceroute6
@@ -31,34 +32,38 @@ limit, until the final destination is reached.
 .SH OPTIONS
 
 .TP
-.BR "\-f" "
+.B "\-f" "
 Override the initial IPv6 packets hop limit (default: 1).
 
 .TP
-.BR "\-h"
+.B "\-h"
 Display some help and exit.
 
 .TP
-.BR "\-m"
+.B "\-m"
 Override the maximum hop limit (maximum number of hops).
 The default is 30 hops which should be sufficient on the IPv6 Internet for
 some time.
 
 .TP
-.BR "\-n"
+.B "\-n"
 Do not try to resolve each hop's IPv6 address to a host name. That may speed
 up the traceroute significantly.
 
 .TP
-.BR "\-q"
+.B "\-q"
 Override the number of probes sent to each hop (default: 3).
 
 .TP
-.BR "\-V" " or " "\-\-version"
+.B "\-s"
+Specify the source address to use for probe packets explicitly.
+
+.TP
+.B "\-V"
 Display program version and license and exit.
 
 .TP
-.BR "\-w"
+.B "\-w"
 Override the delay (in seconds) to wait for response once a given probe packet
 was sent (default: 5 seconds).
 
