@@ -47,7 +47,7 @@ traceroute6: %: traceroute.c Makefile
 	$(CC) $($*_CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $<
 
 tcptraceroute6: traceroute6
-	ln -s traceroute6 $@
+	ln -sf traceroute6 $@
 
 COPYING: /usr/share/common-licenses/GPL-2
 	ln -s $< $@
