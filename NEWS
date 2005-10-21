@@ -15,8 +15,10 @@ provided manual pages.
 =============================================================================
 TEST RELEASE 0.5.1 : Minor feature enhancement
 
-# Source address specification option for tcptraceroute6
-# TCP/ACK probes option for tcptraceroute6
+# Add traditional UDP traceroute to traceroute6 (formerly tcptraceroute6)
+# tcptraceroute6 is now an alias for "traceroute6 -S"
+# Source address specification option for (tcp)traceroute6
+# TCP/ACK probes option for (tcp)traceroute6
 # Use a rather high source TCP port, dependant on PID
 
 =============================================================================

@@ -36,6 +36,7 @@
 #include <sys/time.h>
 #include <netinet/in.h>
 #include <netinet/ip6.h>
+#include <netinet/udp.h>
 #include <netinet/tcp.h>
 #include <netinet/icmp6.h>
 #include <netdb.h>
@@ -81,6 +82,48 @@ static uint16_t getsourceport (void)
 	}
 	return htons (p);
 }
+
+
+/* UDP probes (traditional traceroute) */
+static int
+send_udp_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
+{
+	struct udphdr uh = { };
+
+	uh.source = getsourceport ();
+	uh.dest = htons (ntohs (port) + ttl);
+	uh.len = htons (sizeof (uh));
+
+	return (send (fd, &uh, sizeof (uh), 0) == sizeof (uh)) ? 0 : -1;
+}
+
+
+static int
+parse_udp_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
+                 uint16_t port)
+{
+	const struct udphdr *puh = (const struct udphdr *)data;
+	uint16_t rport;
+
+	if ((len < 4)
+	 || (puh->source != getsourceport ())
+	 || (puh->len != htons (sizeof (*puh))))
+		return -1;
+
+	rport = ntohs (puh->dest);
+	port = ntohs (port);
+	if ((rport < port) || (rport > port + 255))
+		return -1;
+
+	*ttl = rport - port;
+	*n = -1;
+	return 0;
+}
+
+
+const static tracetype udp_type =
+	{ SOCK_DGRAM,	IPPROTO_UDP, 6,
+	  send_udp_probe, NULL, parse_udp_error };
 
 
 /* TCP/SYN probes */
@@ -281,9 +324,16 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		int val, maxfd;
 
 		FD_ZERO (&rdset);
-		FD_SET (protofd, &rdset);
 		FD_SET (icmpfd, &rdset);
-		maxfd = 1 + (protofd > icmpfd ? protofd : icmpfd);
+		maxfd = icmpfd;
+
+		if (type->parse_resp != NULL)
+		{
+			FD_SET (protofd, &rdset);
+			if (protofd > maxfd)
+				maxfd = protofd;
+		}
+		maxfd++;
 
 		gettimeofday (&sent, NULL);
 		if (type->send_probe (protofd, ttl, n, dst->sin6_port))
@@ -307,7 +357,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 			gettimeofday (&recvd, NULL);
 
 			/* Receive final packet when host reached */
-			if (FD_ISSET (protofd, &rdset))
+			if ((type->parse_resp != NULL) && FD_ISSET (protofd, &rdset))
 			{
 				uint8_t buf[1240];
 				int len;
@@ -378,7 +428,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 				len = type->parse_err (pkt.buf, len, &pttl, &pn,
 				                       dst->sin6_port);
-				if ((len < 0) || (pttl != ttl) || (pn != n))
+				if ((len < 0) || (pttl != ttl) || ((pn != n) && (pn != -1)))
 					continue;
 
 				/* genuine ICMPv6 error that concerns us */
@@ -732,13 +782,22 @@ main (int argc, char *argv[])
 
 	if (type == NULL)
 	{
+		const char *prgm;
+
 		/* Booooh, GNU coding styles say that is very bad!! */
-		/*if (strncmp (argv[0], "tcp", 3))*/
+		prgm = strrchr (argv[0], '/');
+		if (prgm == NULL)
+			prgm = argv[0];
+		else
+			prgm++;
+
+		if (strncmp (prgm, "tcp", 3) == 0)
 			type = &syn_type;
-		/*else
-			type = &udp_type;*/
+		else
+			type = &udp_type;
 	}
 
+	/* FIXME: use dstport as packet size for UDP and ICMP */
 	if (optind < argc)
 	{
 		dsthost = argv[optind++];
@@ -746,7 +805,7 @@ main (int argc, char *argv[])
 		if (optind < argc)
 			dstport = argv[optind++];
 		else
-			dstport = "80";
+			dstport = (type->protocol == IPPROTO_TCP) ? "80" : "33434";
 	}
 	else
 		return quick_usage (argv[0]);

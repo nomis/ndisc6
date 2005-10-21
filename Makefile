@@ -29,33 +29,37 @@ prefix = /usr/local
 PACKAGE = ndisc6
 VERSION = 0.5.1
 
-sbin_PROGRAMS = ndisc6 rdisc6 tcptraceroute6
+sbin_PROGRAMS = ndisc6 rdisc6 traceroute6
+man8_MANS = $(sbin_PROGRAMS:%=%.8) tcptraceroute6.8
 DOC = COPYING INSTALL NEWS README
 
 AM_CPPFLAGS = -DPACKAGE_VERSION=\"$(VERSION)\" $(CPPFLAGS)
 ndisc6_CPPFLAGS = $(AM_CPPFLAGS)
 rdisc6_CPPFLAGS = -DRDISC $(AM_CPPFLAGS)
-tcptraceroute6_CPPFLAGS = $(AM_CPPFLAGS)
+traceroute6_CPPFLAGS = $(AM_CPPFLAGS)
 
-all: $(sbin_PROGRAMS) $(DOC)
+all: $(sbin_PROGRAMS) $(DOC) tcptraceroute6
 
 ndisc6 rdisc6: %: ndisc.c Makefile
 	$(CC) $($*_CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $<
 
-tcptraceroute6: %: traceroute.c Makefile
+traceroute6: %: traceroute.c Makefile
 	$(CC) $($*_CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $<
+
+tcptraceroute6: traceroute6
+	ln -s traceroute6 $@
 
 COPYING: /usr/share/common-licenses/GPL-2
 	ln -s $< $@
 
-install: all install-man
+install: all install-man install-links
 	mkdir -p $(DESTDIR)$(prefix)/bin
 	for f in $(sbin_PROGRAMS); do \
 		$(INSTALL) -m 04755 $$f $(DESTDIR)$(prefix)/bin/$$f || \
 			exit $$? ; \
 	done
 
-install-strip: all install-man
+install-strip: all install-man install-links
 	mkdir -p $(DESTDIR)$(prefix)/bin
 	for f in $(sbin_PROGRAMS); do \
 		$(INSTALL) -s -m 04755 $$f $(DESTDIR)$(prefix)/bin/$$f || \
@@ -64,17 +68,21 @@ install-strip: all install-man
 
 install-man:
 	mkdir -p $(DESTDIR)$(prefix)/man/man8
-	for f in $(sbin_PROGRAMS); do \
-		$(INSTALL) -m 0644 $$f.8 $(DESTDIR)$(prefix)/man/man8/$$f.8 || \
+	for f in $(man8_MANS); do \
+		$(INSTALL) -m 0644 $$f $(DESTDIR)$(prefix)/man/man8/$$f || \
 			exit $$? ; \
 	done
 
+install-links:
+	cd $(DESTDIR)$(prefix)/bin && ln -sf traceroute6 tcptraceroute6
+
 uninstall:
-	rm -f $(sbin_PROGRAMS:%=$(DESTDIR)$(prefix)/bin/%) \
-		$(sbin_PROGRAMS:%=$(DESTDIR)$(prefix)/man/man8/%.8)
+	rm -f $(sbin_PROGRAMS:%=$(DESTDIR)$(prefix)/bin/%)
+	rm -f $(man8_MANS:%=$(DESTDIR)$(prefix)/man/man8/%)
+	rm -f $(DESTDIR)$(prefix)/bin/tcptraceroute6
 
 mostlyclean:
-	rm -f $(sbin_PROGRAMS)
+	rm -f $(sbin_PROGRAMS) tcptraceroute6
 
 clean: mostlyclean
 	rm -f *~
