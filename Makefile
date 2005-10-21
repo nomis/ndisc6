@@ -38,6 +38,9 @@ ndisc6_CPPFLAGS = $(AM_CPPFLAGS)
 rdisc6_CPPFLAGS = -DRDISC $(AM_CPPFLAGS)
 traceroute6_CPPFLAGS = $(AM_CPPFLAGS)
 
+mandir = $(prefix)/man
+bindir = $(prefix)/bin
+
 all: $(sbin_PROGRAMS) $(DOC) tcptraceroute6
 
 ndisc6 rdisc6: %: ndisc.c Makefile
@@ -53,36 +56,38 @@ COPYING: /usr/share/common-licenses/GPL-2
 	ln -s $< $@
 
 install: all install-man install-links
-	mkdir -p $(DESTDIR)$(prefix)/bin
-	for f in $(sbin_PROGRAMS); do \
-		$(INSTALL) -m 04755 $$f $(DESTDIR)$(prefix)/bin/$$f || \
-			exit $$? ; \
+	mkdir -p $(DESTDIR)$(bindir)
+	@for f in $(sbin_PROGRAMS); do \
+		c="$(INSTALL) -m 04755 $$f $(DESTDIR)$(bindir)/$$f" ; \
+		echo $$c ; \
+		$$c || exit $$? ; \
 	done
 
 install-strip: all install-man install-links
-	mkdir -p $(DESTDIR)$(prefix)/bin
-	for f in $(sbin_PROGRAMS); do \
-		$(INSTALL) -s -m 04755 $$f $(DESTDIR)$(prefix)/bin/$$f || \
-			exit $$? ; \
+	mkdir -p $(DESTDIR)$(bindir)
+	@for f in $(sbin_PROGRAMS); do \
+		c="$(INSTALL) -s -m 04755 $$f $(DESTDIR)$(bindir)/$$f" ; \
+		echo $$c ; \
+		$$c || exit $$? ; \
 	done
 
 install-man:
-	mkdir -p $(DESTDIR)$(prefix)/man/man8
-	for f in $(man8_MANS); do \
-		$(INSTALL) -m 0644 $$f $(DESTDIR)$(prefix)/man/man8/$$f || \
-			exit $$? ; \
+	mkdir -p $(DESTDIR)$(mandir)/man8
+	@for f in $(man8_MANS); do \
+		c="$(INSTALL) -m 0644 $$f $(DESTDIR)$(mandir)/man8/$$f" ; \
+		echo $$c ; \
+		$$c || exit $$? ; \
 	done
-	cd $(DESTDIR)$(prefix)/man/man8 && \
-	ln -sf traceroute6.8 tcptraceroute6.8
+	cd $(DESTDIR)$(mandir)/man8 && ln -sf traceroute6.8 tcptraceroute6.8
 
 install-links:
-	cd $(DESTDIR)$(prefix)/bin && ln -sf traceroute6 tcptraceroute6
+	cd $(DESTDIR)$(bindir) && ln -sf traceroute6 tcptraceroute6
 
 uninstall:
-	rm -f $(sbin_PROGRAMS:%=$(DESTDIR)$(prefix)/bin/%)
-	rm -f $(man8_MANS:%=$(DESTDIR)$(prefix)/man/man8/%)
-	rm -f $(DESTDIR)$(prefix)/bin/tcptraceroute6
-	rm -f $(DESTDIR)$(prefix)/man/man8/tcptraceroute6.8
+	rm -f $(sbin_PROGRAMS:%=$(DESTDIR)$(bindir)/%)
+	rm -f $(man8_MANS:%=$(DESTDIR)$(mandir)/man8/%)
+	rm -f $(DESTDIR)$(bindir)/tcptraceroute6
+	rm -f $(DESTDIR)$(mandir)/man8/tcptraceroute6.8
 
 mostlyclean:
 	rm -f $(sbin_PROGRAMS) tcptraceroute6
@@ -100,5 +105,6 @@ dist:
 	tar c $(PACKAGE)-$(VERSION) | bzip2 > $(PACKAGE)-$(VERSION).tar.bz2
 	rm -Rf $(PACKAGE)-$(VERSION)
 
-.PHONY: clean mostlyclean distclean all install install-man install-strip
+.PHONY: clean mostlyclean distclean all install
+.PHONY: install-man install-strip install-links
 
