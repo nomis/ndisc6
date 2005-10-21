@@ -1,5 +1,5 @@
 RELEASE NOTES for NDisc6
-version 0.5.0
+version 0.5.1
 =========================
 $Id$
 
@@ -13,7 +13,13 @@ informations on this program, see README. For syntax details, read the
 provided manual pages.
 
 =============================================================================
-STABLE RELEASE 0.5.0 : Major feature enhancement
+TEST RELEASE 0.5.1 : Minor feature enhancement
+
+# Source address specification option for tcptraceroute6
+# TCP/ACK probes option for tcptraceroute6
+
+=============================================================================
+TEST RELEASE 0.5.0 : Major feature enhancement
 
 # tcptraceroute6 was added to the package.
 

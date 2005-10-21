@@ -41,6 +41,28 @@
 #include <netdb.h>
 #include <arpa/inet.h> /* inet_ntop() */
 
+
+typedef struct tracetype
+{
+	int res_socktype;
+	int protocol;
+	int check_offset;
+	int (*send_probe) (int fd, unsigned ttl, unsigned n, uint16_t port);
+	int (*parse_resp) (const void *data, size_t len, unsigned *ttl,
+	                   unsigned *n, uint16_t port);
+	int (*parse_err) (const void *data, size_t len, unsigned *ttl,
+	                   unsigned *n, uint16_t port);
+} tracetype;
+
+
+static int niflags = 0;
+static const tracetype *type = NULL;
+
+#define TCP_SOURCE_PORT 1024
+#define TCP_WINDOW 4096
+
+/****************************************************************************/
+
 static void
 drop_priv (void)
 {
@@ -48,53 +70,32 @@ drop_priv (void)
 }
 
 
+/* TCP/SYN probes */
 static int
-send_tcp_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
+send_syn_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
 {
 	struct tcphdr th = { };
 
-	th.source = htons (1024);
+	th.source = htons (TCP_SOURCE_PORT);
 	th.dest = port;
 	th.seq = htonl ((ttl << 24) | (n << 16) | getpid ());
 	th.doff = sizeof (th) / 4;
 	th.syn = 1;
-	th.window = htons (4096);
+	th.window = htons (TCP_WINDOW);
 
 	return (send (fd, &th, sizeof (th), 0) == sizeof (th)) ? 0 : -1;
 }
 
 
 static int
-parse_tcp_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
-                 uint16_t port)
-{
-	const struct tcphdr *pth = (const struct tcphdr *)data;
-	uint32_t seq;
-
-	if ((len < 8)
-	 || (pth->source != htons (1024))
-	 || (pth->dest != port))
-		return -1;
-
-	seq = ntohl (pth->seq);
-	if ((seq & 0xffff) != getpid ())
-		return -1;
-
-	*ttl = seq >> 24;
-	*n = (seq >> 16) & 0xff;
-	return 0;
-}
-
-
-static int
-parse_tcp_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
+parse_syn_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
                 uint16_t port)
 {
 	const struct tcphdr *pth = (const struct tcphdr *)data;
 	uint32_t seq;
 
 	if ((len < sizeof (*pth))
-	 || (pth->dest != htons (1024))
+	 || (pth->dest != htons (TCP_SOURCE_PORT))
 	 || (pth->source != port)
 	 || (pth->ack == 0)
 	 || (pth->syn == pth->rst)
@@ -111,37 +112,116 @@ parse_tcp_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
 }
 
 
-static const struct tracetype
+static int
+parse_syn_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
+                 uint16_t port)
 {
-	int res_socktype;
-	int protocol;
-	int check_offset;
-	int (*send_probe) (int fd, unsigned ttl, unsigned n, uint16_t port);
-	int (*parse_resp) (const void *data, size_t len, unsigned *ttl,
-	                   unsigned *n, uint16_t port);
-	int (*parse_err) (const void *data, size_t len, unsigned *ttl,
-	                   unsigned *n, uint16_t port);
-} types[] =
-{
+	const struct tcphdr *pth = (const struct tcphdr *)data;
+	uint32_t seq;
+
+	if ((len < 8)
+	 || (pth->source != htons (TCP_SOURCE_PORT))
+	 || (pth->dest != port))
+		return -1;
+
+	seq = ntohl (pth->seq);
+	if ((seq & 0xffff) != getpid ())
+		return -1;
+
+	*ttl = seq >> 24;
+	*n = (seq >> 16) & 0xff;
+	return 0;
+}
+
+
+const static tracetype syn_type =
 	{ SOCK_STREAM,	IPPROTO_TCP, 16,
-	  send_tcp_probe, parse_tcp_resp, parse_tcp_error },
-	{ SOCK_DGRAM,	IPPROTO_RAW, -1, NULL, NULL , NULL }
-};
+	  send_syn_probe, parse_syn_resp, parse_syn_error };
+
+
+/* TCP/ACK probes */
+static int
+send_ack_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
+{
+	struct tcphdr th = { };
+
+	th.source = htons (TCP_SOURCE_PORT);
+	th.dest = port;
+	th.ack_seq = htonl ((ttl << 24) | (n << 16) | getpid ());
+	th.doff = sizeof (th) / 4;
+	th.ack = 1;
+	th.window = htons (TCP_WINDOW);
+
+	return (send (fd, &th, sizeof (th), 0) == sizeof (th)) ? 0 : -1;
+}
+
+
+static int
+parse_ack_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
+                uint16_t port)
+{
+	const struct tcphdr *pth = (const struct tcphdr *)data;
+	uint32_t seq;
+
+	if ((len < sizeof (*pth))
+	 || (pth->dest != htons (TCP_SOURCE_PORT))
+	 || (pth->source != port)
+	 || pth->syn
+	 || pth->ack
+	 || (!pth->rst)
+	 || (pth->doff < (sizeof (*pth) / 4)))
+		return -1;
+
+	seq = ntohl (pth->seq);
+	if ((seq & 0xffff) != getpid ())
+		return -1;
+
+	*ttl = seq >> 24;
+	*n = (seq >> 16) & 0xff;
+	return 0;
+}
+
+
+static int
+parse_ack_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
+                 uint16_t port)
+{
+	const struct tcphdr *pth = (const struct tcphdr *)data;
+	uint32_t seq;
+
+	if ((len < 8)
+	 || (pth->source != htons (TCP_SOURCE_PORT))
+	 || (pth->dest != port))
+		return -1;
+
+	seq = ntohl (pth->ack_seq);
+	if ((seq & 0xffff) != getpid ())
+		return -1;
+
+	*ttl = seq >> 24;
+	*n = (seq >> 16) & 0xff;
+	return 0;
+}
+
+
+const static tracetype ack_type =
+	{ SOCK_STREAM,	IPPROTO_TCP, 16,
+	  send_ack_probe, parse_ack_resp, parse_ack_error };
 
 
 /* Performs reverse lookup; print hostname and address */
 static void
-printname (const struct sockaddr *addr, size_t addrlen, int flags)
+printname (const struct sockaddr *addr, size_t addrlen)
 {
 	char name[NI_MAXHOST];
 	int val;
 
-	val = getnameinfo (addr, addrlen, name, sizeof (name), NULL, 0, flags);
+	val = getnameinfo (addr, addrlen, name, sizeof (name), NULL, 0, niflags);
 	if (!val)
 		printf (" %s", name);
 
 	val = getnameinfo (addr, addrlen, name, sizeof (name), NULL, 0,
-	                   NI_NUMERICHOST | flags);
+	                   NI_NUMERICHOST | niflags);
 	if (!val)
 		printf (" (%s) ", name);
 }
@@ -167,9 +247,8 @@ printdelay (const struct timeval *from, const struct timeval *to)
 
 
 static int
-probe_ttl (const struct tracetype *t, int protofd, int icmpfd,
-           const struct sockaddr_in6 *dst, unsigned ttl,
-           unsigned retries, unsigned timeout, int niflags)
+probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
+           unsigned ttl, unsigned retries, unsigned timeout)
 {
 	struct in6_addr hop = { }; /* hop if known from previous probes */
 	unsigned n;
@@ -194,7 +273,7 @@ probe_ttl (const struct tracetype *t, int protofd, int icmpfd,
 		maxfd = 1 + (protofd > icmpfd ? protofd : icmpfd);
 
 		gettimeofday (&sent, NULL);
-		if (t->send_probe (protofd, ttl, n, dst->sin6_port))
+		if (type->send_probe (protofd, ttl, n, dst->sin6_port))
 		{
 			perror (_("Cannot send packet"));
 			return -1;
@@ -224,13 +303,12 @@ probe_ttl (const struct tracetype *t, int protofd, int icmpfd,
 				if (len < 0)
 					continue;
 
-				len = t->parse_resp (buf, len, &pttl, &pn, dst->sin6_port);
+				len = type->parse_resp (buf, len, &pttl, &pn, dst->sin6_port);
 				if ((len >= 0) && (n == pn) && (pttl = ttl))
 				{
 					/* Route determination complete! */
 					if (state == -1)
-						printname ((struct sockaddr *)dst, sizeof (*dst),
-						           niflags);
+						printname ((struct sockaddr *)dst, sizeof (*dst));
 
 					if (len != state)
 					{
@@ -281,12 +359,12 @@ probe_ttl (const struct tracetype *t, int protofd, int icmpfd,
 				  && ((pkt.hdr.icmp6_type != ICMP6_TIME_EXCEEDED)
 				   || (pkt.hdr.icmp6_code != ICMP6_TIME_EXCEED_TRANSIT)))
 				 || memcmp (&pkt.inhdr.ip6_dst, &dst->sin6_addr, 16)
-				 || (pkt.inhdr.ip6_nxt != t->protocol))
+				 || (pkt.inhdr.ip6_nxt != type->protocol))
 					continue;
 				len -= sizeof (pkt.hdr) + sizeof (pkt.inhdr);
 
-				len = t->parse_err (pkt.buf, len, &pttl, &pn,
-				                    dst->sin6_port);
+				len = type->parse_err (pkt.buf, len, &pttl, &pn,
+				                       dst->sin6_port);
 				if ((len < 0) || (pttl != ttl) || (pn != n))
 					continue;
 
@@ -294,8 +372,7 @@ probe_ttl (const struct tracetype *t, int protofd, int icmpfd,
 				if ((state == -1) || memcmp (&hop, &peer.sin6_addr, 16))
 				{
 					memcpy (&hop, &peer.sin6_addr, 16);
-					printname ((struct sockaddr *)&peer, peerlen,
-					           niflags);
+					printname ((struct sockaddr *)&peer, peerlen);
 					state = 0;
 				}
 				printdelay (&sent, &recvd);
@@ -353,15 +430,15 @@ getaddrinfo_err (const char *host, const char *serv,
 }
 
 static int
-connect_proto (int fd, struct sockaddr_in6 *dst, int socktype,
+connect_proto (int fd, struct sockaddr_in6 *dst,
                const char *dsthost, const char *dstport,
-               const char *srchost, const char *srcport, int niflags)
+               const char *srchost, const char *srcport)
 {
 	struct addrinfo hints = { }, *res;
 	int val;
 
 	hints.ai_family = AF_INET6;
-	hints.ai_socktype = socktype;
+	hints.ai_socktype = type->res_socktype;
 
 	if ((srchost != NULL) || (srcport != NULL))
 	{
@@ -397,7 +474,7 @@ connect_proto (int fd, struct sockaddr_in6 *dst, int socktype,
 		socklen_t len = sizeof (*dst);
 
 		fputs (_("traceroute to"), stdout);
-		printname (res->ai_addr, res->ai_addrlen, niflags);
+		printname (res->ai_addr, res->ai_addrlen);
 		if ((getsockname (fd, (struct sockaddr *)dst, &len) == 0)
 		 && inet_ntop (AF_INET6, &dst->sin6_addr, buf, sizeof (buf)))
 			printf (_("from %s, "), buf);
@@ -420,10 +497,9 @@ static int
 traceroute (const char *dsthost, const char *dstport,
             const char *srchost, const char *srcport,
             unsigned timeout, unsigned retries,
-            unsigned min_ttl, unsigned max_ttl, int niflags)
+            unsigned min_ttl, unsigned max_ttl)
 {
 	struct sockaddr_in6 dst = { };
-	const struct tracetype *t = types;
 	int protofd, icmpfd, found;
 	unsigned ttl;
 
@@ -436,7 +512,7 @@ traceroute (const char *dsthost, const char *dstport,
 	}
 
 	/* Creates protocol-specific socket */
-	protofd = socket (AF_INET6, SOCK_RAW, t->protocol);
+	protofd = socket (AF_INET6, SOCK_RAW, type->protocol);
 	if (protofd == -1)
 	{
 		perror (_("Raw socket"));
@@ -458,8 +534,8 @@ traceroute (const char *dsthost, const char *dstport,
 	}
 
 	/* Defines protocol-specific checksum offset */
-	if ((t->check_offset != -1)
-	 && setsockopt (protofd, SOL_IPV6, IPV6_CHECKSUM, &t->check_offset,
+	if ((type->check_offset != -1)
+	 && setsockopt (protofd, SOL_IPV6, IPV6_CHECKSUM, &type->check_offset,
 	                sizeof (int)))
 	{
 		perror ("setsockopt(IPV6_CHECKSUM)");
@@ -467,16 +543,14 @@ traceroute (const char *dsthost, const char *dstport,
 	}
 
 	/* Defines destination */
-	if (connect_proto (protofd, &dst, t->res_socktype,
-	                   dsthost, dstport, srchost, srcport, niflags))
+	if (connect_proto (protofd, &dst, dsthost, dstport, srchost, srcport))
 		goto error;
 	printf (_("port %u, "), ntohs (dst.sin6_port));
 	printf (_("%u hops max\n"), max_ttl);
 
 	/* Performs traceroute */
 	for (ttl = min_ttl, found = 0; (ttl <= max_ttl) && !found; ttl++)
-		found = probe_ttl (t, protofd, icmpfd, &dst, ttl, retries, timeout,
-		                   niflags);
+		found = probe_ttl (protofd, icmpfd, &dst, ttl, retries, timeout);
 
 	/* Cleans up */
 	close (protofd);
@@ -511,7 +585,7 @@ usage (const char *path)
 	         "Print IPv6 network route to a host\n"), path);
 
 	fputs (_("\n"
-/*"  -A  send TCP ACK probes\n"*/
+"  -A  send TCP ACK probes\n"
 /*"  -d  enable debugging\n"*/
 /*"  -E  enable TCP Explicit Congestion Notification\n"*/
 "  -f  specify the initial hop limit (default: 1)\n"
@@ -524,7 +598,7 @@ usage (const char *path)
 /*"  -p  override base destination UDP port\n"*/
 /*"  -p  override source TCP port\n"*/
 "  -q  override the number of probes per hop (default: 3)\n"
-/*"  -S  send TCP SYN probes (default for TCP probes)\n"*/
+"  -S  send TCP SYN probes\n"
 "  -s  specify the source IPv6 address of probe packets\n"
 "  -V, --version  display program version and exit\n"
 /*"  -v, --verbose  display all kind of ICMPv6 errors\n"*/
@@ -574,13 +648,17 @@ int
 main (int argc, char *argv[])
 {
 	int val;
-	unsigned retries = 3, niflags = 0, wait = 5, minhlim = 1, maxhlim = 30;
+	unsigned retries = 3, wait = 5, minhlim = 1, maxhlim = 30;
 	const char *dsthost, *dstport, *srchost = NULL, *srcport = NULL;
 
-	while ((val = getopt (argc, argv, "f:hm:nq:s:Vw:")) != EOF)
+	while ((val = getopt (argc, argv, "Af:hm:nq:Ss:Vw:")) != EOF)
 	{
 		switch (val)
 		{
+			case 'A':
+				type = &ack_type;
+				break;
+
 			case 'f':
 				if ((minhlim = parse_hlim (optarg)) < 0)
 					return 1;
@@ -595,7 +673,7 @@ main (int argc, char *argv[])
 				break;
 
 			case 'n':
-				niflags |= NI_NUMERICHOST;
+				niflags |= NI_NUMERICHOST | NI_NUMERICSERV;
 				break;
 
 			case 'q':
@@ -609,6 +687,10 @@ main (int argc, char *argv[])
 				retries = l;
 				break;
 			}
+
+			case 'S':
+				type = &syn_type;
+				break;
 
 			case 's':
 				srchost = optarg;
@@ -635,6 +717,15 @@ main (int argc, char *argv[])
 		}
 	}
 
+	if (type == NULL)
+	{
+		/* Booooh, GNU coding styles say that is very bad!! */
+		/*if (strncmp (argv[0], "tcp", 3))*/
+			type = &syn_type;
+		/*else
+			type = &udp_type;*/
+	}
+
 	if (optind < argc)
 	{
 		dsthost = argv[optind++];
@@ -649,5 +740,5 @@ main (int argc, char *argv[])
 
 	setvbuf (stdout, NULL, _IONBF, 0);
 	return -traceroute (dsthost, dstport, srchost, srcport, wait, retries,
-	                    minhlim, maxhlim, niflags);
+	                    minhlim, maxhlim);
 }
