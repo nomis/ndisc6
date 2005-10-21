@@ -642,10 +642,9 @@ usage (const char *path)
 {
 	drop_priv ();
 
-	fprintf (stderr,
-	         _("Usage: %s [options] <IPv6 hostname/address> [port number]\n"
-	         /* [packet len]*/
-	         "Print IPv6 network route to a host\n"), path);
+	fprintf (stderr, _(
+"Usage: %s [options] <IPv6 hostname/address> [port number/packet length]\n"
+"Print IPv6 network route to a host\n"), path);
 
 	fputs (_("\n"
 "  -A  send TCP ACK probes\n"
@@ -679,7 +678,7 @@ version (void)
 	drop_priv ();
 
 	puts (
-"tcptraceroute6 : TCP/IPv6 traceroute tool "PACKAGE_VERSION
+"traceroute6 : TCP & UDP IPv6 traceroute tool "PACKAGE_VERSION
 " ($Rev$)\n built "__DATE__"\n"
 "Copyright (C) 2005 Remi Denis-Courmont");
 	puts (_(

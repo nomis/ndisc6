@@ -30,7 +30,7 @@ PACKAGE = ndisc6
 VERSION = 0.5.1
 
 sbin_PROGRAMS = ndisc6 rdisc6 traceroute6
-man8_MANS = $(sbin_PROGRAMS:%=%.8) tcptraceroute6.8
+man8_MANS = $(sbin_PROGRAMS:%=%.8)
 DOC = COPYING INSTALL NEWS README
 
 AM_CPPFLAGS = -DPACKAGE_VERSION=\"$(VERSION)\" $(CPPFLAGS)
@@ -72,6 +72,8 @@ install-man:
 		$(INSTALL) -m 0644 $$f $(DESTDIR)$(prefix)/man/man8/$$f || \
 			exit $$? ; \
 	done
+	cd $(DESTDIR)$(prefix)/man/man8 && \
+	ln -sf traceroute6.8 tcptraceroute6.8
 
 install-links:
 	cd $(DESTDIR)$(prefix)/bin && ln -sf traceroute6 tcptraceroute6
@@ -80,6 +82,7 @@ uninstall:
 	rm -f $(sbin_PROGRAMS:%=$(DESTDIR)$(prefix)/bin/%)
 	rm -f $(man8_MANS:%=$(DESTDIR)$(prefix)/man/man8/%)
 	rm -f $(DESTDIR)$(prefix)/bin/tcptraceroute6
+	rm -f $(DESTDIR)$(prefix)/man/man8/tcptraceroute6.8
 
 mostlyclean:
 	rm -f $(sbin_PROGRAMS) tcptraceroute6
