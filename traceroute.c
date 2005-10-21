@@ -58,7 +58,6 @@ typedef struct tracetype
 static int niflags = 0;
 static const tracetype *type = NULL;
 
-#define TCP_SOURCE_PORT 1024
 #define TCP_WINDOW 4096
 
 /****************************************************************************/
@@ -70,13 +69,27 @@ drop_priv (void)
 }
 
 
+static uint16_t getsourceport (void)
+{
+	static uint16_t p = 0;
+
+	if (p == 0)
+	{
+		p = ~getpid ();
+		if (p < 1025)
+			p += 1025;
+	}
+	return htons (p);
+}
+
+
 /* TCP/SYN probes */
 static int
 send_syn_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
 {
 	struct tcphdr th = { };
 
-	th.source = htons (TCP_SOURCE_PORT);
+	th.source = getsourceport ();
 	th.dest = port;
 	th.seq = htonl ((ttl << 24) | (n << 16) | getpid ());
 	th.doff = sizeof (th) / 4;
@@ -95,7 +108,7 @@ parse_syn_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
 	uint32_t seq;
 
 	if ((len < sizeof (*pth))
-	 || (pth->dest != htons (TCP_SOURCE_PORT))
+	 || (pth->dest != getsourceport ())
 	 || (pth->source != port)
 	 || (pth->ack == 0)
 	 || (pth->syn == pth->rst)
@@ -120,7 +133,7 @@ parse_syn_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 	uint32_t seq;
 
 	if ((len < 8)
-	 || (pth->source != htons (TCP_SOURCE_PORT))
+	 || (pth->source != getsourceport ())
 	 || (pth->dest != port))
 		return -1;
 
@@ -145,7 +158,7 @@ send_ack_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
 {
 	struct tcphdr th = { };
 
-	th.source = htons (TCP_SOURCE_PORT);
+	th.source = getsourceport ();
 	th.dest = port;
 	th.ack_seq = htonl ((ttl << 24) | (n << 16) | getpid ());
 	th.doff = sizeof (th) / 4;
@@ -164,7 +177,7 @@ parse_ack_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
 	uint32_t seq;
 
 	if ((len < sizeof (*pth))
-	 || (pth->dest != htons (TCP_SOURCE_PORT))
+	 || (pth->dest != getsourceport ())
 	 || (pth->source != port)
 	 || pth->syn
 	 || pth->ack
@@ -190,7 +203,7 @@ parse_ack_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 	uint32_t seq;
 
 	if ((len < 8)
-	 || (pth->source != htons (TCP_SOURCE_PORT))
+	 || (pth->source != getsourceport ())
 	 || (pth->dest != port))
 		return -1;
 

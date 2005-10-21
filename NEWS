@@ -17,6 +17,7 @@ TEST RELEASE 0.5.1 : Minor feature enhancement
 
 # Source address specification option for tcptraceroute6
 # TCP/ACK probes option for tcptraceroute6
+# Use a rather high source TCP port, dependant on PID
 
 =============================================================================
 TEST RELEASE 0.5.0 : Major feature enhancement
