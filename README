@@ -10,7 +10,7 @@ Copyright (C) 2005 Remi Denis-Courmont.
 - tcptraceroute6, a TCP/IPv6-based traceroute implementation.
 
   For detailled usage instructions, you should refer to the Unix manual
-pages ndisc6(8), rdisc6(8) and tcptraceroute6(8) which should be
+pages ndisc6(8), rdisc6(8) and traceroute6(8) which should be
 provided with your copy of the program.
   For instructions on compilation and installation of the package,
 refer to the provided INSTALL file.
@@ -27,7 +27,7 @@ Important portability note
 
   All programs are known to run on Linux (with either glibc or µclibc).
 rdisc6 should also work on any BSD variant. ndisc6 won't compile on a
-BSD system. tcptraceroute6 was not tested on BSD so far.
+BSD system. traceroute6 was not tested on BSD so far.
 
 -- 
 Remi Denis-Courmont <rdenis (at) simphalempin (dot) com>
