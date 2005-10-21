@@ -6,7 +6,8 @@ Copyright (C) 2005 Remi Denis-Courmont.
   This package gathers a few diagnostic tools for IPv6 networks :
 - ndisc6, which performs ICMPv6 Neighbor Discovery in userland,
 - rdisc6, which performs ICMPv6 Router Discovery in userland,
-- tcptraceroute6, which is a TCP/IPv6-based traceroute implementation.
+- traceroute6, yet another IPv6 implementation of traceroute,
+- tcptraceroute6, a TCP/IPv6-based traceroute implementation.
 
   For detailled usage instructions, you should refer to the Unix manual
 pages ndisc6(8), rdisc6(8) and tcptraceroute6(8) which should be
