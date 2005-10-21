@@ -17,7 +17,7 @@
 .SH NAME
 tcptraceroute6 \- TCP/IPv6 traceroute tool
 .SH SYNOPSIS
-.BR "tcptraceroute6" " [" "-n" "] [" "-f min_hop" "] [" "-m max_hop" "] ["
+.BR "tcptraceroute6" " [" "-AnS" "] [" "-f min_hop" "] [" "-m max_hop" "] ["
 .BR "-q attempts" "] [" "-s source" "] [" "-w wait" "] <"
 .BR "hostname/address" "> [" "port" "]"
 
@@ -30,6 +30,13 @@ and specified destination, by sending packets while incrementing their hop
 limit, until the final destination is reached.
 
 .SH OPTIONS
+
+.TP
+.B "\-A"
+Send TCP/ACK probe packets. That's very efficient against stateless
+firewalls (e.g. the official Linux kernel versions up to and including 2.4.31
+and 2.6.14), and utterly helpless against stateful ones. Note that TCP/ACK
+probing cannot determine whether the destination TCP port is open or not.
 
 .TP
 .B "\-f" "
@@ -53,6 +60,10 @@ up the traceroute significantly.
 .TP
 .B "\-q"
 Override the number of probes sent to each hop (default: 3).
+
+.TP
+.B "\-S"
+Use TCP/SYN probe packets. That's the default for tcptraceroute6.
 
 .TP
 .B "\-s"
