@@ -24,10 +24,11 @@ LDFLAGS =
 CPPFLAGS =
 #LINK = $(CC)
 INSTALL = install -c
+STRIP = strip
 prefix = /usr/local
 
 PACKAGE = ndisc6
-VERSION = 0.5.1
+VERSION = 0.5.2
 
 sbin_PROGRAMS = ndisc6 rdisc6 traceroute6
 man8_MANS = $(sbin_PROGRAMS:%=%.8)
@@ -41,7 +42,11 @@ traceroute6_CPPFLAGS = $(AM_CPPFLAGS)
 mandir = $(prefix)/man
 bindir = $(prefix)/bin
 
-all: $(sbin_PROGRAMS) $(DOC) tcptraceroute6
+all: build-bin build-doc
+
+build-bin: $(sbin_PROGRAMS) tcptraceroute6
+
+build-doc: $(DOC)
 
 ndisc6 rdisc6: %: ndisc.c Makefile
 	$(CC) $($*_CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $<
@@ -55,39 +60,40 @@ tcptraceroute6: traceroute6
 COPYING: /usr/share/common-licenses/GPL-2
 	ln -s $< $@
 
-install: all install-man install-links
-	mkdir -p $(DESTDIR)$(bindir)
-	@for f in $(sbin_PROGRAMS); do \
-		c="$(INSTALL) -m 04755 $$f $(DESTDIR)$(bindir)/$$f" ; \
-		echo $$c ; \
-		$$c || exit $$? ; \
-	done
+install: install-bin install-man
 
-install-strip: all install-man install-links
-	mkdir -p $(DESTDIR)$(bindir)
-	@for f in $(sbin_PROGRAMS); do \
-		c="$(INSTALL) -s -m 04755 $$f $(DESTDIR)$(bindir)/$$f" ; \
-		echo $$c ; \
-		$$c || exit $$? ; \
-	done
+install-strip: install-bin-strip install-man
 
 install-man:
-	mkdir -p $(DESTDIR)$(mandir)/man8
+	mkdir -p "$(DESTDIR)$(mandir)/man8"
 	@for f in $(man8_MANS); do \
-		c="$(INSTALL) -m 0644 $$f $(DESTDIR)$(mandir)/man8/$$f" ; \
+		c="$(INSTALL) -m 0644 $$f \"$(DESTDIR)$(mandir)/man8/$$f\"" ; \
 		echo $$c ; \
-		$$c || exit $$? ; \
+		eval $$c || exit $$? ; \
 	done
-	cd $(DESTDIR)$(mandir)/man8 && ln -sf traceroute6.8 tcptraceroute6.8
+	cd "$(DESTDIR)$(mandir)/man8" && ln -sf traceroute6.8 tcptraceroute6.8
 
-install-links:
-	cd $(DESTDIR)$(bindir) && ln -sf traceroute6 tcptraceroute6
+install-bin: build-bin
+	mkdir -p "$(DESTDIR)$(bindir)"
+	@for f in $(sbin_PROGRAMS); do \
+		c="$(INSTALL) -m 04755 $$f \"$(DESTDIR)$(bindir)/$$f\"" ; \
+		echo $$c ; \
+		eval $$c || exit $$? ; \
+	done
+	cd "$(DESTDIR)$(bindir)" && ln -sf traceroute6 tcptraceroute6
+
+install-bin-strip: install-bin
+	@for f in $(sbin_PROGRAMS); do \
+		c="$(STRIP) \"$(DESTDIR)$(bindir)/$$f\"" ; \
+		echo $$c ; \
+		eval $$c || exit $$? ; \
+	done
 
 uninstall:
-	rm -f $(sbin_PROGRAMS:%=$(DESTDIR)$(bindir)/%)
-	rm -f $(man8_MANS:%=$(DESTDIR)$(mandir)/man8/%)
-	rm -f $(DESTDIR)$(bindir)/tcptraceroute6
-	rm -f $(DESTDIR)$(mandir)/man8/tcptraceroute6.8
+	rm -f $(sbin_PROGRAMS:%="$(DESTDIR)$(bindir)/%")
+	rm -f $(man8_MANS:%="$(DESTDIR)$(mandir)/man8/%")
+	rm -f "$(DESTDIR)$(bindir)/tcptraceroute6"
+	rm -f "$(DESTDIR)$(mandir)/man8/tcptraceroute6.8"
 
 mostlyclean:
 	rm -f $(sbin_PROGRAMS) tcptraceroute6
@@ -105,6 +111,6 @@ dist:
 	tar c $(PACKAGE)-$(VERSION) | bzip2 > $(PACKAGE)-$(VERSION).tar.bz2
 	rm -Rf $(PACKAGE)-$(VERSION)
 
-.PHONY: clean mostlyclean distclean all install
+.PHONY: clean mostlyclean distclean all install build-bin build-doc
 .PHONY: install-man install-strip install-links
 
