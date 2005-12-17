@@ -42,11 +42,7 @@ traceroute6_CPPFLAGS = $(AM_CPPFLAGS)
 mandir = $(prefix)/man
 bindir = $(prefix)/bin
 
-all: build-bin build-doc
-
-build-bin: $(sbin_PROGRAMS) tcptraceroute6
-
-build-doc: $(DOC)
+all: $(sbin_PROGRAMS) tcptraceroute6
 
 ndisc6 rdisc6: %: ndisc.c Makefile
 	$(CC) $($*_CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $<
@@ -56,9 +52,6 @@ traceroute6: %: traceroute.c Makefile
 
 tcptraceroute6: traceroute6
 	ln -sf traceroute6 $@
-
-COPYING: /usr/share/common-licenses/GPL-2
-	ln -s $< $@
 
 install: install-bin install-man
 
@@ -73,7 +66,7 @@ install-man:
 	done
 	cd "$(DESTDIR)$(mandir)/man8" && ln -sf traceroute6.8 tcptraceroute6.8
 
-install-bin: build-bin
+install-bin: all
 	mkdir -p "$(DESTDIR)$(bindir)"
 	@for f in $(sbin_PROGRAMS); do \
 		c="$(INSTALL) -m 04755 $$f \"$(DESTDIR)$(bindir)/$$f\"" ; \
@@ -111,6 +104,5 @@ dist:
 	tar c $(PACKAGE)-$(VERSION) | bzip2 > $(PACKAGE)-$(VERSION).tar.bz2
 	rm -Rf $(PACKAGE)-$(VERSION)
 
-.PHONY: clean mostlyclean distclean all install build-bin build-doc
-.PHONY: install-man install-strip install-links
+.PHONY: clean mostlyclean distclean all install install-strip
 
