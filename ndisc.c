@@ -227,10 +227,10 @@ parseadv (const uint8_t *buf, size_t len, const struct sockaddr_in6 *tgt,
 		if (optlen == 0)
 			break; /* invalid length */
 
+		if (len < optlen) /* length > remaining bytes */
+			break;
 		len -= optlen;
 
-		if (len < 0) /* length > remaining bytes */
-			break;
 
 		/* skips unrecognized option */
 		if (ptr[0] != ND_OPT_TARGET_LINKADDR)
