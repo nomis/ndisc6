@@ -13,13 +13,19 @@ informations on this program, see README. For syntax details, read the
 provided manual pages.
 
 =============================================================================
+TEST RELEASE 0.5.1 : Minor bug fixes
+
+# Fix minor input buffer boundary check error.
+# Fix detection of invalid hop limits on the command line.
+
+=============================================================================
 TEST RELEASE 0.5.1 : Minor feature enhancement
 
-# Add traditional UDP traceroute to traceroute6 (formerly tcptraceroute6)
-# tcptraceroute6 is now an alias for "traceroute6 -S"
-# Source address specification option for (tcp)traceroute6
-# TCP/ACK probes option for (tcp)traceroute6
-# Use a rather high source TCP port, dependant on PID
+# Add traditional UDP traceroute to traceroute6 (formerly tcptraceroute6).
+# tcptraceroute6 is now an alias for “traceroute6 -S”.
+# Source address specification option for (tcp)traceroute6.
+# TCP/ACK probes option for (tcp)traceroute6.
+# Use a rather high source TCP port, dependant on PID.
 
 =============================================================================
 TEST RELEASE 0.5.0 : Major feature enhancement
