@@ -4,7 +4,7 @@
  */
 
 /***********************************************************************
- *  Copyright (C) 2005 Rémi Denis-Courmont.                            *
+ *  Copyright (C) 2005-2006 Rémi Denis-Courmont.                       *
  *  This program is free software; you can redistribute and/or modify  *
  *  it under the terms of the GNU General Public License as published  *
  *  by the Free Software Foundation; version 2 of the license.         *
@@ -88,8 +88,10 @@ static uint16_t getsourceport (void)
 static int
 send_udp_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
 {
-	struct udphdr uh = { };
+	struct udphdr uh;
+	memset (&uh, 0, sizeof (uh));
 
+	(void)n;
 	uh.source = getsourceport ();
 	uh.dest = htons (ntohs (port) + ttl);
 	uh.len = htons (sizeof (uh));
@@ -121,7 +123,7 @@ parse_udp_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 }
 
 
-const static tracetype udp_type =
+static const tracetype udp_type =
 	{ SOCK_DGRAM,	IPPROTO_UDP, 6,
 	  send_udp_probe, NULL, parse_udp_error };
 
@@ -130,8 +132,9 @@ const static tracetype udp_type =
 static int
 send_syn_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
 {
-	struct tcphdr th = { };
+	struct tcphdr th;
 
+	memset (&th, 0, sizeof (th));
 	th.source = getsourceport ();
 	th.dest = port;
 	th.seq = htonl ((ttl << 24) | (n << 16) | getpid ());
@@ -159,7 +162,7 @@ parse_syn_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
 		return -1;
 
 	seq = ntohl (pth->ack_seq) - 1;
-	if ((seq & 0xffff) != getpid ())
+	if ((seq & 0xffff) != (unsigned)getpid ())
 		return -1;
 
 	*ttl = seq >> 24;
@@ -181,7 +184,7 @@ parse_syn_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 		return -1;
 
 	seq = ntohl (pth->seq);
-	if ((seq & 0xffff) != getpid ())
+	if ((seq & 0xffff) != (unsigned)getpid ())
 		return -1;
 
 	*ttl = seq >> 24;
@@ -190,7 +193,7 @@ parse_syn_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 }
 
 
-const static tracetype syn_type =
+static const tracetype syn_type =
 	{ SOCK_STREAM,	IPPROTO_TCP, 16,
 	  send_syn_probe, parse_syn_resp, parse_syn_error };
 
@@ -199,8 +202,9 @@ const static tracetype syn_type =
 static int
 send_ack_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
 {
-	struct tcphdr th = { };
+	struct tcphdr th;
 
+	memset (&th, 0, sizeof (th));
 	th.source = getsourceport ();
 	th.dest = port;
 	th.ack_seq = htonl ((ttl << 24) | (n << 16) | getpid ());
@@ -229,7 +233,7 @@ parse_ack_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
 		return -1;
 
 	seq = ntohl (pth->seq);
-	if ((seq & 0xffff) != getpid ())
+	if ((seq & 0xffff) != (unsigned)getpid ())
 		return -1;
 
 	*ttl = seq >> 24;
@@ -251,7 +255,7 @@ parse_ack_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 		return -1;
 
 	seq = ntohl (pth->ack_seq);
-	if ((seq & 0xffff) != getpid ())
+	if ((seq & 0xffff) != (unsigned)getpid ())
 		return -1;
 
 	*ttl = seq >> 24;
@@ -260,7 +264,7 @@ parse_ack_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 }
 
 
-const static tracetype ack_type =
+static const tracetype ack_type =
 	{ SOCK_STREAM,	IPPROTO_TCP, 16,
 	  send_ack_probe, parse_ack_resp, parse_ack_error };
 
@@ -306,13 +310,14 @@ static int
 probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
            unsigned ttl, unsigned retries, unsigned timeout)
 {
-	struct in6_addr hop = { }; /* hop if known from previous probes */
+	struct in6_addr hop; /* hop if known from previous probes */
 	unsigned n;
 	int found = 0;
 	int state = -1; /* type of response received so far (-1: none,
 		0: normal, 1: closed, 2: open) */
 	/* see also: found (0: not found, <0: unreachable, >0: reached) */
 
+	memset (&hop, 0, sizeof (hop));
 	printf ("%2d ", ttl);
 	setsockopt (protofd, SOL_IPV6, IPV6_UNICAST_HOPS, &ttl, sizeof (ttl));
 
