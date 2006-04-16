@@ -422,7 +422,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				                (struct sockaddr *)&peer, &peerlen);
 
 				/* FIXME: support further (all?) ICMPv6 errors */
-				if ((len < (sizeof (pkt.hdr) + sizeof (pkt.inhdr)))
+				if ((len < (int)(sizeof (pkt.hdr) + sizeof (pkt.inhdr)))
 				 || ((pkt.hdr.icmp6_type != ICMP6_DST_UNREACH)
 				  && ((pkt.hdr.icmp6_type != ICMP6_TIME_EXCEEDED)
 				   || (pkt.hdr.icmp6_code != ICMP6_TIME_EXCEED_TRANSIT)))
@@ -433,7 +433,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 				len = type->parse_err (pkt.buf, len, &pttl, &pn,
 				                       dst->sin6_port);
-				if ((len < 0) || (pttl != ttl) || ((pn != n) && (pn != -1)))
+				if ((len < 0) || (pttl != ttl) || (pn != n))
 					continue;
 
 				/* genuine ICMPv6 error that concerns us */
@@ -502,9 +502,10 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
                const char *dsthost, const char *dstport,
                const char *srchost, const char *srcport)
 {
-	struct addrinfo hints = { }, *res;
+	struct addrinfo hints, *res;
 	int val;
 
+	memset (&hints, 0, sizeof (hints));
 	hints.ai_family = AF_INET6;
 	hints.ai_socktype = type->res_socktype;
 
@@ -567,7 +568,7 @@ traceroute (const char *dsthost, const char *dstport,
             unsigned timeout, unsigned retries,
             unsigned min_ttl, unsigned max_ttl)
 {
-	struct sockaddr_in6 dst = { };
+	struct sockaddr_in6 dst;
 	int protofd, icmpfd, found;
 	unsigned ttl;
 
@@ -611,6 +612,7 @@ traceroute (const char *dsthost, const char *dstport,
 	}
 
 	/* Defines destination */
+	memset (&dst, 0, sizeof (dst));
 	if (connect_proto (protofd, &dst, dsthost, dstport, srchost, srcport))
 		goto error;
 	printf (_("port %u, "), ntohs (dst.sin6_port));
@@ -727,7 +729,7 @@ main (int argc, char *argv[])
 				break;
 
 			case 'f':
-				if ((minhlim = parse_hlim (optarg)) < 0)
+				if ((minhlim = parse_hlim (optarg)) == (unsigned)(-1))
 					return 1;
 				break;
 
@@ -735,7 +737,7 @@ main (int argc, char *argv[])
 				return usage (argv[0]);
 
 			case 'm':
-				if ((maxhlim = parse_hlim (optarg)) < 0)
+				if ((maxhlim = parse_hlim (optarg)) == (unsigned)(-1))
 					return 1;
 				break;
 
