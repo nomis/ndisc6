@@ -1,5 +1,5 @@
 RELEASE NOTES for NDisc6
-version 0.5.1
+version 0.5.2
 =========================
 $Id$
 
@@ -13,7 +13,7 @@ informations on this program, see README. For syntax details, read the
 provided manual pages.
 
 =============================================================================
-TEST RELEASE 0.5.1 : Minor bug fixes
+TEST RELEASE 0.5.2 : Minor bug fixes
 
 # Fix minor input buffer boundary check error.
 # Fix detection of invalid hop limits on the command line.
