@@ -18,7 +18,7 @@
 # *  http://www.gnu.org/copyleft/gpl.html                               *
 # ***********************************************************************
 
-CC = gcc
+CC = cc
 CFLAGS = -O2 -Wall -g
 LDFLAGS =
 CPPFLAGS =
@@ -100,7 +100,7 @@ dist:
 	mkdir -v $(PACKAGE)-$(VERSION)
 	cp ndisc.c traceroute.c $(sbin_PROGRAMS:%=%.8) Makefile $(DOC) \
 		$(PACKAGE)-$(VERSION)/
-	svn -v log > $(PACKAGE)-$(VERSION)/ChangeLog
+	LANG=C svn -v log > $(PACKAGE)-$(VERSION)/ChangeLog
 	tar c $(PACKAGE)-$(VERSION) | bzip2 > $(PACKAGE)-$(VERSION).tar.bz2
 	rm -Rf $(PACKAGE)-$(VERSION)
 
