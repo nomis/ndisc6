@@ -43,6 +43,12 @@
 #include <arpa/inet.h> /* inet_ntop() */
 #include <fcntl.h>
 #include <errno.h>
+#ifndef SOL_IPV6
+# define SOL_IPV6 IPPROTO_IPV6
+#endif
+#ifndef SOL_ICMPV6
+# define SOL_ICMPV6 IPPROTO_ICMPV6
+#endif
 
 
 typedef struct tracetype
