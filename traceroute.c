@@ -314,6 +314,37 @@ printdelay (const struct timeval *from, const struct timeval *to)
 }
 
 
+static void
+print_icmp_code (const struct icmp6_hdr *hdr)
+{
+	if (hdr->icmp6_type == ICMP6_DST_UNREACH)
+	{
+		/* No path to destination */
+		char c = '\0';
+
+		switch (hdr->icmp6_code)
+		{
+			case ICMP6_DST_UNREACH_NOROUTE:
+				c = 'N';
+				break;
+
+			case ICMP6_DST_UNREACH_ADMIN:
+				c = 'S';
+				break;
+
+			case ICMP6_DST_UNREACH_ADDR:
+				c = 'H';
+				break;
+
+			case ICMP6_DST_UNREACH_NOPORT:
+				break;
+		}
+
+		if (c)
+			printf ("!%c ", c);
+	}
+}
+// 
 static int
 probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
            unsigned ttl, unsigned retries, unsigned timeout)
@@ -333,7 +364,9 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 	{
 		struct timeval tv = { timeout, 0 }, sent, recvd;
 		unsigned pttl, pn;
-		int val;
+		int maxfd;
+
+		maxfd = 1 + (icmpfd > protofd ? icmpfd : protofd);
 
 		gettimeofday (&sent, NULL);
 		if (type->send_probe (protofd, ttl, n, dst->sin6_port))
@@ -342,36 +375,29 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 			return -1;
 		}
 
-		do
+		for (;;)
 		{
 			fd_set rdset;
+			int val;
 
 			FD_ZERO (&rdset);
 			FD_SET (icmpfd, &rdset);
-			val = icmpfd;
+			FD_SET (protofd, &rdset);
 
-			if (type->parse_resp != NULL)
-			{
-				FD_SET (protofd, &rdset);
-				if (protofd > val)
-					val = protofd;
-			}
-			val++;
-
-			val = select (val, &rdset, NULL, NULL, &tv);
+			val = select (maxfd, &rdset, NULL, NULL, &tv);
 			if (val < 0) /* interrupted by signal - well, not really */
 				return -1;
 
 			if (val == 0)
 			{
 				fputs (" *", stdout);
-				continue;
+				break;
 			}
 
 			gettimeofday (&recvd, NULL);
 
 			/* Receive final packet when host reached */
-			if ((type->parse_resp != NULL) && FD_ISSET (protofd, &rdset))
+			if (FD_ISSET (protofd, &rdset))
 			{
 				uint8_t buf[1240];
 				int len;
@@ -379,11 +405,35 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				len = recv (protofd, buf, sizeof (buf), 0);
 				if (len < 0)
 				{
-					if (errno == EAGAIN)
-						continue;
-					perror (_("Receive error"));
-					return -1;
+					switch (errno)
+					{
+						case EPROTO:
+							/* Parameter problem seemingly can't be read from
+							 * the ICMPv6 socket, regardless of the filter. */
+							break;
+
+						case EAGAIN:
+						case ECONNREFUSED:
+							continue;
+
+						default:
+							/* These are very bad errors (-> bugs) */
+							perror (_("Receive error"));
+							return -1;
+					}
+
+					if (state == -1)
+					{
+						printname ((struct sockaddr *)dst, sizeof (*dst));
+						state = 1;
+						found = ttl;
+					}
+					printdelay (&sent, &recvd);
+					break;
 				}
+
+				if (type->parse_resp == NULL)
+					continue;
 
 				len = type->parse_resp (buf, len, &pttl, &pn, dst->sin6_port);
 				if ((len >= 0) && (n == pn) && (pttl = ttl))
@@ -414,8 +464,8 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 					}
 
 					printdelay (&sent, &recvd);
-					val = 0;
 					found = ttl;
+					break;
 				}
 			}
 
@@ -435,7 +485,6 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				len = recvfrom (icmpfd, &pkt, sizeof (pkt), 0,
 				                (struct sockaddr *)&peer, &peerlen);
 
-				/* FIXME: support further (all?) ICMPv6 errors */
 				if ((len < (int)(sizeof (pkt.hdr) + sizeof (pkt.inhdr)))
 				 || ((pkt.hdr.icmp6_type != ICMP6_DST_UNREACH)
 				  && ((pkt.hdr.icmp6_type != ICMP6_TIME_EXCEEDED)
@@ -458,40 +507,20 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 					printname ((struct sockaddr *)&peer, peerlen);
 					state = 0;
 				}
-				printdelay (&sent, &recvd);
-				val = 0;
 
-				if (pkt.hdr.icmp6_type == ICMP6_DST_UNREACH)
+				if ((found == 0) && (pkt.hdr.icmp6_type == ICMP6_DST_UNREACH))
 				{
-					/* No path to destination */
-					char c = '\0';
-					found = -ttl;
-
-					switch (pkt.hdr.icmp6_code)
-					{
-						case ICMP6_DST_UNREACH_NOROUTE:
-							c = 'N';
-							break;
-
-						case ICMP6_DST_UNREACH_ADMIN:
-							c = 'S';
-							break;
-
-						case ICMP6_DST_UNREACH_ADDR:
-							c = 'H';
-							break;
-
-						case ICMP6_DST_UNREACH_NOPORT:
-							found = ttl; /* success! */
-							break;
-					}
-
-					if (c)
-						printf ("!%c ", c);
+					if (pkt.hdr.icmp6_code == ICMP6_DST_UNREACH_NOPORT)
+						found = ttl;
+					else
+						found = -ttl;
 				}
+
+				printdelay (&sent, &recvd);
+				print_icmp_code (&pkt.hdr);
+				break;
 			}
 		}
-		while (val > 0);
 	}
 	puts ("");
 	return found;
@@ -511,6 +540,7 @@ getaddrinfo_err (const char *host, const char *serv,
 	}
 	return 0;
 }
+
 
 static int
 connect_proto (int fd, struct sockaddr_in6 *dst,
