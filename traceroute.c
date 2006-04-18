@@ -54,7 +54,7 @@ typedef struct tracetype
 	int (*parse_resp) (const void *data, size_t len, unsigned *ttl,
 	                   unsigned *n, uint16_t port);
 	int (*parse_err) (const void *data, size_t len, unsigned *ttl,
-	                   unsigned *n, uint16_t port);
+	                  unsigned *n, uint16_t port);
 } tracetype;
 
 
@@ -120,7 +120,7 @@ parse_udp_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 		return -1;
 
 	*ttl = rport - port;
-	*n = -1;
+	*n = (unsigned)(-1);
 	return 0;
 }
 
@@ -441,7 +441,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 				len = type->parse_err (pkt.buf, len, &pttl, &pn,
 				                       dst->sin6_port);
-				if ((len < 0) || (pttl != ttl) || (pn != n))
+				if ((len < 0) || (pttl != ttl) || ((pn != n) && (pn != -1)))
 					continue;
 
 				/* genuine ICMPv6 error that concerns us */
@@ -457,7 +457,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				if (pkt.hdr.icmp6_type == ICMP6_DST_UNREACH)
 				{
 					/* No path to destination */
-					char c = 'E';
+					char c = '\0';
 					found = -ttl;
 
 					switch (pkt.hdr.icmp6_code)
