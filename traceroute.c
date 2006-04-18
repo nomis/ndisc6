@@ -41,6 +41,8 @@
 #include <netinet/icmp6.h>
 #include <netdb.h>
 #include <arpa/inet.h> /* inet_ntop() */
+#include <fcntl.h>
+#include <errno.h>
 
 
 typedef struct tracetype
@@ -370,7 +372,12 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 				len = recv (protofd, buf, sizeof (buf), 0);
 				if (len < 0)
-					continue;
+				{
+					if (errno == EAGAIN)
+						continue;
+					perror (_("Receive error"));
+					return -1;
+				}
 
 				len = type->parse_resp (buf, len, &pttl, &pn, dst->sin6_port);
 				if ((len >= 0) && (n == pn) && (pttl = ttl))
@@ -570,7 +577,7 @@ traceroute (const char *dsthost, const char *dstport,
             unsigned min_ttl, unsigned max_ttl)
 {
 	struct sockaddr_in6 dst;
-	int protofd, icmpfd, found;
+	int protofd, icmpfd, val;
 	unsigned ttl;
 
 	/* Creates ICMPv6 socket to collect error packets */
@@ -592,6 +599,13 @@ traceroute (const char *dsthost, const char *dstport,
 
 	/* Drops privileges permanently */
 	drop_priv ();
+
+	val = fcntl (icmpfd, F_GETFL);
+	fcntl (icmpfd, F_SETFL, O_NONBLOCK | ((val != -1) ? val : 0));
+	fcntl (icmpfd, F_SETFD, FD_CLOEXEC);
+	val = fcntl (protofd, F_GETFL);
+	fcntl (protofd, F_SETFL, O_NONBLOCK | ((val != -1) ? val : 0));
+	fcntl (protofd, F_SETFD, FD_CLOEXEC);
 
 	/* Set ICMPv6 filter */
 	{
@@ -620,13 +634,13 @@ traceroute (const char *dsthost, const char *dstport,
 	printf (_("%u hops max\n"), max_ttl);
 
 	/* Performs traceroute */
-	for (ttl = min_ttl, found = 0; (ttl <= max_ttl) && !found; ttl++)
-		found = probe_ttl (protofd, icmpfd, &dst, ttl, retries, timeout);
+	for (ttl = min_ttl, val = 0; (ttl <= max_ttl) && !val; ttl++)
+		val = probe_ttl (protofd, icmpfd, &dst, ttl, retries, timeout);
 
 	/* Cleans up */
 	close (protofd);
 	close (icmpfd);
-	return found > 0 ? 0 : -2;
+	return val > 0 ? 0 : -2;
 
 error:
 	close (protofd);
