@@ -26,8 +26,9 @@ Important portability note
 ==========================
 
   All programs are known to run on Linux (with either glibc or µclibc).
-rdisc6 should also work on any BSD variant. ndisc6 won't compile on a
-BSD system. traceroute6 was not tested on BSD so far.
+rdisc6, traceroute6 and tcptraceroute6 should also work on any recent
+open-source BSD variant (GNU make is required). ndisc6 won't compile on
+a BSD system.
 
 -- 
 Remi Denis-Courmont <rdenis (at) simphalempin (dot) com>
