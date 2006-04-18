@@ -26,7 +26,7 @@
 #define N_( str ) (str)
 #define _( str ) (str)
 
-#define _GNU_SOURCE
+#define _BSD_SOURCE
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h> /* div() */
@@ -94,9 +94,9 @@ send_udp_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
 	memset (&uh, 0, sizeof (uh));
 
 	(void)n;
-	uh.source = getsourceport ();
-	uh.dest = htons (ntohs (port) + ttl);
-	uh.len = htons (sizeof (uh));
+	uh.uh_sport = getsourceport ();
+	uh.uh_dport = htons (ntohs (port) + ttl);
+	uh.uh_ulen = htons (sizeof (uh));
 
 	return (send (fd, &uh, sizeof (uh), 0) == sizeof (uh)) ? 0 : -1;
 }
@@ -110,11 +110,11 @@ parse_udp_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 	uint16_t rport;
 
 	if ((len < 4)
-	 || (puh->source != getsourceport ())
-	 || (puh->len != htons (sizeof (*puh))))
+	 || (puh->uh_sport != getsourceport ())
+	 || (puh->uh_ulen != htons (sizeof (*puh))))
 		return -1;
 
-	rport = ntohs (puh->dest);
+	rport = ntohs (puh->uh_dport);
 	port = ntohs (port);
 	if ((rport < port) || (rport > port + 255))
 		return -1;
@@ -137,12 +137,12 @@ send_syn_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
 	struct tcphdr th;
 
 	memset (&th, 0, sizeof (th));
-	th.source = getsourceport ();
-	th.dest = port;
-	th.seq = htonl ((ttl << 24) | (n << 16) | getpid ());
-	th.doff = sizeof (th) / 4;
-	th.syn = 1;
-	th.window = htons (TCP_WINDOW);
+	th.th_sport = getsourceport ();
+	th.th_dport = port;
+	th.th_seq = htonl ((ttl << 24) | (n << 16) | getpid ());
+	th.th_off = sizeof (th) / 4;
+	th.th_flags = TH_SYN;
+	th.th_win = htons (TCP_WINDOW);
 
 	return (send (fd, &th, sizeof (th), 0) == sizeof (th)) ? 0 : -1;
 }
@@ -156,20 +156,20 @@ parse_syn_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
 	uint32_t seq;
 
 	if ((len < sizeof (*pth))
-	 || (pth->dest != getsourceport ())
-	 || (pth->source != port)
-	 || (pth->ack == 0)
-	 || (pth->syn == pth->rst)
-	 || (pth->doff < (sizeof (*pth) / 4)))
+	 || (pth->th_dport != getsourceport ())
+	 || (pth->th_sport != port)
+	 || ((pth->th_flags & TH_ACK) == 0)
+	 || (((pth->th_flags & TH_SYN) != 0) == ((pth->th_flags & TH_RST) != 0))
+	 || (pth->th_off < (sizeof (*pth) / 4)))
 		return -1;
 
-	seq = ntohl (pth->ack_seq) - 1;
+	seq = ntohl (pth->th_ack) - 1;
 	if ((seq & 0xffff) != (unsigned)getpid ())
 		return -1;
 
 	*ttl = seq >> 24;
 	*n = (seq >> 16) & 0xff;
-	return 1 + pth->syn;
+	return 1 + ((pth->th_flags & TH_SYN) == TH_SYN);
 }
 
 
@@ -181,11 +181,11 @@ parse_syn_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 	uint32_t seq;
 
 	if ((len < 8)
-	 || (pth->source != getsourceport ())
-	 || (pth->dest != port))
+	 || (pth->th_sport != getsourceport ())
+	 || (pth->th_dport != port))
 		return -1;
 
-	seq = ntohl (pth->seq);
+	seq = ntohl (pth->th_seq);
 	if ((seq & 0xffff) != (unsigned)getpid ())
 		return -1;
 
@@ -207,12 +207,12 @@ send_ack_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
 	struct tcphdr th;
 
 	memset (&th, 0, sizeof (th));
-	th.source = getsourceport ();
-	th.dest = port;
-	th.ack_seq = htonl ((ttl << 24) | (n << 16) | getpid ());
-	th.doff = sizeof (th) / 4;
-	th.ack = 1;
-	th.window = htons (TCP_WINDOW);
+	th.th_sport = getsourceport ();
+	th.th_dport = port;
+	th.th_ack = htonl ((ttl << 24) | (n << 16) | getpid ());
+	th.th_off = sizeof (th) / 4;
+	th.th_flags = TH_ACK;
+	th.th_win = htons (TCP_WINDOW);
 
 	return (send (fd, &th, sizeof (th), 0) == sizeof (th)) ? 0 : -1;
 }
@@ -226,15 +226,15 @@ parse_ack_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
 	uint32_t seq;
 
 	if ((len < sizeof (*pth))
-	 || (pth->dest != getsourceport ())
-	 || (pth->source != port)
-	 || pth->syn
-	 || pth->ack
-	 || (!pth->rst)
-	 || (pth->doff < (sizeof (*pth) / 4)))
+	 || (pth->th_dport != getsourceport ())
+	 || (pth->th_sport != port)
+	 || (pth->th_flags & TH_SYN)
+	 || (pth->th_flags & TH_ACK)
+	 || ((pth->th_flags & TH_RST) == 0)
+	 || (pth->th_off < (sizeof (*pth) / 4)))
 		return -1;
 
-	seq = ntohl (pth->seq);
+	seq = ntohl (pth->th_seq);
 	if ((seq & 0xffff) != (unsigned)getpid ())
 		return -1;
 
@@ -252,11 +252,11 @@ parse_ack_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 	uint32_t seq;
 
 	if ((len < 8)
-	 || (pth->source != getsourceport ())
-	 || (pth->dest != port))
+	 || (pth->th_sport != getsourceport ())
+	 || (pth->th_dport != port))
 		return -1;
 
-	seq = ntohl (pth->ack_seq);
+	seq = ntohl (pth->th_ack);
 	if ((seq & 0xffff) != (unsigned)getpid ())
 		return -1;
 
