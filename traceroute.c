@@ -323,22 +323,9 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 	for (n = 0; n < retries; n++)
 	{
-		fd_set rdset;
 		struct timeval tv = { timeout, 0 }, sent, recvd;
 		unsigned pttl, pn;
-		int val, maxfd;
-
-		FD_ZERO (&rdset);
-		FD_SET (icmpfd, &rdset);
-		maxfd = icmpfd;
-
-		if (type->parse_resp != NULL)
-		{
-			FD_SET (protofd, &rdset);
-			if (protofd > maxfd)
-				maxfd = protofd;
-		}
-		maxfd++;
+		int val;
 
 		gettimeofday (&sent, NULL);
 		if (type->send_probe (protofd, ttl, n, dst->sin6_port))
@@ -349,7 +336,21 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 		do
 		{
-			val = select (maxfd, &rdset, NULL, NULL, &tv);
+			fd_set rdset;
+
+			FD_ZERO (&rdset);
+			FD_SET (icmpfd, &rdset);
+			val = icmpfd;
+
+			if (type->parse_resp != NULL)
+			{
+				FD_SET (protofd, &rdset);
+				if (protofd > val)
+					val = protofd;
+			}
+			val++;
+
+			val = select (val, &rdset, NULL, NULL, &tv);
 			if (val < 0) /* interrupted by signal - well, not really */
 				return -1;
 
@@ -449,7 +450,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				if (pkt.hdr.icmp6_type == ICMP6_DST_UNREACH)
 				{
 					/* No path to destination */
-					char c = '\0';
+					char c = 'E';
 					found = -ttl;
 
 					switch (pkt.hdr.icmp6_code)

@@ -28,7 +28,7 @@ STRIP = strip
 prefix = /usr/local
 
 PACKAGE = ndisc6
-VERSION = 0.5.2
+VERSION = 0.5.3
 
 sbin_PROGRAMS = ndisc6 rdisc6 traceroute6
 man8_MANS = $(sbin_PROGRAMS:%=%.8)
