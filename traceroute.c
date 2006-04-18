@@ -441,7 +441,8 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 				len = type->parse_err (pkt.buf, len, &pttl, &pn,
 				                       dst->sin6_port);
-				if ((len < 0) || (pttl != ttl) || ((pn != n) && (pn != -1)))
+				if ((len < 0) || (pttl != ttl)
+				 || ((pn != n) && (pn != (unsigned)(-1))))
 					continue;
 
 				/* genuine ICMPv6 error that concerns us */
