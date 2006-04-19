@@ -72,6 +72,15 @@ AC_SEARCH_LIBS(inet_ntop, [nsl])
 
 # Checks for optionnal features
 AS_MESSAGE([checking optional features...])
+AC_MSG_CHECKING([if installed programs should be setuid])
+AC_ARG_ENABLE(suid-install,
+              [AS_HELP_STRING(--disable-suid-install,
+                              [do not set the SetUID bit on installed programs])])
+AS_IF([test "x${enable_suid_install}" != "xno"],
+	[enable_suid_install=yes])
+AM_CONDITIONAL(NOSUID, [test "${enable_suid_install}" = "no"])
+AC_MSG_RESULT([${enable_suid_install}])
+
 
 # Defines for <config.h>
 AH_BOTTOM([

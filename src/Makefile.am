@@ -17,7 +17,7 @@
 # *  http://www.gnu.org/copyleft/gpl.html                               *
 # ***********************************************************************
 
-top_srcdir = @top_srcdir@
+sbindir = @sbindir@
 
 AM_CPPFLAGS = -I$(top_srcdir) -D_BSD_SOURCE
 #AM_CFLAGS = -std=c99
@@ -40,7 +40,14 @@ traceroute6_SOURCES = traceroute.c
 tcptraceroute6: Makefile
 	rm -f $@.tmp $@
 	echo '#! /bin/sh' > $@.tmp
-	echo 'exec @sbindir@/traceroute6 -S $$*' >> $@.tmp
+	echo 'exec $(sbindir)/traceroute6 -S $$*' >> $@.tmp
 	chmod +x $@.tmp
 	mv -f $@.tmp $@
 
+if !NOSUID
+install-exec-hook:
+	@for f in $(sbin_PROGRAMS); do \
+		echo chmod u+s "$(DESTDIR)$(sbindir)/$$f" ; \
+		chmod u+s "$(DESTDIR)$(sbindir)/$$f" || exit $$? ; \
+	done
+endif
