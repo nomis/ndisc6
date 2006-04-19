@@ -698,11 +698,11 @@ usage (const char *path)
 {
 	drop_priv ();
 
-	fprintf (stderr, _(
+	printf (_(
 "Usage: %s [options] <IPv6 hostname/address> [port number/packet length]\n"
 "Print IPv6 network route to a host\n"), path);
 
-	fputs (_("\n"
+	puts (_("\n"
 "  -A  send TCP ACK probes\n"
 /*"  -d  enable debugging\n"*/
 /*"  -E  enable TCP Explicit Congestion Notification\n"*/
@@ -722,7 +722,7 @@ usage (const char *path)
 /*"  -v, --verbose  display all kind of ICMPv6 errors\n"*/
 "  -w  override the timeout for response in seconds (default: 5)\n"
 /*"  -z  specify a time to wait (in ms) between each probes (default: 0)\n"*/
-	"\n"), stderr);
+	));
 
 	return 0;
 }
