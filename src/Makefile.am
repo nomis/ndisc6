@@ -20,9 +20,9 @@
 sbindir = @sbindir@
 
 AM_CPPFLAGS = -I$(top_srcdir) -D_BSD_SOURCE
-#AM_CFLAGS = -std=c99
+AM_CFLAGS = -std=gnu99
 
-sbin_PROGRAMS = ndisc6 rdisc6 traceroute6
+sbin_PROGRAMS = ndisc6 rdisc6 traceroute6 tcpspray6
 sbin_SCRIPTS = tcptraceroute6
 
 MOSTLYCLEANFILES = $(sbin_SCRIPTS)
@@ -43,6 +43,9 @@ tcptraceroute6: Makefile
 	echo 'exec $(sbindir)/traceroute6 -S $$*' >> $@.tmp
 	chmod +x $@.tmp
 	mv -f $@.tmp $@
+
+# tcpspray6
+tcpspray6_SOURCES = tcpspray.c
 
 if !NOSUID
 install-exec-hook:
