@@ -141,6 +141,7 @@ printmacaddress (const uint8_t *ptr, size_t len)
 static int
 getmacaddress (const char *ifname, uint8_t *addr)
 {
+# ifndef SIOCGIFHWADDR
 	struct ifreq req;
 
 	memset (&req, 0, sizeof (req));
@@ -157,6 +158,9 @@ getmacaddress (const char *ifname, uint8_t *addr)
 
 	memcpy (addr, req.ifr_hwaddr.sa_data, 6);
 	return 0;
+# else
+	return -1;
+# endif
 }
 
 typedef struct
@@ -169,6 +173,10 @@ typedef struct
 static int
 buildsol (solicit_packet *ns, struct sockaddr_in6 *tgt, const char *ifname)
 {
+	/* determines actual multicast destination address */
+	memcpy (&tgt->sin6_addr.s6_addr, "\xff\x02\x00\x00\x00\x00\x00\x00"
+	                                 "\x00\x00\x00\x01\xff", 13);
+
 	/* builds ICMPv6 Neighbor Solicitation packet */
 	ns->hdr.nd_ns_type = ND_NEIGHBOR_SOLICIT;
 	ns->hdr.nd_ns_code = 0;
@@ -176,18 +184,13 @@ buildsol (solicit_packet *ns, struct sockaddr_in6 *tgt, const char *ifname)
 	ns->hdr.nd_ns_reserved = 0;
 	memcpy (&ns->hdr.nd_ns_target, &tgt->sin6_addr, 16);
 
-	ns->opt.nd_opt_type = ND_OPT_SOURCE_LINKADDR;
-	ns->opt.nd_opt_len = 1; /* 8 bytes */
-
 	/* gets our own interface's link-layer address (MAC) */
 	if (getmacaddress (ifname, ns->hw_addr))
-		return -1;
-
-	/* determines multicast address */
-	memcpy (&tgt->sin6_addr.s6_addr, "\xff\x02\x00\x00\x00\x00\x00\x00"
-	                                 "\x00\x00\x00\x01\xff", 13);
-
-	return 0;
+		return sizeof (ns->hdr);
+	
+	ns->opt.nd_opt_type = ND_OPT_SOURCE_LINKADDR;
+	ns->opt.nd_opt_len = 1; /* 8 bytes */
+	return sizeof (*ns);
 }
 
 
@@ -255,7 +258,7 @@ buildsol (solicit_packet *rs)
 	rs->nd_rs_code = 0;
 	rs->nd_rs_cksum = 0; /* computed by the kernel */
 	rs->nd_rs_reserved = 0;
-	return 0;
+	return sizeof (*rs);
 }
 
 
@@ -560,9 +563,11 @@ ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
 	{
 		solicit_packet packet;
 		struct sockaddr_in6 dst;
+		int plen;
 
 		memcpy (&dst, &tgt, sizeof (dst));
-		if (buildsol (&packet, &dst, ifname))
+		plen = buildsol (&packet, &dst, ifname);
+		if (plen == -1)
 			goto error;
 
 		while (retry > 0)
@@ -570,9 +575,9 @@ ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
 			int val;
 	
 			/* sends a Solitication */
-			if (sendto (fd, &packet, sizeof (packet), MSG_DONTROUTE,
+			if (sendto (fd, &packet, plen, MSG_DONTROUTE,
 			            (const struct sockaddr *)&dst,
-			            sizeof (dst)) != sizeof (packet))
+			            sizeof (dst)) != plen)
 			{
 				perror (_("Sending ICMPv6 packet"));
 				goto error;
