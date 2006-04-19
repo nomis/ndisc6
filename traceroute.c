@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h> /* div() */
+#include <limits.h>
 
 #include <unistd.h>
 #include <sys/socket.h>
