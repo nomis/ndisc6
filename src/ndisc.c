@@ -23,8 +23,6 @@
 # include <config.h>
 #endif
 
-#define _GNU_SOURCE
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h> /* div() */
@@ -50,13 +48,6 @@
 #ifndef SOL_IPV6
 # define SOL_IPV6 41 /* FreeBSD doesn't define this */
 #endif
-
-#define gettext( a ) (a)
-#define gettext_noop( a ) (a)
-#define ngettext( a, b, c ) (((c) == 1) ? (a) : (b))
-
-#define _( a ) gettext(a)
-#define N_( a ) gettext_noop(a)
 
 #ifndef RDISC
 # define NAME "ndisc"

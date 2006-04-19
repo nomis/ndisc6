@@ -23,10 +23,6 @@
 # include <config.h>
 #endif
 
-#define N_( str ) (str)
-#define _( str ) (str)
-
-#define _BSD_SOURCE
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h> /* div() */
