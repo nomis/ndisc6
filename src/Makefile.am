@@ -38,7 +38,7 @@ traceroute6_SOURCES = traceroute.c
 tcptraceroute6: Makefile
 	rm -f $@.tmp $@
 	echo '#! /bin/sh' > $@.tmp
-	echo 'exec traceroute6 -S $$*' >> $@.tmp
+	echo 'exec @sbindir@/traceroute6 -S $$*' >> $@.tmp
 	chmod +x $@.tmp
 	mv -f $@.tmp $@
 
