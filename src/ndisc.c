@@ -141,7 +141,7 @@ printmacaddress (const uint8_t *ptr, size_t len)
 static int
 getmacaddress (const char *ifname, uint8_t *addr)
 {
-# ifndef SIOCGIFHWADDR
+# ifdef SIOCGIFHWADDR
 	struct ifreq req;
 
 	memset (&req, 0, sizeof (req));
@@ -159,6 +159,8 @@ getmacaddress (const char *ifname, uint8_t *addr)
 	memcpy (addr, req.ifr_hwaddr.sa_data, 6);
 	return 0;
 # else
+	(void)ifname;
+	(void)addr;
 	return -1;
 # endif
 }
