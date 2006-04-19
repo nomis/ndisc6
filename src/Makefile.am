@@ -25,6 +25,8 @@ AM_CPPFLAGS = -I$(top_srcdir) -D_BSD_SOURCE
 sbin_PROGRAMS = ndisc6 rdisc6 traceroute6
 sbin_SCRIPTS = tcptraceroute6
 
+MOSTLYCLEANFILES = $(sbin_SCRIPTS)
+
 # ndisc6
 ndisc6_SOURCES = ndisc.c
 
