@@ -13,10 +13,11 @@ informations on this program, see README. For syntax details, read the
 provided manual pages.
 
 =============================================================================
-TEST RELEASE 0.6.0 : Code cleanup
+STABLE RELEASE 0.6.0 : Code cleanup
 
 # Switch to the bloated autotools.
-# rdisc6 and traceroute6 builds on Solaris.
+# rdisc6 and traceroute6 compile fixes for Solaris.
+# ndisc6 fixes for BSD and Solaris.
 
 =============================================================================
 TEST RELEASE 0.5.3 : Minor bug fixes

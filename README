@@ -1,5 +1,5 @@
-NDisc6 : IPv6 discovery tools
-==============================
+NDisc6 : IPv6 diagnostic tools
+===============================
 $Id$
 Copyright (C) 2005 Remi Denis-Courmont.
 
@@ -22,13 +22,9 @@ for full licensing details, please read COPYING.
   If you have further questions, you can contact me via email at :
     rdenis (at) simphalempin (dot) com
 
-Important portability note
-==========================
-
   All programs are known to run on Linux (with either glibc or µclibc).
-rdisc6, traceroute6 and tcptraceroute6 should also work on any recent
-open-source BSD variant (GNU make is required). ndisc6 won't compile on
-a BSD system.
+They should also work on any recent open-source BSD variant, and might
+work on Solaris or other BSD derivatives.
 
 -- 
 Remi Denis-Courmont <rdenis (at) simphalempin (dot) com>
