@@ -691,7 +691,8 @@ static struct option opts[] =
 	{ "retry",    required_argument, NULL, 'r' },
 	{ "version",  no_argument,       NULL, 'V' },
 	{ "verbose",  no_argument,       NULL, 'v' },
-	{ "wait",     required_argument, NULL, 'w' }
+	{ "wait",     required_argument, NULL, 'w' },
+	{ NULL,       0,                 NULL, 0   }
 };
 
 
