@@ -37,7 +37,9 @@
 #include <unistd.h> /* close() */
 #include <sys/ioctl.h>
 
-#include <getopt.h>
+#ifdef HAVE_GETOPT_H
+# include <getopt.h>
+#endif
 
 #include <netdb.h> /* getaddrinfo() */
 #include <arpa/inet.h> /* inet_ntop() */
