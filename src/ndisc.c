@@ -173,16 +173,16 @@ typedef struct
 static int
 buildsol (solicit_packet *ns, struct sockaddr_in6 *tgt, const char *ifname)
 {
-	/* determines actual multicast destination address */
-	memcpy (&tgt->sin6_addr.s6_addr, "\xff\x02\x00\x00\x00\x00\x00\x00"
-	                                 "\x00\x00\x00\x01\xff", 13);
-
 	/* builds ICMPv6 Neighbor Solicitation packet */
 	ns->hdr.nd_ns_type = ND_NEIGHBOR_SOLICIT;
 	ns->hdr.nd_ns_code = 0;
 	ns->hdr.nd_ns_cksum = 0; /* computed by the kernel */
 	ns->hdr.nd_ns_reserved = 0;
 	memcpy (&ns->hdr.nd_ns_target, &tgt->sin6_addr, 16);
+
+	/* determines actual multicast destination address */
+	memcpy (&tgt->sin6_addr.s6_addr, "\xff\x02\x00\x00\x00\x00\x00\x00"
+	                                 "\x00\x00\x00\x01\xff", 13);
 
 	/* gets our own interface's link-layer address (MAC) */
 	if (getmacaddress (ifname, ns->hw_addr))
