@@ -24,3 +24,22 @@ DIST_SUBDIRS = m4 $(SUBDIRS)
 man8_MANS = doc/ndisc6.8 doc/rdisc6.8 doc/traceroute6.8
 
 EXTRA_DIST = $(man8_MANS)
+BUILT_SOURCES = stamp-svn
+
+stamp-svn:
+	@rev=$$(svnversion "$(srcdir)" || echo exported) ; \
+	oldrev=$$(cat stamp-svn) ; \
+	if test "$$rev" != "$$oldrev"; then \
+		if test "$$rev" != "exported"; then \
+			echo -n "Rebuilding ChangeLog... " ; \
+			LANG=C svn -v log > ChangeLog ; \
+			echo "OK" ; \
+		fi ; \
+		echo "$$rev" > stamp-svn ; \
+	fi
+
+ChangeLog:
+	$(MAKE) $(AM_MAKEFLAGS) stamp-svn
+
+
+.PHONY: stamp-svn
