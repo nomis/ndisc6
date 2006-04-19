@@ -33,9 +33,12 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#ifdef HAVE_GETOPT_H
+# include <getopt.h>
+#endif
 
 static int family = 0;
-static int verbose = 0;
+static unsigned verbose = 0;
 
 static int tcpconnect (const char *host, const char *serv)
 {
@@ -49,7 +52,8 @@ static int tcpconnect (const char *host, const char *serv)
 	int val = getaddrinfo (host, serv, &hints, &res);
 	if (val)
 	{
-		fprintf (stderr, _("%s port %s: %s\n"), host, serv,
+		fprintf (stderr, _("%s port %s: %s\n"),
+		         (host != NULL) ? host : _("local system"), serv,
 		         gai_strerror (val));
 		return -1;
 	}
@@ -71,7 +75,8 @@ static int tcpconnect (const char *host, const char *serv)
 
 		if (connect (val, p->ai_addr, p->ai_addrlen))
 		{
-			fprintf (stderr, _("%s port %s: %s\n"), host, serv,
+			fprintf (stderr, _("%s port %s: %s\n"),
+			         (host != NULL) ? host : _("local system"), serv,
 			         strerror (errno));
 			close (val);
 			val = -1;
@@ -85,14 +90,20 @@ static int tcpconnect (const char *host, const char *serv)
 
 
 static int
-tcpspray (const char *host, unsigned n, size_t blen)
+tcpspray (const char *host, const char *serv, unsigned long n, size_t blen)
 {
-	int fd = tcpconnect (host, "discard");
+	int fd = tcpconnect (host, serv);
 	if (fd == -1)
 		return -1;
 
 	uint8_t block[blen];
 	memset (block, 0, blen);
+
+	if (verbose)
+	{
+		printf (_("Sending %lu bytes with blocksize %u bytes\n"), n * blen,
+		        blen);
+	}
 
 	struct timeval start, end;
 	gettimeofday (&start, NULL);
@@ -128,15 +139,11 @@ tcpspray (const char *host, unsigned n, size_t blen)
 
 	double duration = ((double)end.tv_sec) + ((double)end.tv_usec) / 1000000;
 
-	printf (_("Transmitted %lu bytes in %f seconds"),
-	        (unsigned long)blen * n, duration);
-	if (duration == 0.)
-	{
-		puts ("");
-		return 0;
-	}
+	printf (_("Transmitted %lu bytes in %f seconds"), n * blen, duration);
+	if (duration > 0)
+		printf (_(" (%0.3f kbytes/s)"), ((double)blen) * n / duration / 1024);
+	puts ("");
 
-	printf (_(" (%0.3f kbytes/s)\n"), ((double)blen) * n / duration / 1024);
 	return 0;
 
 backward:
@@ -155,35 +162,112 @@ abort:
 -d optional microseconds delay between each block
 -e echo service instead of discard
 -f load block content from file (all zeroes by default)
--h help
 -n blocks count (default 100)
--v verbose
- * also: -4, -6, service specification
  */
 
+static int
+quick_usage (const char *path)
+{
+	fprintf (stderr, _("Try \"%s -h\" for more information.\n"), path);
+	return 2;
+}
+
+
+static int
+usage (const char *path)
+{
+	printf (_(
+"Usage: %s [options] [hostname/address] [service/port number]\n"
+"Use the discard TCP service at the specified host\n"
+"(the default host is the local system, the default service is discard)\n"),
+	        path);
+
+	puts (_("\n"
+"  -4  force usage of the IPv4 protocols family\n"
+"  -6  force usage of the IPv6 protocols family\n"
+//"  -b  specify the block bytes size (default: 1024)\n"
+"  -h  display this help and exit\n"
+"  -V  display program version and exit\n"
+"  -v  enable verbose output\n"
+	));
+
+	return 0;
+}
+
+
+static int
+version (void)
+{
+	printf (_(
+"tcpspray6: TCP/IP bandwidth tester %s ($Rev$)\n"
+" built %s on %s\n"), VERSION, __DATE__, PACKAGE_BUILD_HOSTNAME);
+	printf (_("Configured with: %s\n"), PACKAGE_CONFIGURE_INVOCATION);
+	puts (_("Written by Remi Denis-Courmont\n"));
+
+	printf (_("Copyright (C) %u-%u Remi Denis-Courmont\n"
+"This is free software; see the source for copying conditions.\n"
+"There is NO warranty; not even for MERCHANTABILITY or\n"
+"FITNESS FOR A PARTICULAR PURPOSE.\n"), 2005, 2006);
+	return 0;
+}
+
+
+static const struct option opts[] =
+{
+	{ "ipv4",     no_argument,       NULL, '4' },
+	{ "ipv6",     no_argument,       NULL, '6' },
+//	{ "echo",     no_argument,       NULL, 'e' },
+	{ "help",     no_argument,       NULL, 'h' },
+	{ "version",  no_argument,       NULL, 'V' },
+	{ "verbose",  no_argument,       NULL, 'v' },
+	{ NULL,       0,                 NULL, 0   }
+};
+
+static const char optstr[] = "46hVv";
 
 int main (int argc, char *argv[])
 {
-	unsigned block_count = 100;
+	unsigned long block_count = 100;
 	size_t block_length = 1024;
 
-	if (argc < 2)
-		return 1;
-	if (!strcmp (argv[1], "--version"))
+	int c;
+	while ((c = getopt_long (argc, argv, optstr, opts, NULL)) != EOF)
 	{
-		puts ("tcpspray6 preversion "VERSION);
-		return 0;
+		switch (c)
+		{
+			case '4':
+				family = AF_INET;
+				break;
+
+			case '6':
+				family = AF_INET6;
+				break;
+
+			case 'h':
+				return usage (argv[0]);
+
+			case 'V':
+				return version ();
+
+			case 'v':
+				if (verbose < UINT_MAX)
+					verbose++;
+				break;
+
+			case '?':
+			default:
+				return quick_usage (argv[0]);
+		}
 	}
-	if (!strcmp (argv[1], "--help"))
+
+	const char *hostname = NULL, *servname = "discard";
+	if (optind < argc)
 	{
-		puts ("Usage: tcpspray6 <hostname>");
-		return 0;
+		hostname = argv[optind++];
+		if (optind < argc)
+			servname = argv[optind++];
 	}
 
 	setvbuf (stdout, NULL, _IONBF, 0);
-	if (verbose)
-		printf (_("Sending %lu bytes with blocksize %u bytes\n"),
-		        ((unsigned long)block_length) * block_count, block_length);
-
-	return -tcpspray (argv[1], block_count, block_length);
+	return -tcpspray (hostname, servname, block_count, block_length);
 }
