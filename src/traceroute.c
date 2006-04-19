@@ -40,6 +40,9 @@
 #include <arpa/inet.h> /* inet_ntop() */
 #include <fcntl.h>
 #include <errno.h>
+#ifdef HAVE_GETOPT_H
+# include <getopt.h>
+#endif
 #ifndef SOL_IPV6
 # define SOL_IPV6 IPPROTO_IPV6
 #endif
@@ -763,6 +766,18 @@ parse_hlim (const char *str)
 }
 
 
+static struct option opts[] = 
+{
+	{ "help",     no_argument,       NULL, 'h' },
+	{ "numeric",  no_argument,       NULL, 'n' },
+	{ "retry",    required_argument, NULL, 'q' },
+	{ "version",  no_argument,       NULL, 'V' },
+	/*{ "verbose",  no_argument,       NULL, 'v' },*/
+	{ "wait",     required_argument, NULL, 'w' },
+	{ NULL,       0,                 NULL, 0   }
+};
+
+
 int
 main (int argc, char *argv[])
 {
@@ -770,7 +785,8 @@ main (int argc, char *argv[])
 	unsigned retries = 3, wait = 5, minhlim = 1, maxhlim = 30;
 	const char *dsthost, *dstport, *srchost = NULL, *srcport = NULL;
 
-	while ((val = getopt (argc, argv, "Af:hm:nq:Ss:UVw:")) != EOF)
+	while ((val = getopt_long (argc, argv, "Af:hm:nq:Ss:UVw:",
+	                           opts, NULL)) != EOF)
 	{
 		switch (val)
 		{
