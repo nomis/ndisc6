@@ -18,6 +18,7 @@
 # ***********************************************************************
 
 ACLOCAL_AMFLAGS = -I m4
+man8dir = @mandir@/man8
 
 SUBDIRS = src
 DIST_SUBDIRS = m4 $(SUBDIRS)
@@ -26,6 +27,10 @@ man8_MANS = doc/ndisc6.8 doc/rdisc6.8 doc/traceroute6.8
 EXTRA_DIST = $(man8_MANS)
 BUILT_SOURCES = stamp-svn
 DISTCLEANFILES = stamp-svn
+
+install-data-hook:
+	ln -sf "$(DESTDIR)$(man8dir)/traceroute6.8" \
+		"$(DESTDIR)$(man8dir)/tcptraceroute6.8"
 
 distclean-local:
 	test "$(top_srcdir)" = "$(top_builddir)" || rm -f ChangeLog
