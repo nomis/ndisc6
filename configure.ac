@@ -32,7 +32,7 @@ AC_CONFIG_HEADERS(config.h)
 
 dnl AC_DEFINE_UNQUOTED(PACKAGE_CONFIGURE_INVOCATION, "$INVOCATION",
 dnl                    [Define to the command line used to invoke the configure script.])
-RDC_BUILD_HOSTNAME
+dnl RDC_BUILD_HOSTNAME
 
 
 # Checks for programs.

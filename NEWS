@@ -1,5 +1,5 @@
 RELEASE NOTES for NDisc6
-version 0.5.3
+version 0.6.0
 =========================
 $Id$
 
@@ -11,6 +11,12 @@ Thanks for your help.
   You can find major changes since version 0.1.5 below. For more general
 informations on this program, see README. For syntax details, read the
 provided manual pages.
+
+=============================================================================
+TEST RELEASE 0.6.0 : Code cleanup
+
+# Switch to the bloated autotools.
+# rdisc6 and traceroute6 builds on Solaris.
 
 =============================================================================
 TEST RELEASE 0.5.3 : Minor bug fixes
