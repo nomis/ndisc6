@@ -25,14 +25,19 @@ man8_MANS = doc/ndisc6.8 doc/rdisc6.8 doc/traceroute6.8
 
 EXTRA_DIST = $(man8_MANS)
 BUILT_SOURCES = stamp-svn
+DISTCLEANFILES = stamp-svn
+
+distclean-local:
+	test "$(top_srcdir)" = "$(top_builddir)" || rm -f ChangeLog
 
 stamp-svn:
-	@rev=$$(svnversion "$(srcdir)" || echo exported) ; \
-	oldrev=$$(cat stamp-svn) ; \
+	@rev=$$(LANG=C svnversion "$(srcdir)" 2>/dev/null || echo exported) ; \
+	oldrev=$$(cat stamp-svn 2>/dev/null) ; \
 	if test "$$rev" != "$$oldrev"; then \
+		echo "New SVN revision is $$rev." ; \
 		if test "$$rev" != "exported"; then \
 			echo -n "Rebuilding ChangeLog... " ; \
-			LANG=C svn -v log > ChangeLog ; \
+			LANG=C svn -v log "$(srcdir)" > ChangeLog ; \
 			echo "OK" ; \
 		fi ; \
 		echo "$$rev" > stamp-svn ; \
