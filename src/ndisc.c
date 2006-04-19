@@ -621,7 +621,7 @@ usage (const char *path)
 {
 	drop_priv ();
 
-	fprintf (stderr,
+	printf (
 #ifndef RDISC
 _("Usage: %s [options] <IPv6 address> <interface>\n"
 "Looks up an on-link IPv6 node link-layer address (Neighbor Discovery)\n")
@@ -631,7 +631,7 @@ _("Usage: %s [options] [IPv6 address] <interface>\n"
 #endif
 		, path);
 
-	fprintf (stderr, _("\n"
+	printf (_("\n"
 "  -1, --single   display first response and exit\n"
 "  -h, --help     display this help and exit\n"
 "  -m, --multiple wait and display all responses\n"
