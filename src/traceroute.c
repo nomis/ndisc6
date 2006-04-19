@@ -718,6 +718,7 @@ usage (const char *path)
 "  -q  override the number of probes per hop (default: 3)\n"
 "  -S  send TCP SYN probes\n"
 "  -s  specify the source IPv6 address of probe packets\n"
+"  -U  send UDP probes (default)\n"
 "  -V, --version  display program version and exit\n"
 /*"  -v, --verbose  display all kind of ICMPv6 errors\n"*/
 "  -w  override the timeout for response in seconds (default: 5)\n"
@@ -769,7 +770,7 @@ main (int argc, char *argv[])
 	unsigned retries = 3, wait = 5, minhlim = 1, maxhlim = 30;
 	const char *dsthost, *dstport, *srchost = NULL, *srcport = NULL;
 
-	while ((val = getopt (argc, argv, "Af:hm:nq:Ss:Vw:")) != EOF)
+	while ((val = getopt (argc, argv, "Af:hm:nq:Ss:UVw:")) != EOF)
 	{
 		switch (val)
 		{
@@ -814,6 +815,10 @@ main (int argc, char *argv[])
 				srchost = optarg;
 				break;
 
+			case 'U':
+				type = &udp_type;
+				break;
+
 			case 'V':
 				return version ();
 
@@ -836,21 +841,7 @@ main (int argc, char *argv[])
 	}
 
 	if (type == NULL)
-	{
-		const char *prgm;
-
-		/* Booooh, GNU coding styles say that is very bad!! */
-		prgm = strrchr (argv[0], '/');
-		if (prgm == NULL)
-			prgm = argv[0];
-		else
-			prgm++;
-
-		if (strncmp (prgm, "tcp", 3) == 0)
-			type = &syn_type;
-		else
-			type = &udp_type;
-	}
+		type = &udp_type;
 
 	/* FIXME: use dstport as packet size for UDP and ICMP */
 	if (optind < argc)
