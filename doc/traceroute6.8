@@ -1,5 +1,5 @@
 .\" ***********************************************************************
-.\" *  Copyright (C) 2005 Rémi Denis-Courmont.                            *
+.\" *  Copyright (C) 2005-2006 Rémi Denis-Courmont.                       *
 .\" *  This program is free software; you can redistribute and/or modify  *
 .\" *  it under the terms of the GNU General Public License as published  *
 .\" *  by the Free Software Foundation; version 2 of the license.         *
@@ -17,7 +17,7 @@
 .SH NAME
 traceroute6 \- IPv6 traceroute tool
 .SH SYNOPSIS
-.BR "traceroute6" " [" "-AnS" "] [" "-f min_hop" "] [" "-m max_hop" "] ["
+.BR "traceroute6" " [" "-AnSU" "] [" "-f min_hop" "] [" "-m max_hop" "] ["
 .BR "-q attempts" "] [" "-s source" "] [" "-w wait" "] <"
 .BR "hostname/address" "> [" "port/packet length" "]"
 
@@ -77,6 +77,10 @@ Use TCP/SYN probe packets. That's the default for tcptraceroute6.
 .TP
 .B "\-s"
 Specify the source address to use for probe packets explicitly.
+
+.TP
+.B "\-S"
+Use UDP probe packets. That's the default for traceroute6.
 
 .TP
 .B "\-V"
