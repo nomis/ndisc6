@@ -737,15 +737,16 @@ version (void)
 {
 	drop_priv ();
 
-	puts (
-"traceroute6 : TCP & UDP IPv6 traceroute tool "PACKAGE_VERSION
-" ($Rev$)\n built "__DATE__"\n"
-"Copyright (C) 2005 Remi Denis-Courmont");
-	puts (_(
+	printf (_(
+"traceroute6: TCP & UDP IPv6 traceroute tool %s ($Rev$)\n"
+" built %s on %s\n"), VERSION, __DATE__, PACKAGE_BUILD_HOSTNAME);
+	printf (_("Configured with: %s\n"), PACKAGE_CONFIGURE_INVOCATION);
+	puts (_("Written by Remi Denis-Courmont\n"));
+
+	printf (_("Copyright (C) %u-%u Remi Denis-Courmont\n"
 "This is free software; see the source for copying conditions.\n"
 "There is NO warranty; not even for MERCHANTABILITY or\n"
-"FITNESS FOR A PARTICULAR PURPOSE.\n"));
-	printf (_("Written by %s.\n"), "Remi Denis-Courmont");
+"FITNESS FOR A PARTICULAR PURPOSE.\n"), 2005, 2006);
 	return 0;
 }
 

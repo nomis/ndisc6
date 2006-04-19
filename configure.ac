@@ -22,7 +22,7 @@ dnl ***********************************************************************
 AC_COPYRIGHT([Copyright (C) 2005-2006 Remi Denis-Courmont])
 AC_INIT(ndisc6, 0.6.0, rdenis@simphalempin.com)
 AC_PREREQ(2.59)
-dnl INVOCATION="$0 $*"
+INVOCATION="$0 $*"
 
 AS_MESSAGE(checking system...)
 AC_CONFIG_SRCDIR(configure.ac)
@@ -30,9 +30,9 @@ AC_CONFIG_AUX_DIR(admin)
 AC_CONFIG_MACRO_DIR(m4)
 AC_CONFIG_HEADERS(config.h)
 
-dnl AC_DEFINE_UNQUOTED(PACKAGE_CONFIGURE_INVOCATION, "$INVOCATION",
-dnl                    [Define to the command line used to invoke the configure script.])
-dnl RDC_BUILD_HOSTNAME
+AC_DEFINE_UNQUOTED(PACKAGE_CONFIGURE_INVOCATION, "$INVOCATION",
+                   [Define to the command line used to invoke the configure script.])
+RDC_BUILD_HOSTNAME
 
 
 # Checks for programs.
