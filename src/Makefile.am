@@ -23,6 +23,7 @@ AM_CPPFLAGS = -I$(top_srcdir) -D_BSD_SOURCE
 #AM_CFLAGS = -std=c99
 
 sbin_PROGRAMS = ndisc6 rdisc6 traceroute6
+sbin_SCRIPTS = tcptraceroute6
 
 # ndisc6
 ndisc6_SOURCES = ndisc.c
@@ -33,4 +34,11 @@ rdisc6_CFLAGS = -DRDISC
 
 # traceroute6
 traceroute6_SOURCES = traceroute.c
+
+tcptraceroute6: Makefile
+	rm -f $@.tmp $@
+	echo '#! /bin/sh' > $@.tmp
+	echo 'exec traceroute6 -S $$*' >> $@.tmp
+	chmod +x $@.tmp
+	mv -f $@.tmp $@
 
