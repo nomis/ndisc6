@@ -23,15 +23,18 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h> // SIZE_MAX
 #include <stdlib.h>
 
+#include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -89,9 +92,32 @@ static int tcpconnect (const char *host, const char *serv)
 }
 
 
-static int
-tcpspray (const char *host, const char *serv, unsigned long n, size_t blen)
+static int delta (struct timeval *end, const struct timeval *start)
 {
+	if (end->tv_sec < start->tv_sec)
+		return -1;
+
+	end->tv_sec -= start->tv_sec;
+	if (end->tv_usec < start->tv_usec)
+	{
+		if (end->tv_sec <= 0)
+			return -1;
+
+		end->tv_sec--;
+		end->tv_usec += 1000000;
+	}
+	end->tv_usec -= start->tv_usec;
+	return 0;
+}
+
+
+static int
+tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
+          bool echo)
+{
+	if (serv == NULL)
+		serv = echo ? "echo" : "discard";
+
 	int fd = tcpconnect (host, serv);
 	if (fd == -1)
 		return -1;
@@ -105,14 +131,46 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen)
 		        blen);
 	}
 
+	if (echo)
+	{
+		switch (fork ())
+		{
+			case 0:
+				for (unsigned i = 0; i < n; i++)
+				{
+					int val = recv (fd, block, blen, MSG_WAITALL);
+					if (val != (int)blen)
+					{
+						fprintf (stderr, _("Cannot receive data: %s\n"),
+								 (val == -1) ? strerror (errno)
+							: _("Connection closed by peer"));
+						exit (1);
+					}
+
+					if (verbose)
+						fputs ("\b \b", stdout);
+				}
+				exit (0);
+
+			case -1:
+				perror ("fork");
+				goto abort;
+		}
+	}
+	else
+		shutdown (fd, SHUT_RD);
+
 	struct timeval start, end;
 	gettimeofday (&start, NULL);
 
 	for (unsigned i = 0; i < n; i++)
 	{
-		if (write (fd, block, blen) != (int)blen)
+		int val = write (fd, block, blen);
+		if (val != (int)blen)
 		{
-			perror (_("Cannot send data"));
+			fprintf (stderr, _("Cannot send data: %s\n"),
+			         (val == -1) ? strerror (errno)
+			                     : _("Connection closed by peer"));
 			goto abort;
 		}
 
@@ -121,21 +179,37 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen)
 	}
 
 	gettimeofday (&end, NULL);
+	shutdown (fd, SHUT_WR);
 	close (fd);
 
-	puts ("");
-	if (end.tv_sec < start.tv_sec)
-		goto backward;
-
-	end.tv_sec -= start.tv_sec;
-	if (end.tv_usec < start.tv_usec)
+	if (echo)
 	{
-		if (end.tv_sec <= 0)
+		int status;
+		while (wait (&status) == -1);
+
+		if (!WIFEXITED (status) || WEXITSTATUS (status))
+		{
+			fprintf (stderr, _("Child process returned an error"));
+			goto abort;
+		}
+
+		struct timeval end_recv;
+		gettimeofday (&end_recv, NULL);
+		if (delta (&end_recv, &start))
 			goto backward;
-		end.tv_sec--;
-		end.tv_usec += 1000000;
+
+		double rduration = ((double)end_recv.tv_sec)
+		                 + ((double)end_recv.tv_usec) / 1000000;
+
+		printf (_("Received %lu bytes in %f seconds"), n * blen, rduration);
+		if (rduration > 0)
+			printf (_(" (%0.3f kbytes/s)"),
+			        ((double)blen) * n / rduration / 1024);
 	}
-	end.tv_usec -= start.tv_usec;
+	puts ("");
+
+	if (delta (&end, &start))
+		goto backward;
 
 	double duration = ((double)end.tv_sec) + ((double)end.tv_usec) / 1000000;
 
@@ -159,7 +233,6 @@ abort:
 
 /* TODO:
 -d optional microseconds delay between each block
--e echo service instead of discard
 -f load block content from file (all zeroes by default)
  */
 
@@ -184,6 +257,7 @@ usage (const char *path)
 "  -4  force usage of the IPv4 protocols family\n"
 "  -6  force usage of the IPv6 protocols family\n"
 "  -b  specify the block bytes size (default: 1024)\n"
+"  -e  perform a duplex test (TCP Echo instead of TCP Discard)\n"
 "  -h  display this help and exit\n"
 "  -n  specify the number of blocks to send (default: 100)\n"
 "  -V  display program version and exit\n"
@@ -216,19 +290,20 @@ static const struct option opts[] =
 	{ "ipv4",     no_argument,       NULL, '4' },
 	{ "ipv6",     no_argument,       NULL, '6' },
 	{ "bsize",    required_argument, NULL, 'b' },
-//	{ "echo",     no_argument,       NULL, 'e' },
+	{ "echo",     no_argument,       NULL, 'e' },
 	{ "help",     no_argument,       NULL, 'h' },
 	{ "version",  no_argument,       NULL, 'V' },
 	{ "verbose",  no_argument,       NULL, 'v' },
 	{ NULL,       0,                 NULL, 0   }
 };
 
-static const char optstr[] = "46b:hn:Vv";
+static const char optstr[] = "46b:ehn:Vv";
 
 int main (int argc, char *argv[])
 {
 	unsigned long block_count = 100;
 	size_t block_length = 1024;
+	bool echo = false;
 
 	int c;
 	while ((c = getopt_long (argc, argv, optstr, opts, NULL)) != EOF)
@@ -260,6 +335,10 @@ int main (int argc, char *argv[])
 				block_length = (size_t)value;
 				break;
 			}
+
+			case 'e':
+				echo = true;
+				break;
 
 			case 'h':
 				return usage (argv[0]);
@@ -295,10 +374,9 @@ int main (int argc, char *argv[])
 	if (optind >= argc)
 		return quick_usage (argv[0]);
 
-	const char *hostname = argv[optind++], *servname = "discard";
-	if (optind < argc)
-		servname = argv[optind++];
+	const char *hostname = argv[optind++];
+	const char *servname = (optind < argc) ? argv[optind++] : NULL;
 
 	setvbuf (stdout, NULL, _IONBF, 0);
-	return -tcpspray (hostname, servname, block_count, block_length);
+	return -tcpspray (hostname, servname, block_count, block_length, echo);
 }
