@@ -36,7 +36,7 @@ distclean-local:
 
 stamp-svn:
 	@rev=$$(LANG=C svnversion "$(srcdir)" 2>/dev/null || echo exported) ; \
-	oldrev=$$(cat stamp-svn 2>/dev/null) ; \
+	oldrev=$$(cat stamp-svn 2>/dev/null || true) ; \
 	if test "$$rev" != "$$oldrev"; then \
 		echo "New SVN revision is $$rev." ; \
 		if test "$$rev" != "exported"; then \
