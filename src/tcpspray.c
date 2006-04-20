@@ -5,7 +5,7 @@
  */
 
 /***********************************************************************
- *  Copyright (C) 2006 Rémi Denis-Courmont.                            *
+ *  Copyright © 2006 Rémi Denis-Courmont.                              *
  *  This program is free software; you can redistribute and/or modify  *
  *  it under the terms of the GNU General Public License as published  *
  *  by the Free Software Foundation; version 2 of the license.         *
@@ -160,11 +160,9 @@ abort:
 
 
 /* TODO:
--b block byte size (default 1024)
 -d optional microseconds delay between each block
 -e echo service instead of discard
 -f load block content from file (all zeroes by default)
--n blocks count (default 100)
  */
 
 static int
@@ -189,6 +187,7 @@ usage (const char *path)
 "  -6  force usage of the IPv6 protocols family\n"
 "  -b  specify the block bytes size (default: 1024)\n"
 "  -h  display this help and exit\n"
+"  -n  specify the number of blocks to send (default: 100)\n"
 "  -V  display program version and exit\n"
 "  -v  enable verbose output\n"
 	));
@@ -226,7 +225,7 @@ static const struct option opts[] =
 	{ NULL,       0,                 NULL, 0   }
 };
 
-static const char optstr[] = "46b:hVv";
+static const char optstr[] = "46b:hn:Vv";
 
 int main (int argc, char *argv[])
 {
@@ -250,16 +249,13 @@ int main (int argc, char *argv[])
 			{
 				char *end;
 				unsigned long value = strtoul (optarg, &end, 0);
+				if (*end)
+					errno = EINVAL;
+				else
 				if (value > SIZE_MAX)
 					errno = ERANGE;
 				if (errno)
 				{
-					perror (optarg);
-					return 2;
-				}
-				if (*end)
-				{
-					errno = EINVAL;
 					perror (optarg);
 					return 2;
 				}
@@ -269,6 +265,20 @@ int main (int argc, char *argv[])
 
 			case 'h':
 				return usage (argv[0]);
+
+			case 'n':
+			{
+				char *end;
+				block_count = strtoul (optarg, &end, 0);
+				if (*end)
+					errno = EINVAL;
+				if (errno)
+				{
+					perror (optarg);
+					return 2;
+				}
+				break;
+			}
 
 			case 'V':
 				return version ();
