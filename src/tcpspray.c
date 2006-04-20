@@ -114,7 +114,7 @@ static int delta (struct timeval *end, const struct timeval *start)
 
 static int
 tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
-          unsigned delay_ms, bool echo)
+          unsigned delay_ms, const char *fillname, bool echo)
 {
 	if (serv == NULL)
 		serv = echo ? "echo" : "discard";
@@ -125,6 +125,27 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 
 	uint8_t block[blen];
 	memset (block, 0, blen);
+
+	if (fillname != NULL)
+	{
+		FILE *stream = fopen (fillname, "r");
+		if (stream == NULL)
+		{
+			perror (fillname);
+			close (fd);
+			return -1;
+		}
+
+		size_t res = fread (block, 1, blen, stream);
+		if (res < blen)
+		{
+			fprintf (stderr, _("Warning: \"%s\" is too small (%lu %s) "
+			           "to fill block of %lu %s.\n"), fillname,
+			         (unsigned long)res, ngettext ("byte", "bytes", res),
+			         (unsigned long)blen, ngettext ("byte", "bytes", blen));
+		}
+		fclose (stream);
+	}
 
 	if (verbose)
 	{
@@ -246,10 +267,6 @@ abort:
 }
 
 
-/* TODO:
--f load block content from file (all zeroes by default)
- */
-
 static int
 quick_usage (const char *path)
 {
@@ -273,6 +290,7 @@ usage (const char *path)
 "  -b  specify the block bytes size (default: 1024)\n"
 "  -d  wait for given delay (usec) between each block (default: 0)\n"
 "  -e  perform a duplex test (TCP Echo instead of TCP Discard)\n"
+"  -f  fill sent data blocks with the specified file content\n"
 "  -h  display this help and exit\n"
 "  -n  specify the number of blocks to send (default: 100)\n"
 "  -V  display program version and exit\n"
@@ -307,13 +325,15 @@ static const struct option opts[] =
 	{ "bsize",    required_argument, NULL, 'b' },
 	{ "delay",    required_argument, NULL, 'd' },
 	{ "echo",     no_argument,       NULL, 'e' },
+	{ "file",     required_argument, NULL, 'f' },
+	{ "fill",     required_argument, NULL, 'f' },
 	{ "help",     no_argument,       NULL, 'h' },
 	{ "version",  no_argument,       NULL, 'V' },
 	{ "verbose",  no_argument,       NULL, 'v' },
 	{ NULL,       0,                 NULL, 0   }
 };
 
-static const char optstr[] = "46b:d:ehn:Vv";
+static const char optstr[] = "46b:d:ef:hn:Vv";
 
 int main (int argc, char *argv[])
 {
@@ -321,6 +341,7 @@ int main (int argc, char *argv[])
 	size_t block_length = 1024;
 	unsigned delay_ms = 0;
 	bool echo = false;
+	const char *fillname = NULL;
 
 	int c;
 	while ((c = getopt_long (argc, argv, optstr, opts, NULL)) != EOF)
@@ -375,6 +396,10 @@ int main (int argc, char *argv[])
 				echo = true;
 				break;
 
+			case 'f':
+				fillname = optarg;
+				break;
+
 			case 'h':
 				return usage (argv[0]);
 
@@ -414,6 +439,6 @@ int main (int argc, char *argv[])
 
 	setvbuf (stdout, NULL, _IONBF, 0);
 	c = tcpspray (hostname, servname, block_count, block_length,
-	              delay_ms, echo);
+	              delay_ms, fillname, echo);
 	return c ? 1 : 0;
 }
