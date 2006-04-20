@@ -25,6 +25,8 @@
 #endif
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h> // SIZE_MAX
+#include <stdlib.h>
 
 #include <unistd.h>
 #include <errno.h>
@@ -185,7 +187,7 @@ usage (const char *path)
 	puts (_("\n"
 "  -4  force usage of the IPv4 protocols family\n"
 "  -6  force usage of the IPv6 protocols family\n"
-//"  -b  specify the block bytes size (default: 1024)\n"
+"  -b  specify the block bytes size (default: 1024)\n"
 "  -h  display this help and exit\n"
 "  -V  display program version and exit\n"
 "  -v  enable verbose output\n"
@@ -216,6 +218,7 @@ static const struct option opts[] =
 {
 	{ "ipv4",     no_argument,       NULL, '4' },
 	{ "ipv6",     no_argument,       NULL, '6' },
+	{ "bsize",    required_argument, NULL, 'b' },
 //	{ "echo",     no_argument,       NULL, 'e' },
 	{ "help",     no_argument,       NULL, 'h' },
 	{ "version",  no_argument,       NULL, 'V' },
@@ -223,7 +226,7 @@ static const struct option opts[] =
 	{ NULL,       0,                 NULL, 0   }
 };
 
-static const char optstr[] = "46hVv";
+static const char optstr[] = "46b:hVv";
 
 int main (int argc, char *argv[])
 {
@@ -242,6 +245,27 @@ int main (int argc, char *argv[])
 			case '6':
 				family = AF_INET6;
 				break;
+
+			case 'b':
+			{
+				char *end;
+				unsigned long value = strtoul (optarg, &end, 0);
+				if (value > SIZE_MAX)
+					errno = ERANGE;
+				if (errno)
+				{
+					perror (optarg);
+					return 2;
+				}
+				if (*end)
+				{
+					errno = EINVAL;
+					perror (optarg);
+					return 2;
+				}
+				block_length = (size_t)value;
+				break;
+			}
 
 			case 'h':
 				return usage (argv[0]);
