@@ -43,11 +43,11 @@ stamp-svn:
 			LANG=C svn -v log "$(srcdir)" > ChangeLog ; \
 			echo "OK" ; \
 		fi ; \
-		echo "$$rev" > stamp-svn ; \
+		echo "$$rev" > $@ ; \
 	fi
 
 ChangeLog:
 	$(MAKE) $(AM_MAKEFLAGS) stamp-svn
-
+	touch $@
 
 .PHONY: stamp-svn
