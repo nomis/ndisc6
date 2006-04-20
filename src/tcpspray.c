@@ -54,8 +54,7 @@ static int tcpconnect (const char *host, const char *serv)
 	int val = getaddrinfo (host, serv, &hints, &res);
 	if (val)
 	{
-		fprintf (stderr, _("%s port %s: %s\n"),
-		         (host != NULL) ? host : _("local system"), serv,
+		fprintf (stderr, _("%s port %s: %s\n"), host, serv,
 		         gai_strerror (val));
 		return -1;
 	}
@@ -77,8 +76,7 @@ static int tcpconnect (const char *host, const char *serv)
 
 		if (connect (val, p->ai_addr, p->ai_addrlen))
 		{
-			fprintf (stderr, _("%s port %s: %s\n"),
-			         (host != NULL) ? host : _("local system"), serv,
+			fprintf (stderr, _("%s port %s: %s\n"), host, serv,
 			         strerror (errno));
 			close (val);
 			val = -1;
@@ -177,7 +175,7 @@ static int
 usage (const char *path)
 {
 	printf (_(
-"Usage: %s [options] [hostname/address] [service/port number]\n"
+"Usage: %s [options] <hostname/address> [service/port number]\n"
 "Use the discard TCP service at the specified host\n"
 "(the default host is the local system, the default service is discard)\n"),
 	        path);
@@ -294,13 +292,12 @@ int main (int argc, char *argv[])
 		}
 	}
 
-	const char *hostname = NULL, *servname = "discard";
+	if (optind >= argc)
+		return quick_usage (argv[0]);
+
+	const char *hostname = argv[optind++], *servname = "discard";
 	if (optind < argc)
-	{
-		hostname = argv[optind++];
-		if (optind < argc)
-			servname = argv[optind++];
-	}
+		servname = argv[optind++];
 
 	setvbuf (stdout, NULL, _IONBF, 0);
 	return -tcpspray (hostname, servname, block_count, block_length);
