@@ -18,7 +18,6 @@
 # ***********************************************************************
 
 ACLOCAL_AMFLAGS = -I m4
-man8dir = @mandir@/man8
 
 SUBDIRS = src
 DIST_SUBDIRS = m4 $(SUBDIRS)
