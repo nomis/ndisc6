@@ -33,6 +33,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/socket.h>
+#include <time.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <fcntl.h>
@@ -113,7 +114,7 @@ static int delta (struct timeval *end, const struct timeval *start)
 
 static int
 tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
-          bool echo)
+          unsigned delay_ms, bool echo)
 {
 	if (serv == NULL)
 		serv = echo ? "echo" : "discard";
@@ -161,6 +162,14 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 	else
 		shutdown (fd, SHUT_RD);
 
+	struct timespec delay_ts = { 0, 0 };
+	if (delay_ms)
+	{
+		div_t d = div (delay_ms, 1000000);
+		delay_ts.tv_sec = d.quot;
+		delay_ts.tv_nsec = d.rem * 1000;
+	}
+
 	struct timeval start, end;
 	gettimeofday (&start, NULL);
 
@@ -177,6 +186,9 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 
 		if (verbose)
 			fputc ('.', stdout);
+
+		if (delay_ms && nanosleep (&delay_ts, NULL))
+			goto abort;
 	}
 
 	gettimeofday (&end, NULL);
@@ -235,7 +247,6 @@ abort:
 
 
 /* TODO:
--d optional microseconds delay between each block
 -f load block content from file (all zeroes by default)
  */
 
@@ -260,6 +271,7 @@ usage (const char *path)
 "  -4  force usage of the IPv4 protocols family\n"
 "  -6  force usage of the IPv6 protocols family\n"
 "  -b  specify the block bytes size (default: 1024)\n"
+"  -d  wait for given delay (usec) between each block (default: 0)\n"
 "  -e  perform a duplex test (TCP Echo instead of TCP Discard)\n"
 "  -h  display this help and exit\n"
 "  -n  specify the number of blocks to send (default: 100)\n"
@@ -293,6 +305,7 @@ static const struct option opts[] =
 	{ "ipv4",     no_argument,       NULL, '4' },
 	{ "ipv6",     no_argument,       NULL, '6' },
 	{ "bsize",    required_argument, NULL, 'b' },
+	{ "delay",    required_argument, NULL, 'd' },
 	{ "echo",     no_argument,       NULL, 'e' },
 	{ "help",     no_argument,       NULL, 'h' },
 	{ "version",  no_argument,       NULL, 'V' },
@@ -300,12 +313,13 @@ static const struct option opts[] =
 	{ NULL,       0,                 NULL, 0   }
 };
 
-static const char optstr[] = "46b:ehn:Vv";
+static const char optstr[] = "46b:d:ehn:Vv";
 
 int main (int argc, char *argv[])
 {
 	unsigned long block_count = 100;
 	size_t block_length = 1024;
+	unsigned delay_ms = 0;
 	bool echo = false;
 
 	int c;
@@ -336,6 +350,24 @@ int main (int argc, char *argv[])
 					return 2;
 				}
 				block_length = (size_t)value;
+				break;
+			}
+
+			case 'd':
+			{
+				char *end;
+				unsigned long value = strtoul (optarg, &end, 0);
+				if (*end)
+					errno = EINVAL;
+				else
+					if (value > UINT_MAX)
+						errno = ERANGE;
+				if (errno)
+				{
+					perror (optarg);
+					return 2;
+				}
+				delay_ms = (unsigned)value;
 				break;
 			}
 
@@ -381,5 +413,7 @@ int main (int argc, char *argv[])
 	const char *servname = (optind < argc) ? argv[optind++] : NULL;
 
 	setvbuf (stdout, NULL, _IONBF, 0);
-	return -tcpspray (hostname, servname, block_count, block_length, echo);
+	c = tcpspray (hostname, servname, block_count, block_length,
+	              delay_ms, echo);
+	return c ? 1 : 0;
 }
