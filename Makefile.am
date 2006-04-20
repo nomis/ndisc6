@@ -24,7 +24,6 @@ DIST_SUBDIRS = m4 $(SUBDIRS)
 man8_MANS = doc/ndisc6.8 doc/rdisc6.8 doc/traceroute6.8
 
 EXTRA_DIST = $(man8_MANS)
-BUILT_SOURCES = stamp-svn
 DISTCLEANFILES = stamp-svn
 
 install-data-hook:
