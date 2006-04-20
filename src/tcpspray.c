@@ -154,7 +154,8 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 
 			case -1:
 				perror ("fork");
-				goto abort;
+				close (fd);
+				return -1;
 		}
 	}
 	else
@@ -190,7 +191,7 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 		if (!WIFEXITED (status) || WEXITSTATUS (status))
 		{
 			fprintf (stderr, _("Child process returned an error"));
-			goto abort;
+			return -1;
 		}
 
 		struct timeval end_recv;
@@ -227,6 +228,8 @@ backward:
 
 abort:
 	close (fd);
+	if (echo)
+		while (wait (NULL) == -1);
 	return -1;
 }
 
