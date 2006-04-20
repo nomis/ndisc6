@@ -407,10 +407,12 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				{
 					switch (errno)
 					{
+#ifdef EPROTO
 						case EPROTO:
 							/* Parameter problem seemingly can't be read from
 							 * the ICMPv6 socket, regardless of the filter. */
 							break;
+#endif
 
 						case EAGAIN:
 						case ECONNREFUSED:

@@ -26,7 +26,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdint.h> // SIZE_MAX
+#include <limits.h> // SIZE_MAX
 #include <stdlib.h>
 
 #include <sys/types.h>
