@@ -65,6 +65,7 @@ dnl RDC_STRUCT_SOCKADDR_LEN
 # Checks for library functions.
 AS_MESSAGE([checking library functions...])
 RDC_REPLACE_FUNC_GETOPT_LONG
+AC_SEARCH_LIBS(nanosleep, [rt])
 
 # Network stuff
 RDC_FUNC_SOCKET
