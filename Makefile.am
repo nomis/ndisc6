@@ -24,7 +24,7 @@ DIST_SUBDIRS = m4 $(SUBDIRS)
 man1_MANS = doc/tcpspray6.1
 man8_MANS = doc/ndisc6.8 doc/rdisc6.8 doc/traceroute6.8
 
-EXTRA_DIST = $(man8_MANS)
+EXTRA_DIST = $(man1_MANS) $(man8_MANS)
 DISTCLEANFILES = stamp-svn
 
 install-data-hook:
