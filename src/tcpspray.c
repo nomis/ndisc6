@@ -328,6 +328,7 @@ static const struct option opts[] =
 	{ "file",     required_argument, NULL, 'f' },
 	{ "fill",     required_argument, NULL, 'f' },
 	{ "help",     no_argument,       NULL, 'h' },
+	{ "count",    required_argument, NULL, 'n' },
 	{ "version",  no_argument,       NULL, 'V' },
 	{ "verbose",  no_argument,       NULL, 'v' },
 	{ NULL,       0,                 NULL, 0   }
