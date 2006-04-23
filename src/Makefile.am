@@ -27,7 +27,7 @@ myexec_PROGRAMS = ndisc6 rdisc6 traceroute6
 myexec_SCRIPTS = tcptraceroute6
 bin_PROGRAMS = tcpspray6
 
-MOSTLYCLEANFILES = $(sbin_SCRIPTS)
+MOSTLYCLEANFILES = $(myexec_SCRIPTS)
 
 # ndisc6
 ndisc6_SOURCES = ndisc.c
