@@ -7,11 +7,12 @@ Copyright (C) 2005 Remi Denis-Courmont.
 - ndisc6, which performs ICMPv6 Neighbor Discovery in userland,
 - rdisc6, which performs ICMPv6 Router Discovery in userland,
 - traceroute6, yet another IPv6 implementation of traceroute,
-- tcptraceroute6, a TCP/IPv6-based traceroute implementation.
+- tcptraceroute6, a TCP/IPv6-based traceroute implementation,
+- tcpspray6, a TCP/IP Discard/Echo bandwidth metter.
 
   For detailled usage instructions, you should refer to the Unix manual
-pages ndisc6(8), rdisc6(8) and traceroute6(8) which should be
-provided with your copy of the program.
+pages ndisc6(8), rdisc6(8), traceroute6(8) and tcpspray6(1) which
+should be provided with your copy of the program.
   For instructions on compilation and installation of the package,
 refer to the provided INSTALL file.
 

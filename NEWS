@@ -18,6 +18,7 @@ STABLE RELEASE 0.6.0 : Code cleanup
 # Switch to the bloated autotools.
 # rdisc6 and traceroute6 compile fixes for Solaris.
 # ndisc6 fixes for BSD and Solaris.
+# tcpspray6 Discard/Echo bandwidth metter added.
 
 =============================================================================
 TEST RELEASE 0.5.3 : Minor bug fixes
