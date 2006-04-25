@@ -136,6 +136,65 @@ static const tracetype udp_type =
 	  send_udp_probe, NULL, parse_udp_error };
 
 
+/* ICMPv6 Echo probes */
+static int
+send_echo_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
+{
+	struct icmp6_hdr ih;
+	memset (&ih, 0, sizeof (ih));
+
+	ih.icmp6_type = ICMP6_ECHO_REQUEST;
+	ih.icmp6_id = htons (getpid ());
+	ih.icmp6_seq = htons ((ttl << 8) | (n & 0xff));
+	(void)port;
+
+	return (send (fd, &ih, sizeof (ih), 0) == sizeof (ih)) ? 0 : -1;
+}
+
+
+static int
+parse_echo_reply (const void *data, size_t len, unsigned *ttl, unsigned *n,
+                  uint16_t port)
+{
+	const struct icmp6_hdr *pih = (const struct icmp6_hdr *)data;
+
+	if ((len < sizeof (*pih))
+	 || (pih->icmp6_type != ICMP6_ECHO_REPLY)
+	 || (pih->icmp6_id != htons (getpid ())))
+		return -1;
+
+	(void)port;
+
+	*ttl = ntohs (pih->icmp6_seq) >> 8;
+	*n = ntohs (pih->icmp6_seq) & 0xff;
+	return 0;
+}
+
+
+static int
+parse_echo_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
+                  uint16_t port)
+{
+	const struct icmp6_hdr *pih = (const struct icmp6_hdr *)data;
+
+	if ((len < sizeof (*pih))
+	 || (pih->icmp6_type != ICMP6_ECHO_REQUEST) || (pih->icmp6_code)
+	 || (pih->icmp6_id != htons (getpid ())))
+		return -1;
+
+	(void)port;
+
+	*ttl = ntohs (pih->icmp6_seq) >> 8;
+	*n = ntohs (pih->icmp6_seq) & 0xff;
+	return 0;
+}
+
+
+static const tracetype echo_type =
+	{ SOCK_DGRAM,	IPPROTO_ICMPV6, 2,
+	  send_echo_probe, parse_echo_reply, parse_echo_error };
+
+
 /* TCP/SYN probes */
 static int
 send_syn_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
@@ -714,7 +773,7 @@ usage (const char *path)
 /*"  -E  enable TCP Explicit Congestion Notification\n"*/
 "  -f  specify the initial hop limit (default: 1)\n"
 "  -h  display this help and exit\n"
-/*"  -I  use ICMPv6 Echo packets as probes\n"*/
+"  -I  use ICMPv6 Echo packets as probes\n"
 /*"  -i  specify outgoing interface\n"*/
 /*"  -l  display incoming packets hop limit (UDP)\n"*/
 /*"  -l  set TCP probes byte size\n"*/
@@ -778,6 +837,7 @@ static struct option opts[] =
 	{ "ack",      no_argument,       NULL, 'A' },
 	{ "first",    required_argument, NULL, 'f' },
 	{ "help",     no_argument,       NULL, 'h' },
+	{ "icmp",     no_argument,       NULL, 'I' },
 	{ "max",      required_argument, NULL, 'm' },
 	{ "numeric",  no_argument,       NULL, 'n' },
 	{ "retry",    required_argument, NULL, 'q' },
@@ -798,7 +858,7 @@ main (int argc, char *argv[])
 	unsigned retries = 3, wait = 5, minhlim = 1, maxhlim = 30;
 	const char *dsthost, *dstport, *srchost = NULL, *srcport = NULL;
 
-	while ((val = getopt_long (argc, argv, "Af:hm:nq:Ss:UVw:",
+	while ((val = getopt_long (argc, argv, "Af:hIm:nq:Ss:UVw:",
 	                           opts, NULL)) != EOF)
 	{
 		switch (val)
@@ -815,6 +875,10 @@ main (int argc, char *argv[])
 			case 'h':
 				return usage (argv[0]);
 
+			case 'I':
+				type = &echo_type;
+				break;
+
 			case 'm':
 				if ((maxhlim = parse_hlim (optarg)) == (unsigned)(-1))
 					return 1;
@@ -830,7 +894,7 @@ main (int argc, char *argv[])
 				char *end;
 
 				l = strtoul (optarg, &end, 0);
-				if (*end || l > UINT_MAX)
+				if (*end || l > 255)
 					return quick_usage (argv[0]);
 				retries = l;
 				break;

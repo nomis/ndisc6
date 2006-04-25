@@ -17,7 +17,7 @@
 .SH NAME
 traceroute6 \- IPv6 traceroute tool
 .SH SYNOPSIS
-.BR "traceroute6" " [" "-AnSU" "] [" "-f min_hop" "] [" "-m max_hop" "] ["
+.BR "traceroute6" " [" "-AInSU" "] [" "-f min_hop" "] [" "-m max_hop" "] ["
 .BR "-q attempts" "] [" "-s source" "] [" "-w wait" "] <"
 .BR "hostname/address" "> [" "port/packet length" "]"
 
@@ -54,6 +54,10 @@ Override the initial IPv6 packets hop limit (default: 1).
 .TP
 .B "\-h"
 Display some help and exit.
+
+.TP
+.B "\-I"
+Send ICMPv6 Echo requests (like ping6) as probe packets.
 
 .TP
 .B "\-m"
