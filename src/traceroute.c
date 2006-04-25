@@ -84,11 +84,12 @@ static uint16_t getsourceport (void)
 
 	if (p == 0)
 	{
-		p = ~getpid ();
-		if (p < 1025)
-			p += 1025;
+		uint16_t v = ~getpid ();
+		if (v < 1025)
+			v += 1025;
+		p = htons (v);
 	}
-	return htons (p);
+	return p;
 }
 
 
