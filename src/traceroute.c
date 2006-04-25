@@ -670,6 +670,19 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
 }
 
 
+static void setup_socket (int fd)
+{
+	int val = fcntl (fd, F_GETFL);
+	if (val == -1)
+		val = 0;
+	fcntl (fd, F_SETFL, O_NONBLOCK | val);
+	fcntl (fd, F_GETFD, FD_CLOEXEC);
+
+	val = 1;
+	setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof (val));
+}
+
+
 static int
 traceroute (const char *dsthost, const char *dstport,
             const char *srchost, const char *srcport,
@@ -700,12 +713,8 @@ traceroute (const char *dsthost, const char *dstport,
 	/* Drops privileges permanently */
 	drop_priv ();
 
-	val = fcntl (icmpfd, F_GETFL);
-	fcntl (icmpfd, F_SETFL, O_NONBLOCK | ((val != -1) ? val : 0));
-	fcntl (icmpfd, F_SETFD, FD_CLOEXEC);
-	val = fcntl (protofd, F_GETFL);
-	fcntl (protofd, F_SETFL, O_NONBLOCK | ((val != -1) ? val : 0));
-	fcntl (protofd, F_SETFD, FD_CLOEXEC);
+	setup_socket (icmpfd);
+	setup_socket (protofd);
 
 	/* Set ICMPv6 filter */
 	{
@@ -724,6 +733,17 @@ traceroute (const char *dsthost, const char *dstport,
 	{
 		perror ("setsockopt(IPV6_CHECKSUM)");
 		goto error;
+	}
+
+	/* Set ICMPv6 filter for echo replies */
+	if (type->protocol == IPPROTO_ICMPV6)
+	{
+		// This is ok as long as only one “type” uses ICMPv6 as protocol
+		struct icmp6_filter f;
+
+		ICMP6_FILTER_SETBLOCKALL (&f);
+		ICMP6_FILTER_SETPASS (ICMP6_ECHO_REPLY, &f);
+		setsockopt (protofd, SOL_ICMPV6, ICMP6_FILTER, &f, sizeof (f));
 	}
 
 	/* Defines destination */
