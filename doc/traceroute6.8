@@ -17,7 +17,7 @@
 .SH NAME
 traceroute6 \- IPv6 traceroute tool
 .SH SYNOPSIS
-.BR "traceroute6" " [" "-AInSU" "] [" "-f min_hop" "] [" "-m max_hop" "] ["
+.BR "traceroute6" " [" "-AInrSU" "] [" "-f min_hop" "] [" "-m max_hop" "] ["
 .BR "-q attempts" "] [" "-s source" "] [" "-w wait" "] <"
 .BR "hostname/address" "> [" "port/packet length" "]"
 
@@ -48,6 +48,11 @@ and 2.6.14), and utterly helpless against stateful ones. Note that TCP/ACK
 probing cannot determine whether the destination TCP port is open or not.
 
 .TP
+.B "\-F"
+This option is ignored for backward compatibility.
+IPv6 packets are never fragmented en route.
+
+.TP
 .B "\-f" "
 Override the initial IPv6 packets hop limit (default: 1).
 
@@ -66,6 +71,11 @@ The default is 30 hops which should be sufficient on the IPv6 Internet for
 some time.
 
 .TP
+.B "\-N"
+Try to resolve each hop's IPv6 address to a host name. This is the default.
+This option is meant for backward compatibility with tcptraceroute(8).
+
+.TP
 .B "\-n"
 Do not try to resolve each hop's IPv6 address to a host name. That may speed
 up the traceroute significantly.
@@ -73,6 +83,12 @@ up the traceroute significantly.
 .TP
 .B "\-q"
 Override the number of probes sent to each hop (default: 3).
+
+.TP
+.B "\-r"
+Do not route packets, i.e. do not send packets through a gateway that would be
+specified by the routing table. At the time of writing, Linux kernel 2.6.16
+(latest stable release series) ignores this option.
 
 .TP
 .B "\-S"
@@ -95,6 +111,11 @@ Display program version and license and exit.
 Override the delay (in seconds) to wait for response once a given probe packet
 was sent (default: 5 seconds).
 
+.TP
+.B "\-x"
+This option is ignored for backward compatibility.
+The IPv6 header has no checksum field.
+
 .SH SECURITY
 .RI "traceroute6 should be " "setuid" " " "root" " to allow use by non "
 privileged users. It will drop its root privileges before any attempt
@@ -102,8 +123,7 @@ is made to send or receive data from the network so as to reduce the possible
 impact of a security vulnerability.
 
 .SH BUGS
-The packet length is currently not implemented for UDP probe packets.
-ICMP Echo probe packets are not implemented.
+The packet length is currently not implemented for UDP and ICMP probe packets.
 
 .SH "SEE ALSO"
 ipv6(7), traceroute(8), tcptraceroute(8)

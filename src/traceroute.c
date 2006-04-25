@@ -65,6 +65,7 @@ typedef struct tracetype
 
 
 static int niflags = 0;
+static int sendflags = 0;
 static const tracetype *type = NULL;
 
 #define TCP_WINDOW 4096
@@ -93,6 +94,12 @@ static uint16_t getsourceport (void)
 }
 
 
+static int send_payload (int fd, const void *payload, size_t length)
+{
+	return send (fd, payload, length, sendflags) == (int)length ? 0 : -1;
+}
+
+
 /* UDP probes (traditional traceroute) */
 static int
 send_udp_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
@@ -105,7 +112,7 @@ send_udp_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
 	uh.uh_dport = htons (ntohs (port) + ttl);
 	uh.uh_ulen = htons (sizeof (uh));
 
-	return (send (fd, &uh, sizeof (uh), 0) == sizeof (uh)) ? 0 : -1;
+	return send_payload (fd, &uh, sizeof (uh));
 }
 
 
@@ -149,7 +156,7 @@ send_echo_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
 	ih.icmp6_seq = htons ((ttl << 8) | (n & 0xff));
 	(void)port;
 
-	return (send (fd, &ih, sizeof (ih), 0) == sizeof (ih)) ? 0 : -1;
+	return send_payload (fd, &ih, sizeof (ih));
 }
 
 
@@ -210,7 +217,7 @@ send_syn_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
 	th.th_flags = TH_SYN;
 	th.th_win = htons (TCP_WINDOW);
 
-	return (send (fd, &th, sizeof (th), 0) == sizeof (th)) ? 0 : -1;
+	return send_payload (fd, &th, sizeof (th));
 }
 
 
@@ -280,7 +287,7 @@ send_ack_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
 	th.th_flags = TH_ACK;
 	th.th_win = htons (TCP_WINDOW);
 
-	return (send (fd, &th, sizeof (th), 0) == sizeof (th)) ? 0 : -1;
+	return send_payload (fd, &th, sizeof (th));
 }
 
 
@@ -794,16 +801,17 @@ usage (const char *path)
 /*"  -E  enable TCP Explicit Congestion Notification\n"*/
 "  -f  specify the initial hop limit (default: 1)\n"
 "  -h  display this help and exit\n"
-"  -I  use ICMPv6 Echo packets as probes\n"
+"  -I  use ICMPv6 Echo Request packets as probes\n"
 /*"  -i  specify outgoing interface\n"*/
 /*"  -l  display incoming packets hop limit (UDP)\n"*/
 /*"  -l  set TCP probes byte size\n"*/
 "  -m  set the maximum hop limit (default: 30)\n"
+"  -N  perform reverse name lookups on the addresses of every hop\n"
 "  -n  don't perform reverse name lookup on addresses\n"
 /*"  -p  override base destination UDP port\n"*/
 /*"  -p  override source TCP port\n"*/
 "  -q  override the number of probes per hop (default: 3)\n"
-/*"  -r  do not route packets\n"*/
+"  -r  do not route packets\n"
 "  -S  send TCP SYN probes\n"
 "  -s  specify the source IPv6 address of probe packets\n"
 "  -U  send UDP probes (default)\n"
@@ -811,7 +819,7 @@ usage (const char *path)
 /*"  -v, --verbose  display all kind of ICMPv6 errors\n"*/
 "  -w  override the timeout for response in seconds (default: 5)\n"
 /*"  -z  specify a time to wait (in ms) between each probes (default: 0)\n"*/
-			/*"  TCP: -NtF  UDP: -g? -tx"*/
+			/*  TCP: -t  UDP: -g? -t*/
 	));
 
 	return 0;
@@ -856,18 +864,22 @@ parse_hlim (const char *str)
 static struct option opts[] = 
 {
 	{ "ack",      no_argument,       NULL, 'A' },
+	// -F is a stub
 	{ "first",    required_argument, NULL, 'f' },
 	{ "help",     no_argument,       NULL, 'h' },
 	{ "icmp",     no_argument,       NULL, 'I' },
 	{ "max",      required_argument, NULL, 'm' },
+	// -N is not really a stub, should have a long name
 	{ "numeric",  no_argument,       NULL, 'n' },
 	{ "retry",    required_argument, NULL, 'q' },
+	{ "noroute",  no_argument,       NULL, 'r' },
 	{ "syn",      no_argument,       NULL, 'S' },
 	{ "source",   required_argument, NULL, 's' },
 	{ "udp",      no_argument,       NULL, 'U' },
 	{ "version",  no_argument,       NULL, 'V' },
 	/*{ "verbose",  no_argument,       NULL, 'v' },*/
 	{ "wait",     required_argument, NULL, 'w' },
+	// -x is a stub
 	{ NULL,       0,                 NULL, 0   }
 };
 
@@ -879,7 +891,7 @@ main (int argc, char *argv[])
 	unsigned retries = 3, wait = 5, minhlim = 1, maxhlim = 30;
 	const char *dsthost, *dstport, *srchost = NULL, *srcport = NULL;
 
-	while ((val = getopt_long (argc, argv, "Af:hIm:nq:Ss:UVw:",
+	while ((val = getopt_long (argc, argv, "Af:hIm:Nnq:rSs:UVw:x",
 	                           opts, NULL)) != EOF)
 	{
 		switch (val)
@@ -905,6 +917,14 @@ main (int argc, char *argv[])
 					return 1;
 				break;
 
+			case 'N':
+				/*
+				 * FIXME: should we differenciate private addresses as
+				 * tcptraceroute does?
+				 */
+				niflags &= ~NI_NUMERICHOST;
+				break;
+
 			case 'n':
 				niflags |= NI_NUMERICHOST | NI_NUMERICSERV;
 				break;
@@ -920,6 +940,10 @@ main (int argc, char *argv[])
 				retries = l;
 				break;
 			}
+
+			case 'r':
+				sendflags |= MSG_DONTROUTE;
+				break;
 
 			case 'S':
 				type = &syn_type;
@@ -947,6 +971,11 @@ main (int argc, char *argv[])
 				wait = l;
 				break;
 			}
+
+			// stubs:
+			case 'F':
+			case 'x':
+				break;
 
 			case '?':
 			default:
