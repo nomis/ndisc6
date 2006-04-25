@@ -53,9 +53,9 @@
 
 typedef struct tracetype
 {
-	int res_socktype;
+	int gai_socktype;
 	int protocol;
-	int check_offset;
+	int checksum_offset;
 	int (*send_probe) (int fd, unsigned ttl, unsigned n, uint16_t port);
 	int (*parse_resp) (const void *data, size_t len, unsigned *ttl,
 	                   unsigned *n, uint16_t port);
@@ -133,7 +133,7 @@ parse_udp_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 
 
 static const tracetype udp_type =
-	{ SOCK_DGRAM,	IPPROTO_UDP, 6,
+	{ SOCK_DGRAM, IPPROTO_UDP, 6,
 	  send_udp_probe, NULL, parse_udp_error };
 
 
@@ -192,7 +192,7 @@ parse_echo_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 
 
 static const tracetype echo_type =
-	{ SOCK_DGRAM,	IPPROTO_ICMPV6, 2,
+	{ SOCK_DGRAM, IPPROTO_ICMPV6, 2,
 	  send_echo_probe, parse_echo_reply, parse_echo_error };
 
 
@@ -262,7 +262,7 @@ parse_syn_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 
 
 static const tracetype syn_type =
-	{ SOCK_STREAM,	IPPROTO_TCP, 16,
+	{ SOCK_STREAM, IPPROTO_TCP, 16,
 	  send_syn_probe, parse_syn_resp, parse_syn_error };
 
 
@@ -333,7 +333,7 @@ parse_ack_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 
 
 static const tracetype ack_type =
-	{ SOCK_STREAM,	IPPROTO_TCP, 16,
+	{ SOCK_STREAM, IPPROTO_TCP, 16,
 	  send_ack_probe, parse_ack_resp, parse_ack_error };
 
 
@@ -615,7 +615,7 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
 
 	memset (&hints, 0, sizeof (hints));
 	hints.ai_family = AF_INET6;
-	hints.ai_socktype = type->res_socktype;
+	hints.ai_socktype = type->gai_socktype;
 
 	if ((srchost != NULL) || (srcport != NULL))
 	{
@@ -718,8 +718,8 @@ traceroute (const char *dsthost, const char *dstport,
 	}
 
 	/* Defines protocol-specific checksum offset */
-	if ((type->check_offset != -1)
-	 && setsockopt (protofd, SOL_IPV6, IPV6_CHECKSUM, &type->check_offset,
+	if ((type->checksum_offset != -1)
+	 && setsockopt (protofd, SOL_IPV6, IPV6_CHECKSUM, &type->checksum_offset,
 	                sizeof (int)))
 	{
 		perror ("setsockopt(IPV6_CHECKSUM)");
