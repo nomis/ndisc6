@@ -115,7 +115,7 @@ parse_udp_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 	const struct udphdr *puh = (const struct udphdr *)data;
 	uint16_t rport;
 
-	if ((len < 4)
+	if ((len < 6)
 	 || (puh->uh_sport != getsourceport ())
 	 || (puh->uh_ulen != htons (sizeof (*puh))))
 		return -1;
