@@ -344,7 +344,8 @@ print_icmp_code (const struct icmp6_hdr *hdr)
 			printf ("!%c ", c);
 	}
 }
-// 
+
+
 static int
 probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
            unsigned ttl, unsigned retries, unsigned timeout)
@@ -715,12 +716,14 @@ usage (const char *path)
 "  -h  display this help and exit\n"
 /*"  -I  use ICMPv6 Echo packets as probes\n"*/
 /*"  -i  specify outgoing interface\n"*/
-/*"  -l  display incoming packets hop limit\n"*/
+/*"  -l  display incoming packets hop limit (UDP)\n"*/
+/*"  -l  set TCP probes byte size\n"*/
 "  -m  set the maximum hop limit (default: 30)\n"
 "  -n  don't perform reverse name lookup on addresses\n"
 /*"  -p  override base destination UDP port\n"*/
 /*"  -p  override source TCP port\n"*/
 "  -q  override the number of probes per hop (default: 3)\n"
+/*"  -r  do not route packets\n"*/
 "  -S  send TCP SYN probes\n"
 "  -s  specify the source IPv6 address of probe packets\n"
 "  -U  send UDP probes (default)\n"
@@ -728,6 +731,7 @@ usage (const char *path)
 /*"  -v, --verbose  display all kind of ICMPv6 errors\n"*/
 "  -w  override the timeout for response in seconds (default: 5)\n"
 /*"  -z  specify a time to wait (in ms) between each probes (default: 0)\n"*/
+			/*"  TCP: -NtF  UDP: -g? -tx"*/
 	));
 
 	return 0;
@@ -771,9 +775,15 @@ parse_hlim (const char *str)
 
 static struct option opts[] = 
 {
+	{ "ack",      no_argument,       NULL, 'A' },
+	{ "first",    required_argument, NULL, 'f' },
 	{ "help",     no_argument,       NULL, 'h' },
+	{ "max",      required_argument, NULL, 'm' },
 	{ "numeric",  no_argument,       NULL, 'n' },
 	{ "retry",    required_argument, NULL, 'q' },
+	{ "syn",      no_argument,       NULL, 'S' },
+	{ "source",   required_argument, NULL, 's' },
+	{ "udp",      no_argument,       NULL, 'U' },
 	{ "version",  no_argument,       NULL, 'V' },
 	/*{ "verbose",  no_argument,       NULL, 'v' },*/
 	{ "wait",     required_argument, NULL, 'w' },
