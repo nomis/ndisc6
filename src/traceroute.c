@@ -717,7 +717,7 @@ traceroute (const char *dsthost, const char *dstport,
 	icmpfd = socket (AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
 	if (icmpfd == -1)
 	{
-		perror (_("Raw socket"));
+		perror (_("Raw IPv6 socket"));
 		return -1;
 	}
 
@@ -725,8 +725,8 @@ traceroute (const char *dsthost, const char *dstport,
 	protofd = socket (AF_INET6, SOCK_RAW, type->protocol);
 	if (protofd == -1)
 	{
-		perror (_("Raw socket"));
 		close (icmpfd);
+		perror (_("Raw IPv6 socket"));
 		return -1;
 	}
 
@@ -742,6 +742,13 @@ traceroute (const char *dsthost, const char *dstport,
 
 	/* Drops privileges permanently */
 	drop_priv ();
+
+	if ((icmpfd <= 2) || (protofd >= FD_SETSIZE))
+	{
+		close (icmpfd);
+		close (protofd);
+		return -1;
+	}
 
 	setup_socket (icmpfd);
 	setup_socket (protofd);

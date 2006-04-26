@@ -530,13 +530,21 @@ ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
 	struct sockaddr_in6 tgt;
 
 	fd = socket (PF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
+	drop_priv ();
+
 	if (fd == -1)
 	{
-		perror (_("ICMPv6 raw socket"));
+		perror (_("Raw IPv6 socket"));
 		return -1;
 	}
 
-	drop_priv ();
+	if ((fd <= 2) || (fd >= FD_SETSIZE))
+	{
+		close (fd);
+		if (fd >= FD_SETSIZE)
+			fprintf (stderr, "%s\n", sterror (EMFILE));
+		return -1;
+	}
 
 	/* set ICMPv6 filter */
 	{
