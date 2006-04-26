@@ -17,8 +17,8 @@
 .SH NAME
 traceroute6 \- IPv6 traceroute tool
 .SH SYNOPSIS
-.BR "traceroute6" " [" "-AdEInrSU" "] [" "-f min_hop" "] [" "-m max_hop" "] ["
-.BR "-q attempts" "] [" "-s source" "] [" "-w wait" "] <"
+.BR "traceroute6" " [" "-AdEInrSU" "] [" "-f min_hop" "] [" "-i iface" "] ["
+.BR  "-m max_hop" "] [" "-q attempts" "] [" "-s source" "] [" "-w wait" "] <"
 .BR "hostname/address" "> [" "port/packet length" "]"
 
 .SH DESCRIPTON
@@ -73,6 +73,11 @@ Display some help and exit.
 .TP
 .B "\-I"
 Send ICMPv6 Echo requests (like ping6) as probe packets.
+
+.TP
+.B "\-i"
+Only send packets through the specified interface.
+Linux currently seems to ignore this though.
 
 .TP
 .B "\-m"

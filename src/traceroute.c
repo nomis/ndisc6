@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <net/if.h> // IFNAMSIZ
 #include <netinet/in.h>
 #include <netinet/ip6.h>
 #include <netinet/udp.h>
@@ -70,6 +71,7 @@ static int sendflags = 0;
 static int tcpflags = 0;
 static const tracetype *type = NULL;
 bool debug = false;
+static char ifname[IFNAMSIZ] = "";
 
 #define TCP_WINDOW 4096
 #ifndef TH_ECE
@@ -728,6 +730,16 @@ traceroute (const char *dsthost, const char *dstport,
 		return -1;
 	}
 
+	if (*ifname
+	 && setsockopt (protofd, SOL_SOCKET, SO_BINDTODEVICE, ifname,
+	                strlen (ifname) + 1))
+	{
+		perror (ifname);
+		close (protofd);
+		close (icmpfd);
+		return -1;
+	}
+
 	/* Drops privileges permanently */
 	drop_priv ();
 
@@ -771,6 +783,9 @@ traceroute (const char *dsthost, const char *dstport,
 	printf (_("port %u, "), ntohs (dst.sin6_port));
 	printf (_("%u hops max\n"), max_ttl);
 
+	setsockopt (protofd, SOL_SOCKET, SO_BINDTODEVICE, ifname,
+				strlen (ifname) + 1);
+
 	/* Performs traceroute */
 	for (ttl = min_ttl, val = 0; (ttl <= max_ttl) && !val; ttl++)
 		val = probe_ttl (protofd, icmpfd, &dst, ttl, retries, timeout);
@@ -813,7 +828,7 @@ usage (const char *path)
 "  -f  specify the initial hop limit (default: 1)\n"
 "  -h  display this help and exit\n"
 "  -I  use ICMPv6 Echo Request packets as probes\n"
-/*"  -i  specify outgoing interface\n"*/
+"  -i  force outgoing network interface\n"
 /*"  -l  display incoming packets hop limit (UDP)\n"*/
 /*"  -l  set TCP probes byte size\n"*/
 "  -m  set the maximum hop limit (default: 30)\n"
@@ -881,6 +896,7 @@ static struct option opts[] =
 	{ "first",    required_argument, NULL, 'f' },
 	{ "help",     no_argument,       NULL, 'h' },
 	{ "icmp",     no_argument,       NULL, 'I' },
+	{ "iface",    required_argument, NULL, 'i' },
 	{ "max",      required_argument, NULL, 'm' },
 	// -N is not really a stub, should have a long name
 	{ "numeric",  no_argument,       NULL, 'n' },
@@ -897,7 +913,7 @@ static struct option opts[] =
 };
 
 
-static const char optstr[] = "AdEf:hIm:Nnq:rSs:UVw:x";
+static const char optstr[] = "AdEf:hIi:m:Nnq:rSs:UVw:x";
 
 int
 main (int argc, char *argv[])
@@ -932,6 +948,11 @@ main (int argc, char *argv[])
 
 			case 'I':
 				type = &echo_type;
+				break;
+
+			case 'i':
+				strncpy (ifname, optarg, IFNAMSIZ - 1);
+				ifname[IFNAMSIZ - 1] = '\0';
 				break;
 
 			case 'm':
