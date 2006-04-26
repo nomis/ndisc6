@@ -66,9 +66,15 @@ typedef struct tracetype
 
 static int niflags = 0;
 static int sendflags = 0;
+static int tcpflags = 0;
 static const tracetype *type = NULL;
 
 #define TCP_WINDOW 4096
+#ifndef TH_ECE
+# define TH_ECE 0x40
+# define TH_CWR 0x80
+#endif
+
 
 /****************************************************************************/
 
@@ -214,7 +220,7 @@ send_syn_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
 	th.th_dport = port;
 	th.th_seq = htonl ((ttl << 24) | (n << 16) | getpid ());
 	th.th_off = sizeof (th) / 4;
-	th.th_flags = TH_SYN;
+	th.th_flags = TH_SYN | tcpflags;
 	th.th_win = htons (TCP_WINDOW);
 
 	return send_payload (fd, &th, sizeof (th));
@@ -798,7 +804,7 @@ usage (const char *path)
 	puts (_("\n"
 "  -A  send TCP ACK probes\n"
 /*"  -d  enable debugging\n"*/
-/*"  -E  enable TCP Explicit Congestion Notification\n"*/
+"  -E  set TCP Explicit Congestion Notification bits in TCP packets\n"
 "  -f  specify the initial hop limit (default: 1)\n"
 "  -h  display this help and exit\n"
 "  -I  use ICMPv6 Echo Request packets as probes\n"
@@ -864,6 +870,7 @@ parse_hlim (const char *str)
 static struct option opts[] = 
 {
 	{ "ack",      no_argument,       NULL, 'A' },
+	{ "ecn",      no_argument,       NULL, 'E' },
 	// -F is a stub
 	{ "first",    required_argument, NULL, 'f' },
 	{ "help",     no_argument,       NULL, 'h' },
@@ -891,13 +898,17 @@ main (int argc, char *argv[])
 	unsigned retries = 3, wait = 5, minhlim = 1, maxhlim = 30;
 	const char *dsthost, *dstport, *srchost = NULL, *srcport = NULL;
 
-	while ((val = getopt_long (argc, argv, "Af:hIm:Nnq:rSs:UVw:x",
+	while ((val = getopt_long (argc, argv, "AEf:hIm:Nnq:rSs:UVw:x",
 	                           opts, NULL)) != EOF)
 	{
 		switch (val)
 		{
 			case 'A':
 				type = &ack_type;
+				break;
+
+			case 'E':
+				tcpflags |= TH_ECE | TH_CWR;
 				break;
 
 			case 'f':

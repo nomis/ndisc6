@@ -17,7 +17,7 @@
 .SH NAME
 traceroute6 \- IPv6 traceroute tool
 .SH SYNOPSIS
-.BR "traceroute6" " [" "-AInrSU" "] [" "-f min_hop" "] [" "-m max_hop" "] ["
+.BR "traceroute6" " [" "-AEInrSU" "] [" "-f min_hop" "] [" "-m max_hop" "] ["
 .BR "-q attempts" "] [" "-s source" "] [" "-w wait" "] <"
 .BR "hostname/address" "> [" "port/packet length" "]"
 
@@ -46,6 +46,12 @@ Send TCP/ACK probe packets. That's very efficient against stateless
 firewalls (e.g. the official Linux kernel versions up to and including 2.4.31
 and 2.6.14), and utterly helpless against stateful ones. Note that TCP/ACK
 probing cannot determine whether the destination TCP port is open or not.
+
+.TP
+.B "\-E"
+.RI "Send " "ECN-setup" " TCP/SYN probe packets (as per RFC 3168)"
+rather than non-ECN-setup TCP/SYN probe packets. This has no effect unless
+command line optin -S is specified as well.
 
 .TP
 .B "\-F"
