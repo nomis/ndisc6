@@ -783,9 +783,6 @@ traceroute (const char *dsthost, const char *dstport,
 	printf (_("port %u, "), ntohs (dst.sin6_port));
 	printf (_("%u hops max\n"), max_ttl);
 
-	setsockopt (protofd, SOL_SOCKET, SO_BINDTODEVICE, ifname,
-				strlen (ifname) + 1);
-
 	/* Performs traceroute */
 	for (ttl = min_ttl, val = 0; (ttl <= max_ttl) && !val; ttl++)
 		val = probe_ttl (protofd, icmpfd, &dst, ttl, retries, timeout);
