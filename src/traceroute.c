@@ -747,6 +747,8 @@ traceroute (const char *dsthost, const char *dstport,
 	{
 		close (icmpfd);
 		close (protofd);
+		if (protofd >= FD_SETSIZE)
+			fprintf (stderr, "%s\n", strerror (EMFILE));
 		return -1;
 	}
 

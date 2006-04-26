@@ -29,6 +29,7 @@
 #include <inttypes.h>
 #include <limits.h> /* UINT_MAX */
 
+#include <errno.h> /* EMFILE */
 #include <sys/types.h>
 #include <sys/time.h>
 #include <time.h> /* gettimeofday() */
@@ -542,7 +543,7 @@ ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
 	{
 		close (fd);
 		if (fd >= FD_SETSIZE)
-			fprintf (stderr, "%s\n", sterror (EMFILE));
+			fprintf (stderr, "%s\n", strerror (EMFILE));
 		return -1;
 	}
 
