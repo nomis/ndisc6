@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdlib.h> /* div() */
 #include <limits.h>
+#include <stdbool.h>
 
 #include <unistd.h>
 #include <sys/socket.h>
@@ -68,6 +69,7 @@ static int niflags = 0;
 static int sendflags = 0;
 static int tcpflags = 0;
 static const tracetype *type = NULL;
+bool debug = false;
 
 #define TCP_WINDOW 4096
 #ifndef TH_ECE
@@ -685,14 +687,17 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
 
 static void setup_socket (int fd)
 {
-	int val = fcntl (fd, F_GETFL);
+	int val = 1;
+
+	if (debug)
+		setsockopt (fd, SOL_SOCKET, SO_DEBUG, &val, sizeof (val));
+	setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof (val));
+
+	val = fcntl (fd, F_GETFL);
 	if (val == -1)
 		val = 0;
 	fcntl (fd, F_SETFL, O_NONBLOCK | val);
 	fcntl (fd, F_GETFD, FD_CLOEXEC);
-
-	val = 1;
-	setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof (val));
 }
 
 
@@ -803,7 +808,7 @@ usage (const char *path)
 
 	puts (_("\n"
 "  -A  send TCP ACK probes\n"
-/*"  -d  enable debugging\n"*/
+"  -d  enable socket debugging\n"
 "  -E  set TCP Explicit Congestion Notification bits in TCP packets\n"
 "  -f  specify the initial hop limit (default: 1)\n"
 "  -h  display this help and exit\n"
@@ -870,6 +875,7 @@ parse_hlim (const char *str)
 static struct option opts[] = 
 {
 	{ "ack",      no_argument,       NULL, 'A' },
+	{ "debug",    no_argument,       NULL, 'd' },
 	{ "ecn",      no_argument,       NULL, 'E' },
 	// -F is a stub
 	{ "first",    required_argument, NULL, 'f' },
@@ -891,6 +897,8 @@ static struct option opts[] =
 };
 
 
+static const char optstr[] = "AdEf:hIm:Nnq:rSs:UVw:x";
+
 int
 main (int argc, char *argv[])
 {
@@ -898,13 +906,16 @@ main (int argc, char *argv[])
 	unsigned retries = 3, wait = 5, minhlim = 1, maxhlim = 30;
 	const char *dsthost, *dstport, *srchost = NULL, *srcport = NULL;
 
-	while ((val = getopt_long (argc, argv, "AEf:hIm:Nnq:rSs:UVw:x",
-	                           opts, NULL)) != EOF)
+	while ((val = getopt_long (argc, argv, optstr, opts, NULL)) != EOF)
 	{
 		switch (val)
 		{
 			case 'A':
 				type = &ack_type;
+				break;
+
+			case 'd':
+				debug = true;
 				break;
 
 			case 'E':
