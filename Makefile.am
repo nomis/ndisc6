@@ -34,6 +34,8 @@ install-data-hook:
 distclean-local:
 	test "$(top_srcdir)" = "$(top_builddir)" || rm -f ChangeLog
 
+dist-hook: stamp-svn
+
 stamp-svn:
 	@rev=$$(LANG=C svnversion "$(srcdir)" 2>/dev/null || echo exported) ; \
 	oldrev=$$(cat stamp-svn 2>/dev/null || true) ; \
