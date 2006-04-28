@@ -735,6 +735,7 @@ traceroute (const char *dsthost, const char *dstport,
 		return -1;
 	}
 
+#ifdef SO_BINDTODEVICE
 	if (*ifname
 	 && setsockopt (protofd, SOL_SOCKET, SO_BINDTODEVICE, ifname,
 	                strlen (ifname) + 1))
@@ -744,6 +745,8 @@ traceroute (const char *dsthost, const char *dstport,
 		close (icmpfd);
 		return -1;
 	}
+	/* FIXME: implement on non-Linux */
+#endif
 
 	/* Drops privileges permanently */
 	drop_priv ();
