@@ -33,7 +33,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <time.h> /* gettimeofday() */
-#include <sys/select.h> /* select() */
+#include <poll.h> /* poll() */
 #include <sys/socket.h>
 #include <unistd.h> /* close() */
 #include <sys/ioctl.h>
@@ -444,55 +444,43 @@ recvadv (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
 	/* receive loop */
 	for (;;)
 	{
-		uint8_t buf[1500]; /* TODO: use interface MTU */
-		struct sockaddr_in6 addr;
-		fd_set set;
-		struct timeval left;
-		int val;
-
 		/* waits for reply until deadline */
-		FD_ZERO (&set);
-		FD_SET (fd, &set);
+		struct pollfd ufd;
+		memset (&ufd, 0, sizeof (ufd));
+		ufd.fd = fd;
+		ufd.events = POLLIN;
 
-		if ((now.tv_sec < end.tv_sec)
-		 || ((now.tv_sec == end.tv_sec) && (now.tv_usec <= end.tv_usec)))
+		int delay = 0;
+		if (end.tv_sec >= now.tv_sec)
 		{
-			left.tv_sec = end.tv_sec - now.tv_sec;
-			left.tv_usec = end.tv_usec - now.tv_usec;
-
-			if (end.tv_usec < now.tv_usec)
-			{
-				/* carry */
-				left.tv_sec --;
-				left.tv_usec += 1000000;
-			}
-		}
-		else
-		{
-			/* time is UP: reads already queued packets and exit */
-			left.tv_sec = 0;
-			left.tv_usec = 0;
+			delay = (end.tv_sec - now.tv_sec) * 1000
+				+ (int)((end.tv_usec - now.tv_usec) / 1000);
+			if (delay < 0)
+				delay = 0;
 		}
 
-		val = select (fd + 1, &set, NULL, NULL, &left);
+		int val = poll (&ufd, 1, delay);
 		if (val < 0)
 			break;
 
 		if (val == 0)
 			return responses;
-		else
-		{
-			/* receives an ICMPv6 packet */
-			socklen_t len = sizeof (addr);
 
-			/* TODO: ensure packet TTL is 255 (if possible) */
-			val = recvfrom (fd, &buf, sizeof (buf), MSG_DONTWAIT,
-					(struct sockaddr *)&addr, &len);
-			if (val < 0)
-			{
-				perror (_("Receiving ICMPv6 packet"));
-				continue;
-			}
+		/* receives an ICMPv6 packet */
+		/*
+		 * TODO:
+		 * - ensure packet TTL is 255 (if possible)
+		 * - use interface MTU for buffer size
+		 */
+		struct sockaddr_in6 addr;
+		socklen_t len = sizeof (addr);
+		uint8_t buf[1500];
+		val = recvfrom (fd, &buf, sizeof (buf), MSG_DONTWAIT,
+				(struct sockaddr *)&addr, &len);
+		if (val < 0)
+		{
+			perror (_("Receiving ICMPv6 packet"));
+			continue;
 		}
 
 		/* ensures the response came through the right interface */
@@ -539,11 +527,9 @@ ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
 		return -1;
 	}
 
-	if ((fd <= 2) || (fd >= FD_SETSIZE))
+	if (fd <= 2)
 	{
 		close (fd);
-		if (fd >= FD_SETSIZE)
-			fprintf (stderr, "%s\n", strerror (EMFILE));
 		return -1;
 	}
 
