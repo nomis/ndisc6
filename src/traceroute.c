@@ -464,7 +464,11 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 			ufds[1].fd = icmpfd;
 			ufds[1].events = POLLIN;
 
-			int val = poll (ufds, 2, timeout * 1000);
+			gettimeofday (&recvd, NULL);
+			int val = ((sent.tv_sec + timeout - recvd.tv_sec) * 1000)
+				+ (int)((sent.tv_usec - recvd.tv_usec) / 1000);
+
+			val = poll (ufds, 2, val > 0 ? val : 0);
 			if (val < 0) /* interrupted by signal - well, not really */
 				return -1;
 
