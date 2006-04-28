@@ -30,6 +30,7 @@
 #include <stdbool.h>
 
 #include <unistd.h>
+#include <poll.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <net/if.h> // IFNAMSIZ
@@ -440,7 +441,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 	for (n = 0; n < retries; n++)
 	{
-		struct timeval tv = { timeout, 0 }, sent, recvd;
+		struct timeval sent, recvd;
 		unsigned pttl, pn;
 		int maxfd;
 
@@ -455,14 +456,15 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 		for (;;)
 		{
-			fd_set rdset;
-			int val;
+			struct pollfd ufds[2];
 
-			FD_ZERO (&rdset);
-			FD_SET (icmpfd, &rdset);
-			FD_SET (protofd, &rdset);
+			memset (ufds, 0, sizeof (ufds));
+			ufds[0].fd = protofd;
+			ufds[0].events = POLLIN;
+			ufds[1].fd = icmpfd;
+			ufds[1].events = POLLIN;
 
-			val = select (maxfd, &rdset, NULL, NULL, &tv);
+			int val = poll (ufds, 2, timeout * 1000);
 			if (val < 0) /* interrupted by signal - well, not really */
 				return -1;
 
@@ -475,12 +477,11 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 			gettimeofday (&recvd, NULL);
 
 			/* Receive final packet when host reached */
-			if (FD_ISSET (protofd, &rdset))
+			if (ufds[0].revents)
 			{
 				uint8_t buf[1240];
-				int len;
 
-				len = recv (protofd, buf, sizeof (buf), 0);
+				int len = recv (protofd, buf, sizeof (buf), 0);
 				if (len < 0)
 				{
 					switch (errno)
@@ -550,7 +551,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 			}
 
 			/* Receive ICMP errors along the way */
-			if (val && FD_ISSET (icmpfd, &rdset))
+			if (ufds[1].revents)
 			{
 				struct
 				{
@@ -743,12 +744,10 @@ traceroute (const char *dsthost, const char *dstport,
 	/* Drops privileges permanently */
 	drop_priv ();
 
-	if ((icmpfd <= 2) || (protofd >= FD_SETSIZE))
+	if (icmpfd <= 2)
 	{
 		close (icmpfd);
 		close (protofd);
-		if (protofd >= FD_SETSIZE)
-			fprintf (stderr, "%s\n", strerror (EMFILE));
 		return -1;
 	}
 
