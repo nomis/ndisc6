@@ -36,7 +36,7 @@
 #include <poll.h> /* poll() */
 #include <sys/socket.h>
 #include <unistd.h> /* close() */
-#include <sys/ioctl.h>
+#include <fcntl.h>
 
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
@@ -57,6 +57,9 @@
 # define ND_TYPE_ADVERT ND_NEIGHBOR_ADVERT
 # define TYPE_NAME "Neighbor"
 # define NDISC_DEFAULT (NDISC_VERBOSE1 | NDISC_SINGLE)
+# ifdef __linux__
+#  include <sys/ioctl.h>
+# endif
 #else
 # define NAME "rdisc"
 # define ND_TYPE_ADVERT ND_ROUTER_ADVERT
@@ -532,6 +535,8 @@ ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
 		close (fd);
 		return -1;
 	}
+
+	fcntl (fd, F_SETFD, FD_CLOEXEC);
 
 	/* set ICMPv6 filter */
 	{
