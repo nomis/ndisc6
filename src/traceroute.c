@@ -914,19 +914,31 @@ version (void)
 }
 
 
-static int
+static unsigned
 parse_hlim (const char *str)
 {
 	char *end;
-	unsigned long u;
-
-	u = strtoul (str, &end, 0);
+	unsigned long u = strtoul (str, &end, 0);
 	if ((u > 255) || *end)
 	{
 		fprintf (stderr, _("%s: invalid hop limit\n"), str);
-		return -1;
+		return (unsigned)(-1);
 	}
-	return u;
+	return (unsigned)u;
+}
+
+
+static size_t
+parse_plen (const char *str)
+{
+	char *end;
+	unsigned long u = strtoul (str, &end, 0);
+	if ((u > 65535) || *end)
+	{
+		fprintf (stderr, _("%s: invalid packet length\n"), str);
+		return (size_t)(-1);
+	}
+	return (size_t)u;
 }
 
 
@@ -961,9 +973,10 @@ static const char optstr[] = "AdEf:hIi:m:Nnq:rSs:UVw:x";
 int
 main (int argc, char *argv[])
 {
-	int val;
+	const char *dsthost, *dstport = NULL, *srchost = NULL, *srcport = NULL;
+	size_t plen = 16;
 	unsigned retries = 3, wait = 5, minhlim = 1, maxhlim = 30;
-	const char *dsthost, *dstport, *srchost = NULL, *srcport = NULL;
+	int val;
 
 	while ((val = getopt_long (argc, argv, optstr, opts, NULL)) != EOF)
 	{
@@ -1017,10 +1030,8 @@ main (int argc, char *argv[])
 
 			case 'q':
 			{
-				unsigned long l;
 				char *end;
-
-				l = strtoul (optarg, &end, 0);
+				unsigned long l = strtoul (optarg, &end, 0);
 				if (*end || l > 255)
 					return quick_usage (argv[0]);
 				retries = l;
@@ -1048,10 +1059,8 @@ main (int argc, char *argv[])
 
 			case 'w':
 			{
-				unsigned long l;
 				char *end;
-
-				l = strtoul (optarg, &end, 0);
+				unsigned long l = strtoul (optarg, &end, 0);
 				if (*end || l > UINT_MAX)
 					return quick_usage (argv[0]);
 				wait = l;
@@ -1072,22 +1081,29 @@ main (int argc, char *argv[])
 	if (type == NULL)
 		type = &udp_type;
 
-	sport = getsourceport ();
-
 	/* FIXME: use dstport as packet size for UDP and ICMP */
 	if (optind < argc)
 	{
 		dsthost = argv[optind++];
 
 		if (optind < argc)
-			dstport = argv[optind++];
-		else
-			dstport = (type->protocol == IPPROTO_TCP) ? "80" : "33434";
+		{
+			if (type->protocol == IPPROTO_TCP)
+				dstport = argv[optind++];
+			else
+			if ((plen = parse_plen (argv[optind++])) == (size_t)(-1))
+				return 1;
+		}
 	}
 	else
 		return quick_usage (argv[0]);
 
+	if (dstport == NULL)
+		dstport = (type->protocol == IPPROTO_TCP) ? "80" : "33434";
+
+	sport = getsourceport ();
+
 	setvbuf (stdout, NULL, _IONBF, 0);
-	return -traceroute (dsthost, dstport, srchost, srcport, wait, retries, 16,
-	                    minhlim, maxhlim);
+	return -traceroute (dsthost, dstport, srchost, srcport, wait, retries,
+	                    plen, minhlim, maxhlim);
 }
