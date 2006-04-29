@@ -69,10 +69,11 @@ typedef struct tracetype
 
 
 /* All our evil global variables */
+static const tracetype *type = NULL;
 static int niflags = 0;
 static int sendflags = 0;
 static int tcpflags = 0;
-static const tracetype *type = NULL;
+static uint16_t sport;
 static bool debug = false;
 static char ifname[IFNAMSIZ] = "";
 
@@ -95,16 +96,10 @@ drop_priv (void)
 
 static uint16_t getsourceport (void)
 {
-	static uint16_t p = 0;
-
-	if (p == 0)
-	{
-		uint16_t v = ~getpid ();
-		if (v < 1025)
-			v += 1025;
-		p = htons (v);
-	}
-	return p;
+	uint16_t v = ~getpid ();
+	if (v < 1025)
+		v += 1025;
+	return htons (v);
 }
 
 
@@ -129,7 +124,7 @@ send_udp_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 	memset (&packet, 0, plen);
 
 	(void)n;
-	packet.uh.uh_sport = getsourceport ();
+	packet.uh.uh_sport = sport;
 	packet.uh.uh_dport = htons (ntohs (port) + ttl);
 	packet.uh.uh_ulen = htons (plen);
 	/*if (plen > sizeof (struct udphdr))
@@ -146,7 +141,7 @@ parse_udp_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 	const struct udphdr *puh = (const struct udphdr *)data;
 	uint16_t rport;
 
-	if ((len < 4) || (puh->uh_sport != getsourceport ()))
+	if ((len < 4) || (puh->uh_sport != sport ))
 		return -1;
 
 	rport = ntohs (puh->uh_dport);
@@ -238,7 +233,7 @@ send_syn_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 	struct tcphdr th;
 
 	memset (&th, 0, sizeof (th));
-	th.th_sport = getsourceport ();
+	th.th_sport = sport;
 	th.th_dport = port;
 	th.th_seq = htonl ((ttl << 24) | (n << 16) | getpid ());
 	th.th_off = sizeof (th) / 4;
@@ -258,7 +253,7 @@ parse_syn_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
 	uint32_t seq;
 
 	if ((len < sizeof (*pth))
-	 || (pth->th_dport != getsourceport ())
+	 || (pth->th_dport != sport)
 	 || (pth->th_sport != port)
 	 || ((pth->th_flags & TH_ACK) == 0)
 	 || (((pth->th_flags & TH_SYN) != 0) == ((pth->th_flags & TH_RST) != 0))
@@ -283,7 +278,7 @@ parse_syn_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 	uint32_t seq;
 
 	if ((len < 8)
-	 || (pth->th_sport != getsourceport ())
+	 || (pth->th_sport != sport)
 	 || (pth->th_dport != port))
 		return -1;
 
@@ -309,7 +304,7 @@ send_ack_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 	struct tcphdr th;
 
 	memset (&th, 0, sizeof (th));
-	th.th_sport = getsourceport ();
+	th.th_sport = sport;
 	th.th_dport = port;
 	th.th_ack = htonl ((ttl << 24) | (n << 16) | getpid ());
 	th.th_off = sizeof (th) / 4;
@@ -329,7 +324,7 @@ parse_ack_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
 	uint32_t seq;
 
 	if ((len < sizeof (*pth))
-	 || (pth->th_dport != getsourceport ())
+	 || (pth->th_dport != sport)
 	 || (pth->th_sport != port)
 	 || (pth->th_flags & TH_SYN)
 	 || (pth->th_flags & TH_ACK)
@@ -355,7 +350,7 @@ parse_ack_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 	uint32_t seq;
 
 	if ((len < 8)
-	 || (pth->th_sport != getsourceport ())
+	 || (pth->th_sport != sport)
 	 || (pth->th_dport != port))
 		return -1;
 
@@ -698,6 +693,7 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
 			printf (_("from %s, "), buf);
 
 		memcpy (dst, res->ai_addr, res->ai_addrlen);
+		// FIXME: don't print this for ICMP
 		printf (_("port %u, "), ntohs (dst->sin6_port));
 	}
 	freeaddrinfo (res);
@@ -1061,6 +1057,8 @@ main (int argc, char *argv[])
 
 	if (type == NULL)
 		type = &udp_type;
+
+	sport = getsourceport ();
 
 	/* FIXME: use dstport as packet size for UDP and ICMP */
 	if (optind < argc)
