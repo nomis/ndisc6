@@ -675,6 +675,8 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
 			return -1;
 
 		val = bind (fd, res->ai_addr, res->ai_addrlen);
+		if (srcport != NULL)
+			sport = ((const struct sockaddr_in6 *)res->ai_addr)->sin6_port;
 		freeaddrinfo (res);
 
 		if (val)
@@ -682,8 +684,14 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
 			perror (srchost);
 			return -1;
 		}
+
+		else
+
 		hints.ai_flags &= ~AI_PASSIVE;
 	}
+
+	if (srcport == NULL)
+		sport = getsourceport ();
 
 	if (getaddrinfo_err (dsthost, dstport, &hints, &res))
 		return -1;
@@ -708,7 +716,10 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
 
 		memcpy (dst, res->ai_addr, res->ai_addrlen);
 		if (has_port (type->protocol))
+		{
 			printf (_("port %u, "), ntohs (dst->sin6_port));
+			printf (_("from port %u, "), ntohs (sport));
+		}
 	}
 	freeaddrinfo (res);
 	
@@ -826,7 +837,7 @@ traceroute (const char *dsthost, const char *dstport,
 	if (connect_proto (protofd, &dst, dsthost, dstport, srchost, srcport))
 		goto error;
 	printf (_("%u hops max, "), max_ttl);
-	printf (_("%lu bytes packets\n"), (unsigned long)packet_len);
+	printf (_("%lu byte packets\n"), (unsigned long)packet_len);
 
 	/* Performs traceroute */
 	for (ttl = min_ttl, val = 0; (ttl <= max_ttl) && !val; ttl++)
@@ -877,8 +888,7 @@ usage (const char *path)
 "  -m  set the maximum hop limit (default: 30)\n"
 "  -N  perform reverse name lookups on the addresses of every hop\n"
 "  -n  don't perform reverse name lookup on addresses\n"
-/*"  -p  override base destination UDP port\n"*/
-/*"  -p  override source TCP port\n"*/
+"  -p  override source TCP port or base destination UDP port\n"
 "  -q  override the number of probes per hop (default: 3)\n"
 "  -r  do not route packets\n"
 "  -S  send TCP SYN probes\n"
@@ -955,6 +965,7 @@ static struct option opts[] =
 	{ "max",      required_argument, NULL, 'm' },
 	// -N is not really a stub, should have a long name
 	{ "numeric",  no_argument,       NULL, 'n' },
+	{ "port",     required_argument, NULL, 'p' },
 	{ "retry",    required_argument, NULL, 'q' },
 	{ "noroute",  no_argument,       NULL, 'r' },
 	{ "syn",      no_argument,       NULL, 'S' },
@@ -968,12 +979,12 @@ static struct option opts[] =
 };
 
 
-static const char optstr[] = "AdEf:hIi:m:Nnq:rSs:UVw:x";
+static const char optstr[] = "AdEf:hIi:m:Nnp:q:rSs:UVw:x";
 
 int
 main (int argc, char *argv[])
 {
-	const char *dsthost, *dstport = NULL, *srchost = NULL, *srcport = NULL;
+	const char *dsthost, *srchost = NULL, *xxxport = NULL;
 	size_t plen = 16;
 	unsigned retries = 3, wait = 5, minhlim = 1, maxhlim = 30;
 	int val;
@@ -1026,6 +1037,10 @@ main (int argc, char *argv[])
 
 			case 'n':
 				niflags |= NI_NUMERICHOST | NI_NUMERICSERV;
+				break;
+
+			case 'p':
+				xxxport = optarg;
 				break;
 
 			case 'q':
@@ -1081,7 +1096,13 @@ main (int argc, char *argv[])
 	if (type == NULL)
 		type = &udp_type;
 
-	/* FIXME: use dstport as packet size for UDP and ICMP */
+	const char *srcport = NULL, *dstport = NULL;
+
+	if (type->protocol == IPPROTO_TCP)
+		srcport = xxxport;
+	else
+		dstport = xxxport;
+
 	if (optind < argc)
 	{
 		dsthost = argv[optind++];
@@ -1100,8 +1121,6 @@ main (int argc, char *argv[])
 
 	if (dstport == NULL)
 		dstport = (type->protocol == IPPROTO_TCP) ? "80" : "33434";
-
-	sport = getsourceport ();
 
 	setvbuf (stdout, NULL, _IONBF, 0);
 	return -traceroute (dsthost, dstport, srchost, srcport, wait, retries,

@@ -18,8 +18,8 @@
 traceroute6 \- IPv6 traceroute tool
 .SH SYNOPSIS
 .BR "traceroute6" " [" "-AdEInrSU" "] [" "-f min_hop" "] [" "-i iface" "] ["
-.BR  "-m max_hop" "] [" "-q attempts" "] [" "-s source" "] [" "-w wait" "] <"
-.BR "hostname/address" "> [" "port/packet length" "]"
+.BR  "-m max_hop" "] [" "-p port" "] [" "-q attempts" "] [" "-s source" "] ["
+.BR "-w wait" "] <" "hostname/address" "> [" "port/packet length" "]"
 
 .SH DESCRIPTON
 .B traceroute6
@@ -36,7 +36,10 @@ Michael C. Toren's tcptraceroute does on IPv4 networks.
 You must specify the name or address of the host toward which the network
 route should be determined. An optional additional parameter specifies either
 the probe packets length (for UDP and ICMP packets), or the destination port
-number (for TCP packets).
+number/service name (for TCP packets).
+
+Note that TCP destination port zero really is TCP port numbered 0 (which
+cannot be used via the standard higer-level TCP/IP programming interface).
 
 .SH OPTIONS
 
@@ -94,6 +97,20 @@ This option is meant for backward compatibility with tcptraceroute(8).
 .B "\-n"
 Do not try to resolve each hop's IPv6 address to a host name. That may speed
 up the traceroute significantly.
+
+.TP
+.B "\-p"
+For TCP (SYN or ACK) probes, specify the source port number (default: auto).
+Note that source port number zero really means number zero, rather than some
+port number that would be automatically assigned, as is the case with usual
+softwares.
+
+For UDP probes, specify the base destination port number (default: 33434).
+traceroute6 assumes that UDP ports from this port, to this port plus
+the maximum hop limit are not in use by any program on the final destination
+and that they are not blocked by some firewall. The fact that this very
+assumption was not always correct, eventually lead to the development of the
+original IPv4 tcptraceroute by Michael Toren.
 
 .TP
 .B "\-q"
