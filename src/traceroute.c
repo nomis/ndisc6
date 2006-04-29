@@ -59,7 +59,8 @@ typedef struct tracetype
 	int gai_socktype;
 	int protocol;
 	int checksum_offset;
-	int (*send_probe) (int fd, unsigned ttl, unsigned n, uint16_t port);
+	int (*send_probe) (int fd, unsigned ttl, unsigned n, size_t plen,
+	                   uint16_t port);
 	int (*parse_resp) (const void *data, size_t len, unsigned *ttl,
 	                   unsigned *n, uint16_t port);
 	int (*parse_err) (const void *data, size_t len, unsigned *ttl,
@@ -67,12 +68,14 @@ typedef struct tracetype
 } tracetype;
 
 
+/* All our evil global variables */
 static int niflags = 0;
 static int sendflags = 0;
 static int tcpflags = 0;
 static const tracetype *type = NULL;
-bool debug = false;
+static bool debug = false;
 static char ifname[IFNAMSIZ] = "";
+
 
 #define TCP_WINDOW 4096
 #ifndef TH_ECE
@@ -113,17 +116,26 @@ static int send_payload (int fd, const void *payload, size_t length)
 
 /* UDP probes (traditional traceroute) */
 static int
-send_udp_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
+send_udp_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 {
-	struct udphdr uh;
-	memset (&uh, 0, sizeof (uh));
+	if (plen < sizeof (struct udphdr))
+		plen = sizeof (struct udphdr);
+
+	struct
+	{
+		struct udphdr uh;
+		uint8_t payload[plen - sizeof (struct udphdr)];
+	} packet;
+	memset (&packet, 0, plen);
 
 	(void)n;
-	uh.uh_sport = getsourceport ();
-	uh.uh_dport = htons (ntohs (port) + ttl);
-	uh.uh_ulen = htons (sizeof (uh));
+	packet.uh.uh_sport = getsourceport ();
+	packet.uh.uh_dport = htons (ntohs (port) + ttl);
+	packet.uh.uh_ulen = htons (plen);
+	/*if (plen > sizeof (struct udphdr))
+		packet.payload[0] = (uint8_t)ttl;*/
 
-	return send_payload (fd, &uh, sizeof (uh));
+	return send_payload (fd, &packet, plen);
 }
 
 
@@ -134,9 +146,7 @@ parse_udp_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 	const struct udphdr *puh = (const struct udphdr *)data;
 	uint16_t rport;
 
-	if ((len < 6)
-	 || (puh->uh_sport != getsourceport ())
-	 || (puh->uh_ulen != htons (sizeof (*puh))))
+	if ((len < 4) || (puh->uh_sport != getsourceport ()))
 		return -1;
 
 	rport = ntohs (puh->uh_dport);
@@ -157,17 +167,24 @@ static const tracetype udp_type =
 
 /* ICMPv6 Echo probes */
 static int
-send_echo_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
+send_echo_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 {
-	struct icmp6_hdr ih;
-	memset (&ih, 0, sizeof (ih));
+	if (plen < sizeof (struct icmp6_hdr))
+		plen = sizeof (struct icmp6_hdr);
 
-	ih.icmp6_type = ICMP6_ECHO_REQUEST;
-	ih.icmp6_id = htons (getpid ());
-	ih.icmp6_seq = htons ((ttl << 8) | (n & 0xff));
+	struct
+	{
+		struct icmp6_hdr ih;
+		uint8_t payload[plen - sizeof (struct icmp6_hdr)];
+	} packet;
+	memset (&packet, 0, plen);
+
+	packet.ih.icmp6_type = ICMP6_ECHO_REQUEST;
+	packet.ih.icmp6_id = htons (getpid ());
+	packet.ih.icmp6_seq = htons ((ttl << 8) | (n & 0xff));
 	(void)port;
 
-	return send_payload (fd, &ih, sizeof (ih));
+	return send_payload (fd, &packet.ih, plen);
 }
 
 
@@ -216,7 +233,7 @@ static const tracetype echo_type =
 
 /* TCP/SYN probes */
 static int
-send_syn_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
+send_syn_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 {
 	struct tcphdr th;
 
@@ -227,6 +244,7 @@ send_syn_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
 	th.th_off = sizeof (th) / 4;
 	th.th_flags = TH_SYN | tcpflags;
 	th.th_win = htons (TCP_WINDOW);
+	(void)plen; // FIXME
 
 	return send_payload (fd, &th, sizeof (th));
 }
@@ -286,7 +304,7 @@ static const tracetype syn_type =
 
 /* TCP/ACK probes */
 static int
-send_ack_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
+send_ack_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 {
 	struct tcphdr th;
 
@@ -297,6 +315,7 @@ send_ack_probe (int fd, unsigned ttl, unsigned n, uint16_t port)
 	th.th_off = sizeof (th) / 4;
 	th.th_flags = TH_ACK;
 	th.th_win = htons (TCP_WINDOW);
+	(void)plen; // FIXME
 
 	return send_payload (fd, &th, sizeof (th));
 }
@@ -426,7 +445,7 @@ print_icmp_code (const struct icmp6_hdr *hdr)
 
 static int
 probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
-           unsigned ttl, unsigned retries, unsigned timeout)
+           unsigned ttl, unsigned retries, unsigned timeout, size_t plen)
 {
 	struct in6_addr hop; /* hop if known from previous probes */
 	unsigned n;
@@ -448,7 +467,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		maxfd = 1 + (icmpfd > protofd ? icmpfd : protofd);
 
 		gettimeofday (&sent, NULL);
-		if (type->send_probe (protofd, ttl, n, dst->sin6_port))
+		if (type->send_probe (protofd, ttl, n, plen, dst->sin6_port))
 		{
 			perror (_("Cannot send packet"));
 			return -1;
@@ -679,6 +698,7 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
 			printf (_("from %s, "), buf);
 
 		memcpy (dst, res->ai_addr, res->ai_addrlen);
+		printf (_("port %u, "), ntohs (dst->sin6_port));
 	}
 	freeaddrinfo (res);
 	
@@ -711,7 +731,7 @@ static void setup_socket (int fd)
 static int
 traceroute (const char *dsthost, const char *dstport,
             const char *srchost, const char *srcport,
-            unsigned timeout, unsigned retries,
+            unsigned timeout, unsigned retries, size_t packet_len,
             unsigned min_ttl, unsigned max_ttl)
 {
 	struct sockaddr_in6 dst;
@@ -795,12 +815,13 @@ traceroute (const char *dsthost, const char *dstport,
 	memset (&dst, 0, sizeof (dst));
 	if (connect_proto (protofd, &dst, dsthost, dstport, srchost, srcport))
 		goto error;
-	printf (_("port %u, "), ntohs (dst.sin6_port));
-	printf (_("%u hops max\n"), max_ttl);
+	printf (_("%u hops max, "), max_ttl);
+	printf (_("%lu bytes packets\n"), (unsigned long)packet_len);
 
 	/* Performs traceroute */
 	for (ttl = min_ttl, val = 0; (ttl <= max_ttl) && !val; ttl++)
-		val = probe_ttl (protofd, icmpfd, &dst, ttl, retries, timeout);
+		val = probe_ttl (protofd, icmpfd, &dst, ttl,
+		                 retries, timeout, packet_len);
 
 	/* Cleans up */
 	close (protofd);
@@ -1055,6 +1076,6 @@ main (int argc, char *argv[])
 		return quick_usage (argv[0]);
 
 	setvbuf (stdout, NULL, _IONBF, 0);
-	return -traceroute (dsthost, dstport, srchost, srcport, wait, retries,
+	return -traceroute (dsthost, dstport, srchost, srcport, wait, retries, 16,
 	                    minhlim, maxhlim);
 }
