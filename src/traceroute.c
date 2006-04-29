@@ -109,6 +109,20 @@ static int send_payload (int fd, const void *payload, size_t length)
 }
 
 
+static bool has_port (int protocol)
+{
+	switch (protocol)
+	{
+		case IPPROTO_UDP:
+		case IPPROTO_TCP:
+		//case IPPROTO_SCTP:
+		//case IPPROTO_DCCP:
+			return true;
+	}
+	return false;
+}
+
+
 /* UDP probes (traditional traceroute) */
 static int
 send_udp_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
@@ -693,8 +707,8 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
 			printf (_("from %s, "), buf);
 
 		memcpy (dst, res->ai_addr, res->ai_addrlen);
-		// FIXME: don't print this for ICMP
-		printf (_("port %u, "), ntohs (dst->sin6_port));
+		if (has_port (type->protocol))
+			printf (_("port %u, "), ntohs (dst->sin6_port));
 	}
 	freeaddrinfo (res);
 	
