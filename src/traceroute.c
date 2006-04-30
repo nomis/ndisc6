@@ -28,6 +28,7 @@
 #include <stdlib.h> /* div() */
 #include <limits.h>
 #include <stdbool.h>
+#include <time.h> /* nanosleep() */
 
 #include <unistd.h>
 #include <poll.h>
@@ -454,7 +455,8 @@ print_icmp_code (const struct icmp6_hdr *hdr)
 
 static int
 probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
-           unsigned ttl, unsigned retries, unsigned timeout, size_t plen)
+           unsigned ttl, unsigned retries, unsigned timeout, unsigned delay,
+           size_t plen)
 {
 	struct in6_addr hop; /* hop if known from previous probes */
 	unsigned n;
@@ -462,6 +464,12 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 	int state = -1; /* type of response received so far (-1: none,
 		0: normal, 1: closed, 2: open) */
 	/* see also: found (0: not found, <0: unreachable, >0: reached) */
+	struct timespec delay_ts;
+	{
+		div_t d = div (delay, 1000);
+		delay_ts.tv_sec = d.quot;
+		delay_ts.tv_nsec = d.rem * 1000000;
+	}
 
 	memset (&hop, 0, sizeof (hop));
 	printf ("%2d ", ttl);
@@ -634,6 +642,9 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				break;
 			}
 		}
+
+		if (delay)
+			nanosleep (&delay_ts, NULL);
 	}
 	puts ("");
 	return found;
@@ -752,8 +763,8 @@ static void setup_socket (int fd)
 static int
 traceroute (const char *dsthost, const char *dstport,
             const char *srchost, const char *srcport,
-            unsigned timeout, unsigned retries, size_t packet_len,
-            unsigned min_ttl, unsigned max_ttl)
+            unsigned timeout, unsigned delay, unsigned retries,
+            size_t packet_len, unsigned min_ttl, unsigned max_ttl)
 {
 	struct sockaddr_in6 dst;
 	int protofd, icmpfd, val;
@@ -842,7 +853,7 @@ traceroute (const char *dsthost, const char *dstport,
 	/* Performs traceroute */
 	for (ttl = min_ttl, val = 0; (ttl <= max_ttl) && !val; ttl++)
 		val = probe_ttl (protofd, icmpfd, &dst, ttl,
-		                 retries, timeout, packet_len);
+		                 retries, timeout, delay, packet_len);
 
 	/* Cleans up */
 	close (protofd);
@@ -897,7 +908,7 @@ usage (const char *path)
 "  -V, --version  display program version and exit\n"
 /*"  -v, --verbose  display all kind of ICMPv6 errors\n"*/
 "  -w  override the timeout for response in seconds (default: 5)\n"
-/*"  -z  specify a time to wait (in ms) between each probes (default: 0)\n"*/
+"  -z  specify a time to wait (in ms) between each probes (default: 0)\n"
 			/*  TCP: -t  UDP: -g? -t*/
 	));
 
@@ -975,18 +986,19 @@ static struct option opts[] =
 	/*{ "verbose",  no_argument,       NULL, 'v' },*/
 	{ "wait",     required_argument, NULL, 'w' },
 	// -x is a stub
+	{ "delay",    required_argument, NULL, 'z' },
 	{ NULL,       0,                 NULL, 0   }
 };
 
 
-static const char optstr[] = "AdEf:hIi:m:Nnp:q:rSs:UVw:x";
+static const char optstr[] = "AdEf:hIi:m:Nnp:q:rSs:UVw:xz:";
 
 int
 main (int argc, char *argv[])
 {
 	const char *dsthost, *srchost = NULL, *xxxport = NULL;
 	size_t plen = 16;
-	unsigned retries = 3, wait = 5, minhlim = 1, maxhlim = 30;
+	unsigned retries = 3, wait = 5, delay = 0, minhlim = 1, maxhlim = 30;
 	int val;
 
 	while ((val = getopt_long (argc, argv, optstr, opts, NULL)) != EOF)
@@ -1078,7 +1090,17 @@ main (int argc, char *argv[])
 				unsigned long l = strtoul (optarg, &end, 0);
 				if (*end || l > UINT_MAX)
 					return quick_usage (argv[0]);
-				wait = l;
+				wait = (unsigned)l;
+				break;
+			}
+
+			case 'z':
+			{
+				char *end;
+				unsigned long l = strtoul (optarg, &end, 0);
+				if (*end || l > UINT_MAX)
+					return quick_usage (argv[0]);
+				delay = (unsigned)l;
 				break;
 			}
 
@@ -1123,6 +1145,6 @@ main (int argc, char *argv[])
 		dstport = (type->protocol == IPPROTO_TCP) ? "80" : "33434";
 
 	setvbuf (stdout, NULL, _IONBF, 0);
-	return -traceroute (dsthost, dstport, srchost, srcport, wait, retries,
-	                    plen, minhlim, maxhlim);
+	return -traceroute (dsthost, dstport, srchost, srcport, wait, delay,
+	                    retries, plen, minhlim, maxhlim);
 }

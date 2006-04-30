@@ -19,7 +19,8 @@ traceroute6 \- IPv6 traceroute tool
 .SH SYNOPSIS
 .BR "traceroute6" " [" "-AdEInrSU" "] [" "-f min_hop" "] [" "-i iface" "] ["
 .BR  "-m max_hop" "] [" "-p port" "] [" "-q attempts" "] [" "-s source" "] ["
-.BR "-w wait" "] <" "hostname/address" "> [" "port/packet length" "]"
+.BR "-w wait" "] [" "-z delay_ms" "] <" "hostname/address" "> ["
+.BR "port/packet length" "]"
 
 .SH DESCRIPTON
 .B traceroute6
@@ -147,6 +148,11 @@ was sent (default: 5 seconds).
 .B "\-x"
 This option is ignored for backward compatibility.
 The IPv6 header has no checksum field.
+
+.TP
+.B "\-z"
+Specify a milliseconds delay to wait between each probe. This can be useful to
+work-around ICMPv6 rate limitation on some hosts.
 
 .SH SECURITY
 .RI "traceroute6 should be " "setuid" " " "root" " to allow use by non "
