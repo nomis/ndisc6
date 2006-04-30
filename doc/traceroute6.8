@@ -53,7 +53,8 @@ probing cannot determine whether the destination TCP port is open or not.
 
 .TP
 .B "\-d"
-Enable socket debugging option (SO_DEBUG).
+Enable socket debugging option (SO_DEBUG). Unless you are debugging the
+kernel, this is probably not going to have any actual effect.
 
 .TP
 .B "\-E"
@@ -80,8 +81,7 @@ Send ICMPv6 Echo requests (like ping6) as probe packets.
 
 .TP
 .B "\-i"
-Only send packets through the specified interface.
-Linux currently seems to ignore this though.
+Only send packets through the specified interface. See also BUGS.
 
 .TP
 .B "\-m"
@@ -120,8 +120,7 @@ Override the number of probes sent to each hop (default: 3).
 .TP
 .B "\-r"
 Do not route packets, i.e. do not send packets through a gateway that would be
-specified by the routing table. At the time of writing, Linux kernel 2.6.16
-(latest stable release series) ignores this option.
+specified by the routing table, if the IPv6 stack supports this.
 
 .TP
 .B "\-S"
@@ -161,7 +160,12 @@ is made to send or receive data from the network so as to reduce the possible
 impact of a security vulnerability.
 
 .SH BUGS
-The packet length is currently not implemented for UDP and ICMP probe packets.
+However useful they might be, -i and -r options are ignored by the official
+Linux kernel at the time of writing this manpage, and hence do not work as
+documented.
+
+traceroute6 only implements option -i on Linux at the moment. It is not
+portable.
 
 .SH "SEE ALSO"
 ipv6(7), traceroute(8), tcptraceroute(8)
