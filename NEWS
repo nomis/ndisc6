@@ -1,5 +1,5 @@
 RELEASE NOTES for NDisc6
-version 0.6.0
+version 0.6.1-svn
 =========================
 $Id$
 
@@ -13,7 +13,19 @@ informations on this program, see README. For syntax details, read the
 provided manual pages.
 
 =============================================================================
-STABLE RELEASE 0.6.0 : Code cleanup
+STABLE RELEASE 0.6.1 : Major feature enhancement, minor security fixes
+
+# Support for ICMPv6 Echo requests traceroute6.
+# traceroute6 support for specifying UDP and ICMPv6 packets byte size
+  (payload no longer has an empty payload by default).
+# Support for sending ECN-setup SYN packets with tcptraceroute6.
+# Support for selecting base UDP destination port with traceroute6.
+# Support for selecting source port number with tcptraceroute6.
+# Support for custom delay in-between each (tcp)traceroute6 probes.
+# Sanitize raw socket file descriptors number before use.
+
+=============================================================================
+STABLE RELEASE 0.6.0 : Major feature enhancement, portability fixes
 
 # Switch to the bloated autotools.
 # rdisc6 and traceroute6 compile fixes for Solaris.
