@@ -1,5 +1,5 @@
 RELEASE NOTES for NDisc6
-version 0.6.1-svn
+version 0.6.2
 =========================
 $Id$
 
@@ -13,7 +13,7 @@ informations on this program, see README. For syntax details, read the
 provided manual pages.
 
 =============================================================================
-STABLE RELEASE 0.6.1 : Major feature enhancement, minor security fixes
+STABLE RELEASE 0.6.2 : Major feature enhancement, minor security fixes
 
 # Support for ICMPv6 Echo requests traceroute6.
 # traceroute6 support for specifying UDP and ICMPv6 packets byte size
@@ -23,6 +23,7 @@ STABLE RELEASE 0.6.1 : Major feature enhancement, minor security fixes
 # Support for selecting source port number with tcptraceroute6.
 # Support for custom delay in-between each (tcp)traceroute6 probes.
 # Sanitize raw socket file descriptors number before use.
+# Fix symlink installation wrt DESTDIR (such as when packaging via RPM).
 
 =============================================================================
 STABLE RELEASE 0.6.0 : Major feature enhancement, portability fixes
