@@ -28,7 +28,7 @@ EXTRA_DIST = $(man1_MANS) $(man8_MANS)
 DISTCLEANFILES = stamp-svn
 
 install-data-hook:
-	ln -sf "$(DESTDIR)$(man8dir)/traceroute6.8" \
+	ln -sf "$(man8dir)/traceroute6.8" \
 		"$(DESTDIR)$(man8dir)/tcptraceroute6.8"
 
 distclean-local:
