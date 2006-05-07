@@ -15,7 +15,7 @@
 .\" ***********************************************************************
 .TH "TRACEROUTE6" "8" "$Date$" "traceroute6" "System Manager's Manual"
 .SH NAME
-traceroute6 \- IPv6 traceroute tool
+rltraceroute6 \- IPv6 traceroute tool
 .SH SYNOPSIS
 .BR "traceroute6" " [" "-AdEInrSU" "] [" "-f min_hop" "] [" "-i iface" "] ["
 .BR  "-m max_hop" "] [" "-p port" "] [" "-q attempts" "] [" "-s source" "] ["
@@ -23,18 +23,24 @@ traceroute6 \- IPv6 traceroute tool
 .BR "port/packet length" "]"
 
 .SH DESCRIPTON
-.B traceroute6
+.B rltraceroute6
 is an IPv6 traceroute implementation.
 
 It displays the list of hops along the network route between the local system
 and specified destination, by sending packets while incrementing their hop
 limit, until the final destination is reached.
 
-By default, traceroute6 sends UDP probe packets toward the destination (that's
-the historical default). However, it can also send TCP packets, much like
-Michael C. Toren's tcptraceroute does on IPv4 networks. Finally, it can also
-send ICMPv6 Echo Request packets, like some other implementations (such as the
-one in Microsoft Windows).
+.RB "By default, " "rltraceroute6" " sends UDP probe packets toward the"
+destination (that's the historical default).
+However, it can also send TCP packets, much like Michael C. Toren's
+.B tcptraceroute
+does on IPv4 networks; 
+.B tcptraceroute6
+sends TCP packets by default.
+Finally, it can also send ICMPv6 Echo Request packets, like some other
+traceroute implementations (such as the one in Microsoft Windows);
+.B tracert6
+does this by default.
 
 You must specify the name or address of the host toward which the network
 route should be determined. An optional additional parameter specifies either
@@ -110,7 +116,7 @@ port number that would be automatically assigned, as is the case with usual
 softwares.
 
 For UDP probes, specify the base destination port number (default: 33434).
-traceroute6 assumes that UDP ports from this port, to this port plus
+rltraceroute6 assumes that UDP ports from this port, to this port plus
 the maximum hop limit are not in use by any program on the final destination
 and that they are not blocked by some firewall. The fact that this very
 assumption was not always correct, eventually lead to the development of the
@@ -135,7 +141,7 @@ Specify the source address to use for probe packets explicitly.
 
 .TP
 .B "\-S"
-Use UDP probe packets. That's the default for traceroute6.
+Use UDP probe packets. That's the default for rltraceroute6.
 
 .TP
 .B "\-V"
@@ -157,7 +163,7 @@ Specify a milliseconds delay to wait between each probe. This can be useful to
 work-around ICMPv6 rate limitation on some hosts.
 
 .SH SECURITY
-.RI "traceroute6 should be " "setuid" " " "root" " to allow use by non "
+.RI "rltraceroute6 should be " "setuid" " " "root" " to allow use by non "
 privileged users. It will drop its root privileges before any attempt
 is made to send or receive data from the network so as to reduce the possible
 impact of a security vulnerability.
@@ -167,11 +173,11 @@ However useful they might be, -i and -r options are ignored by the official
 Linux kernel at the time of writing this manpage, and hence do not work as
 documented.
 
-traceroute6 only implements option -i on Linux at the moment. It is not
+rltraceroute6 only implements option -i on Linux at the moment. It is not
 portable.
 
 .SH "SEE ALSO"
-ipv6(7), traceroute(8), tcptraceroute(8)
+ipv6(7), traceroute(8), tcptraceroute(8), traceroute6(8)
 
 .SH AUTHOR
 Rémi Denis-Courmont <rdenis at simphalempin.com>
