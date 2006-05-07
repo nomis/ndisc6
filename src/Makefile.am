@@ -42,14 +42,14 @@ traceroute6_SOURCES = traceroute.c
 tcptraceroute6: Makefile.in $(top_builddir)/config.status
 	rm -f $@.tmp $@
 	echo '#! /bin/sh' > $@.tmp
-	echo 'exec $(myexecdir)/traceroute6 -S "$$@"' >> $@.tmp
+	echo 'exec "$$(dirname $$0)/traceroute6" -S "$$@"' >> $@.tmp
 	chmod +x $@.tmp
 	mv -f $@.tmp $@
 
 tracert6: Makefile.in $(top_builddir)/config.status
 	rm -f $@.tmp $@
 	echo '#! /bin/sh' > $@.tmp
-	echo 'exec $(myexecdir)/traceroute6 -I "$$@"' >> $@.tmp
+	echo 'exec "$$(dirname $$0)/traceroute6" -I "$$@"' >> $@.tmp
 	chmod +x $@.tmp
 	mv -f $@.tmp $@
 
