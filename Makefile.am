@@ -35,7 +35,7 @@ install-data-hook:
 
 uninstall-hook:
 	for a in tcptraceroute6 tracert6; do \
-		unlink "$(DESTDIR)$(man8dir)/$$a" ; \
+		rm -f "$(DESTDIR)$(man8dir)/$$a.8" ; \
 	done
 
 distclean-local:
