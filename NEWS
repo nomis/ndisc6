@@ -1,5 +1,5 @@
 RELEASE NOTES for NDisc6
-version 0.6.2
+version 0.6.3
 =========================
 $Id$
 
@@ -11,6 +11,12 @@ Thanks for your help.
   You can find major changes since version 0.1.5 below. For more general
 informations on this program, see README. For syntax details, read the
 provided manual pages.
+
+=============================================================================
+STABLE RELEASE 0.6.3 : Minor bug fixes
+
+# tcptraceroute6 handles parameters with white spaces correctly.
+# Renamed traceroute6 to rltraceroute6 to avoid conflict with iputils.
 
 =============================================================================
 STABLE RELEASE 0.6.2 : Major feature enhancement, minor security fixes
