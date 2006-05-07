@@ -24,7 +24,7 @@ AM_CPPFLAGS = -I$(top_srcdir) -D_BSD_SOURCE
 AM_CFLAGS = -std=gnu99
 
 myexec_PROGRAMS = ndisc6 rdisc6 traceroute6
-myexec_SCRIPTS = tcptraceroute6
+myexec_SCRIPTS = tcptraceroute6 tracert6
 bin_PROGRAMS = tcpspray6
 
 MOSTLYCLEANFILES = $(myexec_SCRIPTS)
@@ -42,7 +42,14 @@ traceroute6_SOURCES = traceroute.c
 tcptraceroute6: Makefile.in $(top_builddir)/config.status
 	rm -f $@.tmp $@
 	echo '#! /bin/sh' > $@.tmp
-	echo 'exec $(myexecdir)/traceroute6 -S $$*' >> $@.tmp
+	echo 'exec $(myexecdir)/traceroute6 -S "$$@"' >> $@.tmp
+	chmod +x $@.tmp
+	mv -f $@.tmp $@
+
+tracert6: Makefile.in $(top_builddir)/config.status
+	rm -f $@.tmp $@
+	echo '#! /bin/sh' > $@.tmp
+	echo 'exec $(myexecdir)/traceroute6 -I "$$@"' >> $@.tmp
 	chmod +x $@.tmp
 	mv -f $@.tmp $@
 
