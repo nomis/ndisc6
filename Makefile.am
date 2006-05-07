@@ -22,14 +22,21 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = src
 DIST_SUBDIRS = m4 $(SUBDIRS)
 man1_MANS = doc/tcpspray6.1
-man8_MANS = doc/ndisc6.8 doc/rdisc6.8 doc/traceroute6.8
+man8_MANS = doc/ndisc6.8 doc/rdisc6.8 doc/rltraceroute6.8
 
 EXTRA_DIST = $(man1_MANS) $(man8_MANS)
 DISTCLEANFILES = stamp-svn
 
 install-data-hook:
-	ln -sf "$(man8dir)/traceroute6.8" \
-		"$(DESTDIR)$(man8dir)/tcptraceroute6.8"
+	for a in tcptraceroute6 tracert6; do \
+		ln -sf "$(man8dir)/rltraceroute6.8" \
+			"$(DESTDIR)$(man8dir)/$$a.8" ; \
+	done
+
+uninstall-hook:
+	for a in tcptraceroute6 tracert6; do \
+		unlink "$(DESTDIR)$(man8dir)/$$a" ; \
+	done
 
 distclean-local:
 	test "$(top_srcdir)" = "$(top_builddir)" || rm -f ChangeLog
