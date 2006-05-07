@@ -32,7 +32,9 @@ limit, until the final destination is reached.
 
 By default, traceroute6 sends UDP probe packets toward the destination (that's
 the historical default). However, it can also send TCP packets, much like
-Michael C. Toren's tcptraceroute does on IPv4 networks.
+Michael C. Toren's tcptraceroute does on IPv4 networks. Finally, it can also
+send ICMPv6 Echo Request packets, like some other implementations (such as the
+one in Microsoft Windows).
 
 You must specify the name or address of the host toward which the network
 route should be determined. An optional additional parameter specifies either
@@ -78,6 +80,7 @@ Display some help and exit.
 .TP
 .B "\-I"
 Send ICMPv6 Echo requests (like ping6) as probe packets.
+That's the default for tracert6.
 
 .TP
 .B "\-i"
