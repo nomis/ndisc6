@@ -20,8 +20,8 @@ dnl *  http://www.gnu.org/copyleft/gpl.html                               *
 dnl ***********************************************************************
 
 AC_COPYRIGHT([Copyright (C) 2005-2006 Remi Denis-Courmont])
-AC_INIT(ndisc6, 0.6.3, rdenis@simphalempin.com)
-AC_PREREQ(2.59)
+AC_INIT(ndisc6, 0.6.4, rdenis@simphalempin.com)
+AC_PREREQ(2.59c)
 INVOCATION="$0 $*"
 
 AS_MESSAGE(checking system...)
@@ -37,8 +37,7 @@ RDC_BUILD_HOSTNAME
 
 # Checks for programs.
 AS_MESSAGE([checking required programs...])
-AC_PROG_CC
-dnl AC_PROG_CC_C99
+AC_PROG_CC_C99
 AM_INIT_AUTOMAKE([check-news dist-bzip2 no-dist-gzip no-exeext std-options])
 
 
