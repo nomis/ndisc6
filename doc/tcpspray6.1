@@ -1,5 +1,5 @@
 .\" ***********************************************************************
-.\" *  Copyright © 2006 Rémi Denis-Courmont.                              *
+.\" *  Copyright Â© 2006 RÃ©mi Denis-Courmont.                              *
 .\" *  This program is free software; you can redistribute and/or modify  *
 .\" *  it under the terms of the GNU General Public License as published  *
 .\" *  by the Free Software Foundation; version 2 of the license.         *
@@ -17,12 +17,12 @@
 .SH NAME
 tcpspray6 \- TCP/IP bandwidth measurement tool (Discard and Echo client)
 .SH SYNOPSIS
-.BR "tcpspray6" " [" "-46ev" "] [" "-b block_size" "] [" "-d wait_µs" "] ["
+.BR "tcpspray6" " [" "-46ev" "] [" "-b block_size" "] [" "-d wait_\[char181]s" "] ["
 .BR "-f filename" "] [" "-n count" "] <" "hostname" "> [" "port" "]"
 
 .SH DESCRIPTON
 .B tcpspray6
-.RI "uses the " "Discard" " resp. " "Echo" " protocol (RFC 863 resp. RFC 862)"
+.RI "uses the " "Discard" " resp. " "Echo" " protocol (RFC\ 863 resp. RFC\ 862)"
 .RI "to perform bandwidth measurements of " "TCP" " sessions between the"
 .RI "local system, and a " "Discard" " resp. " "Echo" " server."
 
@@ -51,7 +51,7 @@ Force usage of TCP over IPv6.
 Send block of the specified byte size (default: 1024).
 
 .TP
-.BR "\-d wait_µs" " or " "\-\-delay wait_µs"
+.BR "\-d wait_\[char181]s" " or " "\-\-delay wait_\[char181]s"
 Waits for the given amount of microseconds after any given was sent
 before attempting to send the next one. There is no delay by default.
 
@@ -101,7 +101,7 @@ tcpspray6 does not require any privilege to run.
 tcp(7), inetd(8), tcptraceroute6(8), tcptraceroute(8)
 
 .SH AUTHOR
-Rémi Denis-Courmont <rdenis at simphalempin.com>
+R\[char233]mi Denis-Courmont <rdenis at simphalempin.com>
 
 $Id$
 
