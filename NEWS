@@ -1,5 +1,5 @@
 RELEASE NOTES for NDisc6
-version 0.6.3
+version 0.6.4
 =========================
 $Id$
 
@@ -11,6 +11,13 @@ Thanks for your help.
   You can find major changes since version 0.1.5 below. For more general
 informations on this program, see README. For syntax details, read the
 provided manual pages.
+
+=============================================================================
+STABLE RELEASE 0.6.4 : Minor bug fixes
+
+# Autoconf updates.
+# Fix non-ASCII characters within manual pages.
+# Debian packaging support.
 
 =============================================================================
 STABLE RELEASE 0.6.3 : Minor bug fixes
