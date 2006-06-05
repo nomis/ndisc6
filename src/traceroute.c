@@ -36,7 +36,7 @@
 #include <unistd.h>
 #include <poll.h>
 #include <sys/socket.h>
-#include <sys/time.h>
+#include <time.h>
 #include <net/if.h> // IFNAMSIZ
 #include <netinet/in.h>
 #include <netinet/ip6.h>
@@ -50,6 +50,7 @@
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
 #endif
+#include "gettime.h"
 #ifndef SOL_IPV6
 # define SOL_IPV6 IPPROTO_IPV6
 #endif
@@ -407,20 +408,27 @@ printname (const struct sockaddr *addr, size_t addrlen)
 
 /* Prints delay between two dates */
 static void
-printdelay (const struct timeval *from, const struct timeval *to)
+printdelay (const struct timespec *from, const struct timespec *to)
 {
-	div_t d;
-	if (to->tv_usec < from->tv_usec)
-	{
-		d = div (1000000 + to->tv_usec - from->tv_usec, 1000);
-		d.quot -= 1000;
-	}
-	else
-		d = div (to->tv_usec - from->tv_usec, 1000);
+	div_t d = div ((to->tv_nsec - from->tv_nsec) / 1000, 1000);
 
-	printf (_(" %u.%03u ms "),
-	        (unsigned)(d.quot + 1000 * (to->tv_sec - from->tv_sec)),
-	        (unsigned)d.rem);
+	/*
+	 * For some stupid reasons, div() returns a negative remainder when
+	 * the numerator is negative, instead of following the mathematician
+	 * convention that the remainder always be positive.
+	 */
+	if (d.rem < 0)
+	{
+		d.quot--;
+		d.rem += 1000;
+		printf ("\nDEBUG: %u.%09u\n"
+		          "    -> %u.%09u\n",
+		        (unsigned)from->tv_sec, (unsigned)from->tv_nsec,
+		        (unsigned)to->tv_sec, (unsigned)to->tv_nsec);
+        }
+	d.quot += 1000 * (to->tv_sec - from->tv_sec);
+
+	printf (_(" %u.%03u ms "), (unsigned)(d.quot), (unsigned)d.rem);
 }
 
 
@@ -480,13 +488,13 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 	for (n = 0; n < retries; n++)
 	{
-		struct timeval sent, recvd;
+		struct timespec sent, recvd;
 		unsigned pttl, pn;
 		int maxfd;
 
 		maxfd = 1 + (icmpfd > protofd ? icmpfd : protofd);
 
-		gettimeofday (&sent, NULL);
+		gettime (&sent);
 		if (type->send_probe (protofd, ttl, n, plen, dst->sin6_port))
 		{
 			perror (_("Cannot send packet"));
@@ -503,9 +511,9 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 			ufds[1].fd = icmpfd;
 			ufds[1].events = POLLIN;
 
-			gettimeofday (&recvd, NULL);
+			gettime (&recvd);
 			int val = ((sent.tv_sec + timeout - recvd.tv_sec) * 1000)
-				+ (int)((sent.tv_usec - recvd.tv_usec) / 1000);
+				+ (int)((sent.tv_nsec - recvd.tv_nsec) / 1000000);
 
 			val = poll (ufds, 2, val > 0 ? val : 0);
 			if (val < 0) /* interrupted by signal - well, not really */
@@ -517,7 +525,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				break;
 			}
 
-			gettimeofday (&recvd, NULL);
+			gettime (&recvd);
 
 			/* Receive final packet when host reached */
 			if (ufds[0].revents)
@@ -647,7 +655,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		}
 
 		if (delay)
-			nanosleep (&delay_ts, NULL);
+			clock_nanosleep (CLOCK_MONOTONIC, 0, &delay_ts, NULL);
 	}
 	puts ("");
 	return found;
