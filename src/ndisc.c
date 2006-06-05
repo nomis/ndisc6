@@ -31,15 +31,19 @@
 
 #include <errno.h> /* EMFILE */
 #include <sys/types.h>
-#include <sys/time.h>
-#include <time.h> /* gettimeofday() */
+#include <unistd.h> /* close() */
+#include <time.h> /* clock_gettime() */
+#include <sys/times.h> /* times() fallback */
 #include <poll.h> /* poll() */
 #include <sys/socket.h>
-#include <unistd.h> /* close() */
 #include <fcntl.h>
 
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
+#endif
+
+#if defined (CLOCK_HIGHRES) && !defined (CLOCK_MONOTONIC)
+# define CLOCK_MONOTONIC CLOCK_HIGHRES
 #endif
 
 #include <netdb.h> /* getaddrinfo() */
@@ -427,21 +431,35 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 # define parseadv( a, b, c, d ) parseadv (a, b, d)
 #endif
 
+static void gettime (struct timespec *ts)
+{
+#ifdef CLOCK_MONOTONIC
+	if (clock_gettime (CLOCK_MONOTONIC, ts))
+#endif
+	{
+		struct tms dummy;
+		clock_t t = times (&dummy);
+		ts->tv_sec = t / 1000;
+		ts->tv_nsec = (t % 1000) * 1000000;
+	}
+}
+
+
 static int
 recvadv (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
          unsigned flags)
 {
-	struct timeval now, end;
+	struct timespec now, end;
 	unsigned responses = 0;
 
-	gettimeofday (&now, NULL);
 	/* computes deadline time */
+	gettime (&now);
 	{
 		div_t d;
 		
 		d = div (wait_ms, 1000);
 		end.tv_sec = now.tv_sec + d.quot;
-		end.tv_usec = now.tv_usec + d.rem;
+		end.tv_nsec = now.tv_nsec + (d.rem * 1000000);
 	}
 
 	/* receive loop */
@@ -457,7 +475,7 @@ recvadv (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
 		if (end.tv_sec >= now.tv_sec)
 		{
 			delay = (end.tv_sec - now.tv_sec) * 1000
-				+ (int)((end.tv_usec - now.tv_usec) / 1000);
+				+ (int)((end.tv_nsec - now.tv_nsec) / 1000000);
 			if (delay < 0)
 				delay = 0;
 		}
@@ -508,7 +526,7 @@ recvadv (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
 			if (flags & NDISC_SINGLE)
 				return 1 /* = responses */;
 		}
-		gettimeofday (&now, NULL);
+		gettime (&now);
 	}
 
 	return -1; /* error */
