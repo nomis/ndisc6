@@ -66,6 +66,7 @@ dnl RDC_STRUCT_SOCKADDR_LEN
 AS_MESSAGE([checking library functions...])
 RDC_REPLACE_FUNC_GETOPT_LONG
 AC_SEARCH_LIBS(clock_gettime, [rt])
+AC_CHECK_FUNC([clock_nanosleep])
 
 # Network stuff
 RDC_FUNC_SOCKET
@@ -85,6 +86,10 @@ AC_MSG_RESULT([${enable_suid_install}])
 
 # Defines for <config.h>
 AH_BOTTOM([
+#ifndef HAVE_CLOCK_NANOSLEEP
+# define clock_nanosleep( c, f, d, r ) nanosleep( d, r )
+#endif
+
 #define _( str )		gettext (str)
 #define N_( str )		gettext_noop (str)
 #define gettext( str )		(str)
