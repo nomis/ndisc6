@@ -33,17 +33,14 @@
 #include <sys/types.h>
 #include <unistd.h> /* close() */
 #include <time.h> /* clock_gettime() */
-#include <sys/times.h> /* times() fallback */
 #include <poll.h> /* poll() */
 #include <sys/socket.h>
 #include <fcntl.h>
 
+#include "gettime.h"
+
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
-#endif
-
-#if defined (CLOCK_HIGHRES) && !defined (CLOCK_MONOTONIC)
-# define CLOCK_MONOTONIC CLOCK_HIGHRES
 #endif
 
 #include <netdb.h> /* getaddrinfo() */
@@ -430,19 +427,6 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 # define buildsol( a, b, c ) buildsol (a)
 # define parseadv( a, b, c, d ) parseadv (a, b, d)
 #endif
-
-static void gettime (struct timespec *ts)
-{
-#ifdef CLOCK_MONOTONIC
-	if (clock_gettime (CLOCK_MONOTONIC, ts))
-#endif
-	{
-		struct tms dummy;
-		clock_t t = times (&dummy);
-		ts->tv_sec = t / 1000;
-		ts->tv_nsec = (t % 1000) * 1000000;
-	}
-}
 
 
 static int

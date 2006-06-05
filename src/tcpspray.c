@@ -23,6 +23,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#define _GNU_SOURCE
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -39,6 +40,7 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include "gettime.h"
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
 #endif
@@ -93,28 +95,9 @@ static int tcpconnect (const char *host, const char *serv)
 }
 
 
-static int delta (struct timeval *end, const struct timeval *start)
-{
-	if (end->tv_sec < start->tv_sec)
-		return -1;
-
-	end->tv_sec -= start->tv_sec;
-	if (end->tv_usec < start->tv_usec)
-	{
-		if (end->tv_sec <= 0)
-			return -1;
-
-		end->tv_sec--;
-		end->tv_usec += 1000000;
-	}
-	end->tv_usec -= start->tv_usec;
-	return 0;
-}
-
-
 static int
 tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
-          unsigned delay_ms, const char *fillname, bool echo)
+          unsigned delay_us, const char *fillname, bool echo)
 {
 	if (serv == NULL)
 		serv = echo ? "echo" : "discard";
@@ -184,15 +167,15 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 		shutdown (fd, SHUT_RD);
 
 	struct timespec delay_ts = { 0, 0 };
-	if (delay_ms)
+	if (delay_us)
 	{
-		div_t d = div (delay_ms, 1000000);
+		div_t d = div (delay_us, 1000000);
 		delay_ts.tv_sec = d.quot;
 		delay_ts.tv_nsec = d.rem * 1000;
 	}
 
-	struct timeval start, end;
-	gettimeofday (&start, NULL);
+	struct timespec start, end;
+	gettime (&start);
 
 	for (unsigned i = 0; i < n; i++)
 	{
@@ -208,11 +191,11 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 		if (verbose)
 			fputc ('.', stdout);
 
-		if (delay_ms && nanosleep (&delay_ts, NULL))
+		if (delay_us && clock_nanosleep (CLOCK_MONOTONIC, 0, &delay_ts, NULL))
 			goto abort;
 	}
 
-	gettimeofday (&end, NULL);
+	gettime (&end);
 	shutdown (fd, SHUT_WR);
 	close (fd);
 
@@ -227,13 +210,11 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 			return -1;
 		}
 
-		struct timeval end_recv;
-		gettimeofday (&end_recv, NULL);
-		if (delta (&end_recv, &start))
-			goto backward;
+		struct timespec end_recv;
+		gettime (&end_recv);
 
 		double rduration = ((double)end_recv.tv_sec)
-		                 + ((double)end_recv.tv_usec) / 1000000;
+		                 + ((double)end_recv.tv_nsec) / 1000000000;
 
 		printf (_("Received %lu bytes in %f seconds"), n * blen, rduration);
 		if (rduration > 0)
@@ -242,10 +223,7 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 	}
 	puts ("");
 
-	if (delta (&end, &start))
-		goto backward;
-
-	double duration = ((double)end.tv_sec) + ((double)end.tv_usec) / 1000000;
+	double duration = ((double)end.tv_sec) + ((double)end.tv_nsec) / 1000000000;
 
 	printf (_("Transmitted %lu bytes in %f seconds"), n * blen, duration);
 	if (duration > 0)
@@ -253,11 +231,6 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 	puts ("");
 
 	return 0;
-
-backward:
-	// This can actually happen if the system clock was NTP'd.
-	fputs (_("Clock went back in time. Aborting.\n"), stderr);
-	return -1;
 
 abort:
 	close (fd);
