@@ -25,6 +25,7 @@ AM_CPPFLAGS = -I$(top_srcdir)
 myexec_PROGRAMS = ndisc6 rdisc6 rltraceroute6
 myexec_SCRIPTS = tcptraceroute6 tracert6
 bin_PROGRAMS = tcpspray6
+noinst_HEADERS = gettime.h
 
 MOSTLYCLEANFILES = $(myexec_SCRIPTS)
 
