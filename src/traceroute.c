@@ -421,10 +421,6 @@ printdelay (const struct timespec *from, const struct timespec *to)
 	{
 		d.quot--;
 		d.rem += 1000;
-		printf ("\nDEBUG: %u.%09u\n"
-		          "    -> %u.%09u\n",
-		        (unsigned)from->tv_sec, (unsigned)from->tv_nsec,
-		        (unsigned)to->tv_sec, (unsigned)to->tv_nsec);
         }
 	d.quot += 1000 * (to->tv_sec - from->tv_sec);
 
