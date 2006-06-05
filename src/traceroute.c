@@ -23,6 +23,9 @@
 # include <config.h>
 #endif
 
+#undef _GNU_SOURCE
+#define _BSD_SOURCE 1
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h> /* div() */

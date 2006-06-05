@@ -20,7 +20,7 @@ dnl *  http://www.gnu.org/copyleft/gpl.html                               *
 dnl ***********************************************************************
 
 AC_COPYRIGHT([Copyright (C) 2005-2006 Remi Denis-Courmont])
-AC_INIT(ndisc6, 0.6.4, rdenis@simphalempin.com)
+AC_INIT(ndisc6, 0.6.5, rdenis@simphalempin.com)
 AC_PREREQ(2.59c)
 INVOCATION="$0 $*"
 
@@ -38,6 +38,7 @@ RDC_BUILD_HOSTNAME
 # Checks for programs.
 AS_MESSAGE([checking required programs...])
 AC_PROG_CC_C99
+AC_USE_SYSTEM_EXTENSIONS
 AM_INIT_AUTOMAKE([check-news dist-bzip2 no-dist-gzip no-exeext std-options])
 
 
@@ -64,7 +65,7 @@ dnl RDC_STRUCT_SOCKADDR_LEN
 # Checks for library functions.
 AS_MESSAGE([checking library functions...])
 RDC_REPLACE_FUNC_GETOPT_LONG
-AC_SEARCH_LIBS(nanosleep, [rt])
+AC_SEARCH_LIBS(clock_gettime, [rt])
 
 # Network stuff
 RDC_FUNC_SOCKET

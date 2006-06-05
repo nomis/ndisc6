@@ -20,7 +20,7 @@
 bindir = @bindir@
 sbindir = @sbindir@
 
-AM_CPPFLAGS = -I$(top_srcdir) -D_BSD_SOURCE
+AM_CPPFLAGS = -I$(top_srcdir)
 
 myexec_PROGRAMS = ndisc6 rdisc6 rltraceroute6
 myexec_SCRIPTS = tcptraceroute6 tracert6
