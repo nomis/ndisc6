@@ -31,10 +31,14 @@ static inline void gettime (struct timespec *ts)
 	if (clock_gettime (CLOCK_MONOTONIC, ts))
 #endif
 	{
+		static long freq = 0;
+		if (freq == 0)
+			freq = sysconf (_SC_CLK_TCK);
+
 		struct tms dummy;
 		clock_t t = times (&dummy);
-		ts->tv_sec = t / 1000;
-		ts->tv_nsec = (t % 1000) * 1000000;
+		ts->tv_sec = t / freq;
+		ts->tv_nsec = (t % freq) * (1000000000 / freq);
 	}
 }
 
