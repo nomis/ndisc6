@@ -27,7 +27,10 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <limits.h> // SIZE_MAX
+#if HAVE_STDINT_H
+# include <stdint.h> // SIZE_MAX
+#endif
+#include <limits.h> // SIZE_MAX on Solaris (non-standard)
 #include <stdlib.h>
 
 #include <sys/types.h>
