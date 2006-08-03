@@ -79,8 +79,7 @@ static int tcpconnect (const char *host, const char *serv)
 			continue;
 		}
 
-		int yes = 1;
-		setsockopt (val, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof (yes));
+		setsockopt (val, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof (int));
 		fcntl (val, F_SETFD, FD_CLOEXEC);
 
 		if (connect (val, p->ai_addr, p->ai_addrlen))

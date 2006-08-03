@@ -753,13 +753,11 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
 
 static void setup_socket (int fd)
 {
-	int val = 1;
-
 	if (debug)
-		setsockopt (fd, SOL_SOCKET, SO_DEBUG, &val, sizeof (val));
-	setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof (val));
+		setsockopt (fd, SOL_SOCKET, SO_DEBUG, &(int) { 1 }, sizeof (int));
+	setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &(int) { 1 }, sizeof (int));
 
-	val = fcntl (fd, F_GETFL);
+	int val = fcntl (fd, F_GETFL);
 	if (val == -1)
 		val = 0;
 	fcntl (fd, F_SETFL, O_NONBLOCK | val);
