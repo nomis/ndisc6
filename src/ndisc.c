@@ -91,14 +91,12 @@ getipv6byname (const char *name, const char *ifname, int numeric,
                struct sockaddr_in6 *addr)
 {
 	struct addrinfo hints, *res;
-	int val;
-
 	memset (&hints, 0, sizeof (hints));
 	hints.ai_family = PF_INET6;
 	hints.ai_socktype = SOCK_DGRAM; /* dummy */
 	hints.ai_flags = numeric ? AI_NUMERICHOST : 0;
 
-	val = getaddrinfo (name, NULL, &hints, &res);
+	int val = getaddrinfo (name, NULL, &hints, &res);
 	if (val)
 	{
 		fprintf (stderr, _("%s: %s\n"), name, gai_strerror (val));
@@ -450,21 +448,16 @@ recvadv (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
 	for (;;)
 	{
 		/* waits for reply until deadline */
-		struct pollfd ufd;
-		memset (&ufd, 0, sizeof (ufd));
-		ufd.fd = fd;
-		ufd.events = POLLIN;
-
-		int delay = 0;
+		int val = 0;
 		if (end.tv_sec >= now.tv_sec)
 		{
-			delay = (end.tv_sec - now.tv_sec) * 1000
+			val = (end.tv_sec - now.tv_sec) * 1000
 				+ (int)((end.tv_nsec - now.tv_nsec) / 1000000);
-			if (delay < 0)
-				delay = 0;
+			if (val < 0)
+				val = 0;
 		}
 
-		int val = poll (&ufd, 1, delay);
+		val = poll (&(struct pollfd){ .fd = fd, .events = POLLIN }, 1, val);
 		if (val < 0)
 			break;
 
@@ -478,10 +471,10 @@ recvadv (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
 		 * - use interface MTU for buffer size
 		 */
 		struct sockaddr_in6 addr;
-		socklen_t len = sizeof (addr);
 		uint8_t buf[1500];
 		val = recvfrom (fd, &buf, sizeof (buf), MSG_DONTWAIT,
-				(struct sockaddr *)&addr, &len);
+		                (struct sockaddr *)&addr,
+		                &(socklen_t){ sizeof (addr) });
 		if (val < 0)
 		{
 			perror (_("Receiving ICMPv6 packet"));
