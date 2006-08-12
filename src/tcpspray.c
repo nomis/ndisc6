@@ -31,6 +31,9 @@
 # include <stdint.h> // SIZE_MAX
 #endif
 #include <limits.h> // SIZE_MAX on Solaris (non-standard)
+#ifndef SIZE_MAX
+# define SIZE_MAX SIZE_T_MAX // FreeBSD 4.x workaround
+#endif
 #include <stdlib.h>
 
 #include <sys/types.h>
