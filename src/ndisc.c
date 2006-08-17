@@ -35,6 +35,7 @@
 #include <time.h> /* clock_gettime() */
 #include <poll.h> /* poll() */
 #include <sys/socket.h>
+#include <sys/uio.h>
 #include <fcntl.h>
 
 #include "gettime.h"
