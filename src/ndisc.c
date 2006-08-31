@@ -432,6 +432,51 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 
 
 static int
+recvfromLL (int fd, void *buf, size_t len, int flags,
+            struct sockaddr_in6 *addr)
+{
+	char cbuf[CMSG_SPACE (sizeof (int))];
+	struct iovec iov =
+	{
+		.iov_base = buf,
+		.iov_len = len
+	};
+	struct msghdr hdr =
+	{
+		.msg_name = addr,
+		.msg_namelen = sizeof (*addr),
+		.msg_iov = &iov,
+		.msg_iovlen = 1,
+		.msg_control = cbuf,
+		.msg_controllen = sizeof (cbuf)
+	};
+
+	int val = recvmsg (fd, &hdr, flags);
+	if (val == -1)
+		return val;
+
+	/* ensures the hop limit is 255 */
+	for (struct cmsghdr *cmsg = CMSG_FIRSTHDR (&hdr);
+	     cmsg != NULL;
+	     cmsg = CMSG_NXTHDR (&hdr, cmsg))
+	{
+		if ((cmsg->cmsg_level == IPPROTO_IPV6)
+		 && (cmsg->cmsg_type == IPV6_HOPLIMIT))
+		{
+			if (255 != *(int *)CMSG_DATA (cmsg))
+			{
+				// pretend to be a spurious wake-up
+				errno = EAGAIN;
+				return -1;
+			}
+		}
+	}
+
+	return val;
+}
+
+
+static int
 recvadv (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
          unsigned flags)
 {
@@ -471,45 +516,15 @@ recvadv (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
 		/* receives an ICMPv6 packet */
 		// TODO: use interface MTU as buffer size
 		uint8_t buf[1460];
-		char cbuf[CMSG_SPACE (sizeof (int))];
 		struct sockaddr_in6 addr;
-		struct iovec iov =
-		{
-			.iov_base = buf,
-			.iov_len = sizeof (buf)
-		};
-		struct msghdr hdr =
-		{
-			.msg_name = &addr,
-			.msg_namelen = sizeof (addr),
-			.msg_iov = &iov,
-			.msg_iovlen = 1,
-			.msg_control = cbuf,
-			.msg_controllen = sizeof (cbuf)
-		};
 
-		val = recvmsg (fd, &hdr, MSG_DONTWAIT);
-		if (val < 0)
-		{
-			perror (_("Receiving ICMPv6 packet"));
-			continue;
-		}
-
-		/* ensures the hop limit is 255 */
-		for (struct cmsghdr *cmsg = CMSG_FIRSTHDR (&hdr);
-		     cmsg != NULL;
-		     cmsg = CMSG_NXTHDR (&hdr, cmsg))
-		{
-			if ((cmsg->cmsg_level == IPPROTO_IPV6)
-			 && (cmsg->cmsg_type == IPV6_HOPLIMIT))
-			{
-				if (255 != *(int *)CMSG_DATA (cmsg))
-					val = -1;
-			}
-		}
-
+		val = recvfromLL (fd, buf, sizeof (buf), MSG_DONTWAIT, &addr);
 		if (val == -1)
+		{
+			if (errno != EAGAIN)
+				perror (_("Receiving ICMPv6 packet"));
 			continue;
+		}
 
 		/* ensures the response came through the right interface */
 		if (addr.sin6_scope_id
@@ -547,7 +562,7 @@ ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
 	struct sockaddr_in6 tgt;
 
 	fd = socket (PF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
-	drop_priv ();
+	drop_priv (); // cannot fail - won't override errno
 
 	if (fd == -1)
 	{
