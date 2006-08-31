@@ -745,7 +745,7 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
 		}
 	}
 	freeaddrinfo (res);
-	
+
 	if (val)
 	{
 		perror (dsthost);
