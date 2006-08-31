@@ -22,7 +22,7 @@ dnl ***********************************************************************
 AC_COPYRIGHT([Copyright (C) 2005-2006 Remi Denis-Courmont])
 AC_INIT(ndisc6, 0.6.8, rdenis@simphalempin.com)
 AC_PREREQ(2.59c)
-INVOCATION="$0 $*"
+INVOCATION="$0 $ac_configure_args"
 
 AS_MESSAGE(checking system...)
 AC_CONFIG_SRCDIR(configure.ac)
