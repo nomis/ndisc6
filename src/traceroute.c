@@ -392,17 +392,23 @@ static const tracetype ack_type =
 static void
 printname (const struct sockaddr *addr, size_t addrlen)
 {
-	char name[NI_MAXHOST];
-	int val;
+	char buf[NI_MAXHOST];
 
-	val = getnameinfo (addr, addrlen, name, sizeof (name), NULL, 0, niflags);
-	if (!val)
-		printf (" %s", name);
+	if (getnameinfo (addr, addrlen, buf, sizeof (buf), NULL, 0, niflags))
+		return;
+	printf (" %s", buf);
 
-	val = getnameinfo (addr, addrlen, name, sizeof (name), NULL, 0,
-	                   NI_NUMERICHOST | niflags);
-	if (!val)
-		printf (" (%s) ", name);
+	if (getnameinfo (addr, addrlen, buf, sizeof (buf), NULL, 0,
+	                 NI_NUMERICHOST | niflags))
+		return;
+	printf (" (%s) ", buf);
+}
+
+
+static inline void
+printipv6 (const struct sockaddr_in6 *addr)
+{
+	printname ((const struct sockaddr *)addr, sizeof (*addr));
 }
 
 
@@ -552,7 +558,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 					if (state == -1)
 					{
-						printname ((struct sockaddr *)dst, sizeof (*dst));
+						printipv6 (dst);
 						state = 1;
 						found = ttl;
 					}
@@ -568,7 +574,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				{
 					/* Route determination complete! */
 					if (state == -1)
-						printname ((struct sockaddr *)dst, sizeof (*dst));
+						printipv6 (dst);
 
 					if (len != state)
 					{
@@ -607,11 +613,10 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 					uint8_t buf[1192];
 				} pkt;
 				struct sockaddr_in6 peer;
-				socklen_t peerlen = sizeof (peer);
-				int len;
 
-				len = recvfrom (icmpfd, &pkt, sizeof (pkt), 0,
-				                (struct sockaddr *)&peer, &peerlen);
+				int len = recvfrom (icmpfd, &pkt, sizeof (pkt), 0,
+				                    (struct sockaddr *)&peer,
+				                    &(socklen_t){ sizeof (peer) });
 
 				if ((len < (int)(sizeof (pkt.hdr) + sizeof (pkt.inhdr)))
 				 || ((pkt.hdr.icmp6_type != ICMP6_DST_UNREACH)
@@ -632,7 +637,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				if ((state == -1) || memcmp (&hop, &peer.sin6_addr, 16))
 				{
 					memcpy (&hop, &peer.sin6_addr, 16);
-					printname ((struct sockaddr *)&peer, peerlen);
+					printipv6 (&peer);
 					state = 0;
 				}
 
