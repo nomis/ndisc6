@@ -110,7 +110,14 @@ static uint16_t getsourceport (void)
 
 static int send_payload (int fd, const void *payload, size_t length)
 {
-	return send (fd, payload, length, sendflags) == (int)length ? 0 : -1;
+	int rc = send (fd, payload, length, sendflags);
+
+	if (rc == (int)length)
+		return 0;
+
+	if (rc != -1)
+		errno = EMSGSIZE;
+	return -1;
 }
 
 
@@ -684,7 +691,6 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
                const char *srchost, const char *srcport)
 {
 	struct addrinfo hints, *res;
-	int val;
 
 	memset (&hints, 0, sizeof (hints));
 	hints.ai_family = AF_INET6;
@@ -697,18 +703,15 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
 		if (getaddrinfo_err (srchost, srcport, &hints, &res))
 			return -1;
 
-		val = bind (fd, res->ai_addr, res->ai_addrlen);
+		if (bind (fd, res->ai_addr, res->ai_addrlen))
+		{
+			perror (srchost);
+			goto error;
+		}
+
 		if (srcport != NULL)
 			sport = ((const struct sockaddr_in6 *)res->ai_addr)->sin6_port;
 		freeaddrinfo (res);
-
-		if (val)
-		{
-			perror (srchost);
-			return -1;
-		}
-
-		else
 
 		hints.ai_flags &= ~AI_PASSIVE;
 	}
@@ -720,39 +723,36 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
 		return -1;
 
 	if (res->ai_addrlen > sizeof (*dst))
-	{
-		freeaddrinfo (res);
-		return -1;
-	}
+		goto error;
 
-	val = connect (fd, res->ai_addr, res->ai_addrlen);
-	if (val == 0)
-	{
-		char buf[INET6_ADDRSTRLEN];
-		socklen_t len = sizeof (*dst);
-
-		fputs (_("traceroute to"), stdout);
-		printname (res->ai_addr, res->ai_addrlen);
-		if ((getsockname (fd, (struct sockaddr *)dst, &len) == 0)
-		 && inet_ntop (AF_INET6, &dst->sin6_addr, buf, sizeof (buf)))
-			printf (_("from %s, "), buf);
-
-		memcpy (dst, res->ai_addr, res->ai_addrlen);
-		if (has_port (type->protocol))
-		{
-			printf (_("port %u, "), ntohs (dst->sin6_port));
-			printf (_("from port %u, "), ntohs (sport));
-		}
-	}
-	freeaddrinfo (res);
-
-	if (val)
+	if (connect (fd, res->ai_addr, res->ai_addrlen))
 	{
 		perror (dsthost);
-		return -1;
+		goto error;
 	}
 
+	char buf[INET6_ADDRSTRLEN];
+	fputs (_("traceroute to"), stdout);
+	printname (res->ai_addr, res->ai_addrlen);
+
+	if ((getsockname (fd, (struct sockaddr *)dst,
+	                  &(socklen_t){ sizeof (*dst) }) == 0)
+	 && inet_ntop (AF_INET6, &dst->sin6_addr, buf, sizeof (buf)))
+		printf (_("from %s, "), buf);
+
+	memcpy (dst, res->ai_addr, res->ai_addrlen);
+	if (has_port (type->protocol))
+	{
+		printf (_("port %u, "), ntohs (dst->sin6_port));
+		printf (_("from port %u, "), ntohs (sport));
+	}
+
+	freeaddrinfo (res);
 	return 0;
+
+error:
+	freeaddrinfo (res);
+	return -1;
 }
 
 
@@ -792,8 +792,8 @@ traceroute (const char *dsthost, const char *dstport,
 	protofd = socket (AF_INET6, SOCK_RAW, type->protocol);
 	if (protofd == -1)
 	{
-		close (icmpfd);
 		perror (_("Raw IPv6 socket"));
+		close (icmpfd);
 		return -1;
 	}
 
