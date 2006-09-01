@@ -65,18 +65,10 @@
 static const tracetype *type = NULL;
 static int niflags = 0;
 static int sendflags = 0;
-int tcpflags = 0;
 static int tclass = -1;
-static uint16_t sport;
+uint16_t sport;
 static bool debug = false;
 static char ifname[IFNAMSIZ] = "";
-
-
-#define TCP_WINDOW 4096
-#ifndef TH_ECE
-# define TH_ECE 0x40
-# define TH_CWR 0x80
-#endif
 
 
 /****************************************************************************/
@@ -239,149 +231,6 @@ parse_echo_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 const tracetype echo_type =
 	{ SOCK_DGRAM, IPPROTO_ICMPV6, 2,
 	  send_echo_probe, parse_echo_reply, parse_echo_error };
-
-
-/* TCP/SYN probes */
-static int
-send_syn_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
-{
-	struct tcphdr th;
-
-	memset (&th, 0, sizeof (th));
-	th.th_sport = sport;
-	th.th_dport = port;
-	th.th_seq = htonl ((ttl << 24) | (n << 16) | getpid ());
-	th.th_off = sizeof (th) / 4;
-	th.th_flags = TH_SYN | tcpflags;
-	th.th_win = htons (TCP_WINDOW);
-	(void)plen; // FIXME
-
-	return send_payload (fd, &th, sizeof (th));
-}
-
-
-static int
-parse_syn_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
-                uint16_t port)
-{
-	const struct tcphdr *pth = (const struct tcphdr *)data;
-	uint32_t seq;
-
-	if ((len < sizeof (*pth))
-	 || (pth->th_dport != sport)
-	 || (pth->th_sport != port)
-	 || ((pth->th_flags & TH_ACK) == 0)
-	 || (((pth->th_flags & TH_SYN) != 0) == ((pth->th_flags & TH_RST) != 0))
-	 || (pth->th_off < (sizeof (*pth) / 4)))
-		return -1;
-
-	seq = ntohl (pth->th_ack) - 1;
-	if ((seq & 0xffff) != (unsigned)getpid ())
-		return -1;
-
-	*ttl = seq >> 24;
-	*n = (seq >> 16) & 0xff;
-	return 1 + ((pth->th_flags & TH_SYN) == TH_SYN);
-}
-
-
-static int
-parse_syn_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
-                 uint16_t port)
-{
-	const struct tcphdr *pth = (const struct tcphdr *)data;
-	uint32_t seq;
-
-	if ((len < 8)
-	 || (pth->th_sport != sport)
-	 || (pth->th_dport != port))
-		return -1;
-
-	seq = ntohl (pth->th_seq);
-	if ((seq & 0xffff) != (unsigned)getpid ())
-		return -1;
-
-	*ttl = seq >> 24;
-	*n = (seq >> 16) & 0xff;
-	return 0;
-}
-
-
-const tracetype syn_type =
-	{ SOCK_STREAM, IPPROTO_TCP, 16,
-	  send_syn_probe, parse_syn_resp, parse_syn_error };
-
-
-/* TCP/ACK probes */
-static int
-send_ack_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
-{
-	struct tcphdr th;
-
-	memset (&th, 0, sizeof (th));
-	th.th_sport = sport;
-	th.th_dport = port;
-	th.th_ack = htonl ((ttl << 24) | (n << 16) | getpid ());
-	th.th_off = sizeof (th) / 4;
-	th.th_flags = TH_ACK;
-	th.th_win = htons (TCP_WINDOW);
-	(void)plen; // FIXME
-
-	return send_payload (fd, &th, sizeof (th));
-}
-
-
-static int
-parse_ack_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
-                uint16_t port)
-{
-	const struct tcphdr *pth = (const struct tcphdr *)data;
-	uint32_t seq;
-
-	if ((len < sizeof (*pth))
-	 || (pth->th_dport != sport)
-	 || (pth->th_sport != port)
-	 || (pth->th_flags & TH_SYN)
-	 || (pth->th_flags & TH_ACK)
-	 || ((pth->th_flags & TH_RST) == 0)
-	 || (pth->th_off < (sizeof (*pth) / 4)))
-		return -1;
-
-	seq = ntohl (pth->th_seq);
-	if ((seq & 0xffff) != (unsigned)getpid ())
-		return -1;
-
-	*ttl = seq >> 24;
-	*n = (seq >> 16) & 0xff;
-	return 0;
-}
-
-
-static int
-parse_ack_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
-                 uint16_t port)
-{
-	const struct tcphdr *pth = (const struct tcphdr *)data;
-	uint32_t seq;
-
-	if ((len < 8)
-	 || (pth->th_sport != sport)
-	 || (pth->th_dport != port))
-		return -1;
-
-	seq = ntohl (pth->th_ack);
-	if ((seq & 0xffff) != (unsigned)getpid ())
-		return -1;
-
-	*ttl = seq >> 24;
-	*n = (seq >> 16) & 0xff;
-	return 0;
-}
-
-
-const tracetype ack_type =
-	{ SOCK_STREAM, IPPROTO_TCP, 16,
-	  send_ack_probe, parse_ack_resp, parse_ack_error };
 
 
 /* Performs reverse lookup; print hostname and address */

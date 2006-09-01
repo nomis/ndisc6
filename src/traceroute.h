@@ -19,9 +19,8 @@
  *  http://www.gnu.org/copyleft/gpl.html                               *
  ***********************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+#ifndef NDISC6_TRACEROUTE_H
+# define NDISC6_TRACEROUTE_H
 
 typedef struct tracetype
 {
@@ -36,10 +35,24 @@ typedef struct tracetype
 	                  unsigned *n, uint16_t port);
 } tracetype;
 
+# ifdef __cplusplus
+extern "C" {
+# endif
+
 int send_payload (int fd, const void *payload, size_t length);
 
-/* Very evil shared global variables */
+# ifdef __cplusplus
+}
+#endif
+
 extern int tcpflags;
+extern uint16_t sport;
 
 extern const tracetype udp_type, echo_type, syn_type, ack_type;
 
+# ifndef TH_ECE
+#  define TH_ECE 0x40
+#  define TH_CWR 0x80
+# endif
+
+#endif
