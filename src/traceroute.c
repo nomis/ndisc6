@@ -58,26 +58,14 @@
 # define SOL_ICMPV6 IPPROTO_ICMPV6
 #endif
 
-
-typedef struct tracetype
-{
-	int gai_socktype;
-	int protocol;
-	int checksum_offset;
-	int (*send_probe) (int fd, unsigned ttl, unsigned n, size_t plen,
-	                   uint16_t port);
-	int (*parse_resp) (const void *data, size_t len, unsigned *ttl,
-	                   unsigned *n, uint16_t port);
-	int (*parse_err) (const void *data, size_t len, unsigned *ttl,
-	                  unsigned *n, uint16_t port);
-} tracetype;
+#include "traceroute.h"
 
 
 /* All our evil global variables */
 static const tracetype *type = NULL;
 static int niflags = 0;
 static int sendflags = 0;
-static int tcpflags = 0;
+int tcpflags = 0;
 static int tclass = -1;
 static uint16_t sport;
 static bool debug = false;
@@ -109,7 +97,7 @@ static uint16_t getsourceport (void)
 }
 
 
-static int send_payload (int fd, const void *payload, size_t length)
+int send_payload (int fd, const void *payload, size_t length)
 {
 	int rc = send (fd, payload, length, sendflags);
 
@@ -182,7 +170,7 @@ parse_udp_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 }
 
 
-static const tracetype udp_type =
+const tracetype udp_type =
 	{ SOCK_DGRAM, IPPROTO_UDP, 6,
 	  send_udp_probe, NULL, parse_udp_error };
 
@@ -248,7 +236,7 @@ parse_echo_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 }
 
 
-static const tracetype echo_type =
+const tracetype echo_type =
 	{ SOCK_DGRAM, IPPROTO_ICMPV6, 2,
 	  send_echo_probe, parse_echo_reply, parse_echo_error };
 
@@ -319,7 +307,7 @@ parse_syn_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 }
 
 
-static const tracetype syn_type =
+const tracetype syn_type =
 	{ SOCK_STREAM, IPPROTO_TCP, 16,
 	  send_syn_probe, parse_syn_resp, parse_syn_error };
 
@@ -391,7 +379,7 @@ parse_ack_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
 }
 
 
-static const tracetype ack_type =
+const tracetype ack_type =
 	{ SOCK_STREAM, IPPROTO_TCP, 16,
 	  send_ack_probe, parse_ack_resp, parse_ack_error };
 

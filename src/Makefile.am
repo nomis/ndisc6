@@ -37,7 +37,7 @@ rdisc6_SOURCES = ndisc.c
 rdisc6_CFLAGS = -DRDISC
 
 # traceroute6
-rltraceroute6_SOURCES = traceroute.c
+rltraceroute6_SOURCES = traceroute.c traceroute.h
 
 tcptraceroute6: Makefile.in $(top_builddir)/config.status
 	rm -f $@.tmp $@
