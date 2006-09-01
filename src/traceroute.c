@@ -78,6 +78,7 @@ static const tracetype *type = NULL;
 static int niflags = 0;
 static int sendflags = 0;
 static int tcpflags = 0;
+static int tclass = -1;
 static uint16_t sport;
 static bool debug = false;
 static char ifname[IFNAMSIZ] = "";
@@ -842,6 +843,9 @@ traceroute (const char *dsthost, const char *dstport,
 		goto error;
 	}
 
+	/* Defines traffic class */
+	setsockopt (protofd, SOL_IPV6, IPV6_TCLASS, &tclass, sizeof (tclass));
+
 	/* Set ICMPv6 filter for echo replies */
 	if (type->protocol == IPPROTO_ICMPV6)
 	{
@@ -901,6 +905,7 @@ usage (const char *path)
 "  -d  enable socket debugging\n"
 "  -E  set TCP Explicit Congestion Notification bits in TCP packets\n"
 "  -f  specify the initial hop limit (default: 1)\n"
+/*"  -g  add a loose route\n"*/
 "  -h  display this help and exit\n"
 "  -I  use ICMPv6 Echo Request packets as probes\n"
 "  -i  force outgoing network interface\n"
@@ -914,6 +919,7 @@ usage (const char *path)
 "  -r  do not route packets\n"
 "  -S  send TCP SYN probes\n"
 "  -s  specify the source IPv6 address of probe packets\n"
+"  -t  set traffic class of probe packets\n"
 "  -U  send UDP probes (default)\n"
 "  -V, --version  display program version and exit\n"
 /*"  -v, --verbose  display all kind of ICMPv6 errors\n"*/
@@ -991,6 +997,7 @@ static struct option opts[] =
 	{ "noroute",  no_argument,       NULL, 'r' },
 	{ "syn",      no_argument,       NULL, 'S' },
 	{ "source",   required_argument, NULL, 's' },
+	{ "tclass",   required_argument, NULL, 't' },
 	{ "udp",      no_argument,       NULL, 'U' },
 	{ "version",  no_argument,       NULL, 'V' },
 	/*{ "verbose",  no_argument,       NULL, 'v' },*/
@@ -1001,7 +1008,7 @@ static struct option opts[] =
 };
 
 
-static const char optstr[] = "AdEf:hIi:m:Nnp:q:rSs:UVw:xz:";
+static const char optstr[] = "AdEf:hIi:m:Nnp:q:rSs:t:UVw:xz:";
 
 int
 main (int argc, char *argv[])
@@ -1025,6 +1032,9 @@ main (int argc, char *argv[])
 
 			case 'E':
 				tcpflags |= TH_ECE | TH_CWR;
+				break;
+
+			case 'F': // stub (don't fragment)
 				break;
 
 			case 'f':
@@ -1087,6 +1097,16 @@ main (int argc, char *argv[])
 				srchost = optarg;
 				break;
 
+			case 't':
+			{
+				char *end;
+				unsigned long l = strtoul (optarg, &end, 0);
+				if (*end || l > 255)
+					return quick_usage (argv[0]);
+				tclass = l;
+				break;
+			}
+
 			case 'U':
 				type = &udp_type;
 				break;
@@ -1104,6 +1124,9 @@ main (int argc, char *argv[])
 				break;
 			}
 
+			case 'x': // stub: no IPv6 checksums
+				break;
+
 			case 'z':
 			{
 				char *end;
@@ -1113,11 +1136,6 @@ main (int argc, char *argv[])
 				delay = (unsigned)l;
 				break;
 			}
-
-			// stubs:
-			case 'F':
-			case 'x':
-				break;
 
 			case '?':
 			default:
