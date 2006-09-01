@@ -45,14 +45,9 @@ int send_payload (int fd, const void *payload, size_t length);
 }
 #endif
 
-extern int tcpflags;
+extern bool ecn;
 extern uint16_t sport;
 
 extern const tracetype udp_type, echo_type, syn_type, ack_type;
-
-# ifndef TH_ECE
-#  define TH_ECE 0x40
-#  define TH_CWR 0x80
-# endif
 
 #endif

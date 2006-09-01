@@ -41,7 +41,6 @@
 #include <netinet/in.h>
 #include <netinet/ip6.h>
 #include <netinet/udp.h>
-#include <netinet/tcp.h>
 #include <netinet/icmp6.h>
 #include <netdb.h>
 #include <arpa/inet.h> /* inet_ntop() */
@@ -68,6 +67,7 @@ static int sendflags = 0;
 static int tclass = -1;
 uint16_t sport;
 static bool debug = false;
+bool ecn = false;
 static char ifname[IFNAMSIZ] = "";
 
 
@@ -870,7 +870,7 @@ main (int argc, char *argv[])
 				break;
 
 			case 'E':
-				tcpflags |= TH_ECE | TH_CWR;
+				ecn = true;
 				break;
 
 			case 'F': // stub (don't fragment)

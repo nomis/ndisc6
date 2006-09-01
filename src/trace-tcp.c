@@ -28,6 +28,7 @@
 
 #include <string.h>
 #include <inttypes.h>
+#include <stdbool.h>
 
 #include <sys/types.h>
 #include <unistd.h> // getpid()
@@ -38,7 +39,10 @@
 
 #define TCP_WINDOW 4096
 
-int tcpflags = 0;
+#ifndef TH_ECE
+# define TH_ECE 0x40
+# define TH_CWR 0x80
+#endif
 
 /* TCP/SYN probes */
 static int
@@ -51,7 +55,7 @@ send_syn_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 	th.th_dport = port;
 	th.th_seq = htonl ((ttl << 24) | (n << 16) | getpid ());
 	th.th_off = sizeof (th) / 4;
-	th.th_flags = TH_SYN | tcpflags;
+	th.th_flags = TH_SYN | (ecn ? (TH_ECE | TH_CWR) : 0);
 	th.th_win = htons (TCP_WINDOW);
 	(void)plen; // FIXME
 
