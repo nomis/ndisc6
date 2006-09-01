@@ -116,57 +116,6 @@ static bool has_port (int protocol)
 }
 
 
-/* UDP probes (traditional traceroute) */
-static int
-send_udp_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
-{
-	if (plen < sizeof (struct udphdr))
-		plen = sizeof (struct udphdr);
-
-	struct
-	{
-		struct udphdr uh;
-		uint8_t payload[plen - sizeof (struct udphdr)];
-	} packet;
-	memset (&packet, 0, plen);
-
-	(void)n;
-	packet.uh.uh_sport = sport;
-	packet.uh.uh_dport = htons (ntohs (port) + ttl);
-	packet.uh.uh_ulen = htons (plen);
-	/*if (plen > sizeof (struct udphdr))
-		packet.payload[0] = (uint8_t)ttl;*/
-
-	return send_payload (fd, &packet, plen);
-}
-
-
-static int
-parse_udp_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
-                 uint16_t port)
-{
-	const struct udphdr *puh = (const struct udphdr *)data;
-	uint16_t rport;
-
-	if ((len < 4) || (puh->uh_sport != sport ))
-		return -1;
-
-	rport = ntohs (puh->uh_dport);
-	port = ntohs (port);
-	if ((rport < port) || (rport > port + 255))
-		return -1;
-
-	*ttl = rport - port;
-	*n = (unsigned)(-1);
-	return 0;
-}
-
-
-const tracetype udp_type =
-	{ SOCK_DGRAM, IPPROTO_UDP, 6,
-	  send_udp_probe, NULL, parse_udp_error };
-
-
 /* ICMPv6 Echo probes */
 static int
 send_echo_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)

@@ -32,6 +32,7 @@
 
 #include <sys/types.h>
 #include <unistd.h> // getpid()
+#include <sys/socket.h> // SOCK_STREAM
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
