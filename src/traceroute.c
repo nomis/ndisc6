@@ -37,7 +37,6 @@
 #include <net/if.h> // IFNAMSIZ
 #include <netinet/in.h>
 #include <netinet/ip6.h>
-#include <netinet/udp.h>
 #include <netinet/icmp6.h>
 #include <netdb.h>
 #include <arpa/inet.h> /* inet_ntop() */
