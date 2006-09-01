@@ -26,37 +26,13 @@
 #undef _GNU_SOURCE
 #define _BSD_SOURCE 1
 
-#include <stdio.h>
 #include <string.h>
-#include <stdlib.h> /* div() */
-#include <limits.h>
-#include <stdbool.h>
-#include <time.h> /* nanosleep() */
+#include <inttypes.h>
 
-#include <unistd.h>
-#include <poll.h>
-#include <sys/socket.h>
-#include <time.h>
-#include <net/if.h> // IFNAMSIZ
+#include <sys/types.h>
+#include <unistd.h> // getpid()
 #include <netinet/in.h>
-#include <netinet/ip6.h>
-#include <netinet/udp.h>
 #include <netinet/tcp.h>
-#include <netinet/icmp6.h>
-#include <netdb.h>
-#include <arpa/inet.h> /* inet_ntop() */
-#include <fcntl.h>
-#include <errno.h>
-#ifdef HAVE_GETOPT_H
-# include <getopt.h>
-#endif
-#include "gettime.h"
-#ifndef SOL_IPV6
-# define SOL_IPV6 IPPROTO_IPV6
-#endif
-#ifndef SOL_ICMPV6
-# define SOL_ICMPV6 IPPROTO_ICMPV6
-#endif
 
 #include "traceroute.h"
 
