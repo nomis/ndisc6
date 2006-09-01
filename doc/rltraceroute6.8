@@ -19,8 +19,8 @@ rltraceroute6 \- IPv6 traceroute tool
 .SH SYNOPSIS
 .BR "traceroute6" " [" "-AdEInrSU" "] [" "-f min_hop" "] [" "-i iface" "] ["
 .BR  "-m max_hop" "] [" "-p port" "] [" "-q attempts" "] [" "-s source" "] ["
-.BR "-w wait" "] [" "-z delay_ms" "] <" "hostname/address" "> ["
-.BR "port/packet length" "]"
+.BR "-t tclass" "] [" "-w wait" "] [" "-z delay_ms" "] <"
+.BR "hostname/address" "> [" "port/packet length" "]"
 
 .SH DESCRIPTON
 .B rltraceroute6
@@ -90,7 +90,8 @@ That's the default for tracert6.
 
 .TP
 .B "\-i"
-Only send packets through the specified interface. See also BUGS.
+Only send packets through the specified interface.
+See also BUGS.
 
 .TP
 .B "\-m"
@@ -105,8 +106,8 @@ This option is meant for backward compatibility with tcptraceroute(8).
 
 .TP
 .B "\-n"
-Do not try to resolve each hop's IPv6 address to a host name. That may speed
-up the traceroute significantly.
+Do not try to resolve each hop's IPv6 address to a host name.
+That may speed up the traceroute significantly.
 
 .TP
 .B "\-p"
@@ -129,7 +130,8 @@ Override the number of probes sent to each hop (default: 3).
 .TP
 .B "\-r"
 Do not route packets, i.e. do not send packets through a gateway that would be
-specified by the routing table, if the IPv6 stack supports this.
+specified by the routing table.
+See also BUGS.
 
 .TP
 .B "\-S"
@@ -144,6 +146,11 @@ Specify the source address to use for probe packets explicitly.
 Use UDP probe packets. That's the default for rltraceroute6.
 
 .TP
+.B "\-t"
+Specify the traffic class (DSCP) for probe packets.
+See also BUGS.
+
+.TP
 .B "\-V"
 Display program version and license and exit.
 
@@ -154,7 +161,7 @@ was sent (default: 5 seconds).
 
 .TP
 .B "\-x"
-This option is ignored for backward compatibility.
+This option is ignored for seamless migration from IPv4 traceroute.
 The IPv6 header has no checksum field.
 
 .TP
@@ -169,12 +176,12 @@ is made to send or receive data from the network so as to reduce the possible
 impact of a security vulnerability.
 
 .SH BUGS
-However useful they might be, -i and -r options are ignored by the official
-Linux kernel at the time of writing this manpage, and hence do not work as
-documented.
+However useful they might be, -i, -r and -t options are ignored by the
+official Linux kernel at the time of writing this manpage,
+and hence do not work as documented.
 
-rltraceroute6 only implements option -i on Linux at the moment. It is not
-portable.
+rltraceroute6 implements option -i on Linux only at the moment.
+It is not portable.
 
 .SH "SEE ALSO"
 ipv6(7), traceroute(8), tcptraceroute(8), traceroute6(8)

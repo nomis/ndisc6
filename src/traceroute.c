@@ -843,8 +843,10 @@ traceroute (const char *dsthost, const char *dstport,
 		goto error;
 	}
 
+#ifdef IPV6_TCLASS
 	/* Defines traffic class */
 	setsockopt (protofd, SOL_IPV6, IPV6_TCLASS, &tclass, sizeof (tclass));
+#endif
 
 	/* Set ICMPv6 filter for echo replies */
 	if (type->protocol == IPPROTO_ICMPV6)
