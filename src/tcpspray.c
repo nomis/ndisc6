@@ -178,7 +178,7 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 	}
 
 	struct timespec start, end;
-	gettime (&start);
+	mono_gettime (&start);
 
 	for (unsigned i = 0; i < n; i++)
 	{
@@ -194,11 +194,11 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 		if (verbose)
 			fputc ('.', stdout);
 
-		if (delay_us && clock_nanosleep (CLOCK_MONOTONIC, 0, &delay_ts, NULL))
+		if (delay_us && mono_nanosleep (&delay_ts))
 			goto abort;
 	}
 
-	gettime (&end);
+	mono_gettime (&end);
 	shutdown (fd, SHUT_WR);
 	close (fd);
 
@@ -214,7 +214,7 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 		}
 
 		struct timespec end_recv;
-		gettime (&end_recv);
+		mono_gettime (&end_recv);
 
 		double rduration = ((double)end_recv.tv_sec)
 		                 + ((double)end_recv.tv_nsec) / 1000000000;

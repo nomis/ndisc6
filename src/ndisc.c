@@ -484,7 +484,7 @@ recvadv (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
 	unsigned responses = 0;
 
 	/* computes deadline time */
-	gettime (&now);
+	mono_gettime (&now);
 	{
 		div_t d;
 		
@@ -548,7 +548,7 @@ recvadv (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
 			if (flags & NDISC_SINGLE)
 				return 1 /* = responses */;
 		}
-		gettime (&now);
+		mono_gettime (&now);
 	}
 
 	return -1; /* error */

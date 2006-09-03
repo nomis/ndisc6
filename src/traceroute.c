@@ -236,7 +236,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 	{
 		struct timespec sent, recvd;
 
-		gettime (&sent);
+		mono_gettime (&sent);
 		if (type->send_probe (protofd, ttl, n, plen, dst->sin6_port))
 		{
 			perror (_("Cannot send packet"));
@@ -253,7 +253,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 			ufds[1].fd = icmpfd;
 			ufds[1].events = POLLIN;
 
-			gettime (&recvd);
+			mono_gettime (&recvd);
 			int val = ((sent.tv_sec + timeout - recvd.tv_sec) * 1000)
 				+ (int)((sent.tv_nsec - recvd.tv_nsec) / 1000000);
 
@@ -267,7 +267,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				break;
 			}
 
-			gettime (&recvd);
+			mono_gettime (&recvd);
 
 			/* Receive final packet when host reached */
 			if (ufds[0].revents)
@@ -415,7 +415,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		}
 
 		if (delay)
-			clock_nanosleep (CLOCK_MONOTONIC, 0, &delay_ts, NULL);
+			mono_nanosleep (&delay_ts);
 	}
 	puts ("");
 	return found;

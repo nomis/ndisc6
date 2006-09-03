@@ -25,7 +25,7 @@
 # define CLOCK_MONOTONIC CLOCK_HIGHRES
 #endif
 
-static inline void gettime (struct timespec *ts)
+static inline void mono_gettime (struct timespec *ts)
 {
 #ifdef CLOCK_MONOTONIC
 	if (clock_gettime (CLOCK_MONOTONIC, ts))
@@ -42,3 +42,14 @@ static inline void gettime (struct timespec *ts)
 	}
 }
 
+
+static inline int mono_nanosleep (const struct timespec *ts)
+{
+#ifdef CLOCK_MONOTONIC
+	int rc = clock_nanosleep (CLOCK_MONOTONIC, 0, ts, NULL);
+	if (rc != EINVAL)
+		return rc;
+#endif
+
+	return clock_nanosleep (CLOCK_REALTIME, 0, ts, NULL);
+}
