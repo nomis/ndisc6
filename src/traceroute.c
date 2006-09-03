@@ -215,7 +215,6 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 	for (n = 0; n < retries; n++)
 	{
 		struct timespec sent, recvd;
-		unsigned pttl, pn;
 		int maxfd;
 
 		maxfd = 1 + (icmpfd > protofd ? icmpfd : protofd);
@@ -293,6 +292,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				if (type->parse_resp == NULL)
 					continue;
 
+				unsigned pttl, pn;
 				len = type->parse_resp (buf, len, &pttl, &pn, dst->sin6_port);
 				if ((len >= 0) && (n == pn) && (pttl = ttl))
 				{
@@ -342,15 +342,43 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				                    (struct sockaddr *)&peer,
 				                    &(socklen_t){ sizeof (peer) });
 
-				if ((len < (int)(sizeof (pkt.hdr) + sizeof (pkt.inhdr)))
-				 || ((pkt.hdr.icmp6_type != ICMP6_DST_UNREACH)
-				  && ((pkt.hdr.icmp6_type != ICMP6_TIME_EXCEEDED)
-				   || (pkt.hdr.icmp6_code != ICMP6_TIME_EXCEED_TRANSIT)))
-				 || memcmp (&pkt.inhdr.ip6_dst, &dst->sin6_addr, 16)
-				 || (pkt.inhdr.ip6_nxt != type->protocol))
-					continue;
+				if (len < (int)(sizeof (pkt.hdr) + sizeof (pkt.inhdr)))
+					continue; // too small
+
+				switch (pkt.hdr.icmp6_type)
+				{
+					case ICMP6_DST_UNREACH:
+						if (found == 0)
+						{
+							switch (pkt.hdr.icmp6_code)
+							{
+								case ICMP6_DST_UNREACH_NOPORT:
+									found = ttl;
+									break;
+
+								default:
+									found = -ttl;
+							}
+						}
+						break;
+
+					case ICMP6_TIME_EXCEEDED:
+						if (pkt.hdr.icmp6_code == ICMP6_TIME_EXCEED_TRANSIT)
+							break;
+
+					default: // should not happen (ICMPv6 filter)
+						continue;
+				}
+
+				if (memcmp (&pkt.inhdr.ip6_dst, &dst->sin6_addr, 16))
+					continue; // wrong destination
+
+				if (pkt.inhdr.ip6_nxt != type->protocol)
+					continue; // wrong protocol
+
 				len -= sizeof (pkt.hdr) + sizeof (pkt.inhdr);
 
+				unsigned pttl, pn;
 				len = type->parse_err (pkt.buf, len, &pttl, &pn,
 				                       dst->sin6_port);
 				if ((len < 0) || (pttl != ttl)
@@ -363,14 +391,6 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 					memcpy (&hop, &peer.sin6_addr, 16);
 					printipv6 (&peer);
 					state = 0;
-				}
-
-				if ((found == 0) && (pkt.hdr.icmp6_type == ICMP6_DST_UNREACH))
-				{
-					if (pkt.hdr.icmp6_code == ICMP6_DST_UNREACH_NOPORT)
-						found = ttl;
-					else
-						found = -ttl;
 				}
 
 				printdelay (&sent, &recvd);
