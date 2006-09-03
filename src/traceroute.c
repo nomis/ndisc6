@@ -215,9 +215,6 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 	for (n = 0; n < retries; n++)
 	{
 		struct timespec sent, recvd;
-		int maxfd;
-
-		maxfd = 1 + (icmpfd > protofd ? icmpfd : protofd);
 
 		gettime (&sent);
 		if (type->send_probe (protofd, ttl, n, plen, dst->sin6_port))
