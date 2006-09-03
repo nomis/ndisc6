@@ -22,17 +22,20 @@
 #ifndef NDISC6_TRACEROUTE_H
 # define NDISC6_TRACEROUTE_H
 
+typedef int (*trace_send_t) (int fd, unsigned ttl, unsigned n, size_t plen,
+                             uint16_t port);
+
+typedef int (*trace_parser_t) (const void *restrict data, size_t len,
+                               unsigned *restrict ttl, unsigned *restrict n,
+                               uint16_t port);
+
 typedef struct tracetype
 {
 	int gai_socktype;
 	int protocol;
 	int checksum_offset;
-	int (*send_probe) (int fd, unsigned ttl, unsigned n, size_t plen,
-	                   uint16_t port);
-	int (*parse_resp) (const void *data, size_t len, unsigned *ttl,
-	                   unsigned *n, uint16_t port);
-	int (*parse_err) (const void *data, size_t len, unsigned *ttl,
-	                  unsigned *n, uint16_t port);
+	trace_send_t send_probe;
+	trace_parser_t parse_resp, parse_err;
 } tracetype;
 
 # ifdef __cplusplus
