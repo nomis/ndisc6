@@ -191,6 +191,26 @@ print_icmp_code (const struct icmp6_hdr *hdr)
 
 
 static int
+parse (trace_parser_t func, const void *data, size_t len,
+       unsigned hlim, unsigned retry, uint16_t port)
+{
+	unsigned rhlim, rretry;
+
+	int rc = func (data, len, &rhlim, &rretry, port);
+	if (rc < 0)
+		return rc;
+
+	if (rhlim != hlim)
+		return -1;
+
+	if ((rretry != (unsigned)(-1)) && (rretry != retry))
+		return -1;
+
+	return rc;
+}
+
+
+static int
 probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
            unsigned ttl, unsigned retries, unsigned timeout, unsigned delay,
            size_t plen)
@@ -289,9 +309,9 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				if (type->parse_resp == NULL)
 					continue;
 
-				unsigned pttl, pn;
-				len = type->parse_resp (buf, len, &pttl, &pn, dst->sin6_port);
-				if ((len >= 0) && (n == pn) && (pttl = ttl))
+				len = parse (type->parse_resp, buf, len, ttl, n,
+				             dst->sin6_port);
+				if (len >= 0)
 				{
 					/* Route determination complete! */
 					if (state == -1)
@@ -375,11 +395,9 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 				len -= sizeof (pkt.hdr) + sizeof (pkt.inhdr);
 
-				unsigned pttl, pn;
-				len = type->parse_err (pkt.buf, len, &pttl, &pn,
-				                       dst->sin6_port);
-				if ((len < 0) || (pttl != ttl)
-				 || ((pn != n) && (pn != (unsigned)(-1))))
+				len = parse (type->parse_err, pkt.buf, len, ttl, n,
+				             dst->sin6_port);
+				if (len < 0)
 					continue;
 
 				/* genuine ICMPv6 error that concerns us */
