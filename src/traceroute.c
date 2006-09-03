@@ -415,7 +415,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		}
 
 		if (delay)
-			gettime (&delay_ts);
+			clock_nanosleep (CLOCK_MONOTONIC, 0, &delay_ts, NULL);
 	}
 	puts ("");
 	return found;
