@@ -136,7 +136,7 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 	if (verbose)
 	{
 		printf (_("Sending %lu bytes with blocksize %u bytes\n"), n * blen,
-		        blen);
+		        (unsigned)blen);
 	}
 
 	if (echo)
