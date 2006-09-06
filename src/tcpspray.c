@@ -98,6 +98,23 @@ static int tcpconnect (const char *host, const char *serv)
 }
 
 
+static void
+print_duration (const char *msg,
+                const struct timespec *end, const struct timespec *start,
+                unsigned long bytes)
+{
+	double duration = ((double)end->tv_sec)
+	                + ((double)end->tv_nsec) / 1000000000
+	                - ((double)start->tv_sec)
+	                - ((double)start->tv_nsec) / 1000000000;
+
+	printf (_("%s %lu bytes in %f seconds"), gettext (msg),
+	        bytes, duration);
+	if (duration > 0)
+		printf (_(" (%0.3f kbytes/s)"), bytes / (duration * 1024));
+}
+
+
 static int
 tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
           unsigned delay_us, const char *fillname, bool echo)
@@ -216,21 +233,11 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 		struct timespec end_recv;
 		mono_gettime (&end_recv);
 
-		double rduration = ((double)end_recv.tv_sec)
-		                 + ((double)end_recv.tv_nsec) / 1000000000;
-
-		printf (_("Received %lu bytes in %f seconds"), n * blen, rduration);
-		if (rduration > 0)
-			printf (_(" (%0.3f kbytes/s)"),
-			        ((double)blen) * n / rduration / 1024);
+		print_duration (N_("Received"), &end_recv, &start, blen * n);
 	}
 	puts ("");
 
-	double duration = ((double)end.tv_sec) + ((double)end.tv_nsec) / 1000000000;
-
-	printf (_("Transmitted %lu bytes in %f seconds"), n * blen, duration);
-	if (duration > 0)
-		printf (_(" (%0.3f kbytes/s)"), ((double)blen) * n / duration / 1024);
+	print_duration (N_("Transmitted"), &end, &start, blen * n);
 	puts ("");
 
 	return 0;
