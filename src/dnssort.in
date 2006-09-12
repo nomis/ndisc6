@@ -23,20 +23,27 @@
 use strict;
 #use locale; -- not very useful for DNS
 
+my $reverse = 0;
+
 for (shift)
 {
-	if (/^--version$/)
+	if (/^--version$/ or /^-V$/)
 	{
 		print ("dnssort version @VERSION@\n");
 		exit 0;
 	}
-	if (/^--help$/)
+	if (/^--help$/ or /^-h$/)
 	{
 		print ("Usage: dnssort\n".
 		       "Sorts DNS hostnames from input.\n");
 		exit 0;
 	}
+	if (/^--reverse$/ or /^-r$/)
+	{
+		$reverse = 1;
+	}
 }
+
 
 my @list = ();
 
@@ -44,12 +51,18 @@ while(<STDIN>)
 {
 	chomp;
 	split /\./;
-	push(@list, join('.', reverse(@_)));
+	push @list, join('.', reverse @_);
 }
 
-foreach(sort { lc($a) cmp lc($b) } @list)
+@list = sort { lc($a) cmp lc($b) } @list;
+if ($reverse)
+{
+	@list = reverse @list;
+}
+
+foreach (@list)
 {
 	split /\./;
-	print join('.', reverse(@_))."\n";
+	print join('.', reverse @_)."\n";
 }
  
