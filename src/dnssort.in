@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#! @PERL@
 #
 # Perl script to sort DNS names
 # 

@@ -41,6 +41,8 @@ AC_PROG_CC_C99
 AC_USE_SYSTEM_EXTENSIONS
 AM_INIT_AUTOMAKE([check-news dist-bzip2 no-dist-gzip no-exeext std-options])
 
+AC_PATH_PROG(PERL, perl, :)
+AC_ARG_VAR(PERL, [Perl interpreter])
 
 # Checks for libraries.
 AS_MESSAGE([checking required libraries...])
