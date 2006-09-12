@@ -1,0 +1,55 @@
+#!/usr/bin/perl
+#
+# Perl script to sort DNS names
+# 
+# $Id$
+
+#**********************************************************************
+#*  Copyright (C) 2004-2006 Remi Denis-Courmont.                      *
+#*  This program is free software; you can redistribute and/or modify *
+#*  it under the terms of the GNU General Public License as published *
+#*  by the Free Software Foundation; version 2 of the license.        *
+#*                                                                    *
+#*  This program is distributed in the hope that it will be useful,   *
+#*  but WITHOUT ANY WARRANTY; without even the implied warranty of    *
+#*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.              *
+#*  See the GNU General Public License for more details.              *
+#*                                                                    *
+#*  You should have received a copy of the GNU General Public License *
+#*  along with this program; if not, you can get it from:             *
+#*  http://www.gnu.org/copyleft/gpl.html                              *
+#**********************************************************************
+
+use strict;
+#use locale; -- not very useful for DNS
+
+for (shift)
+{
+	if (/^--version$/)
+	{
+		print ("dnssort version @VERSION@\n");
+		exit 0;
+	}
+	if (/^--help$/)
+	{
+		print ("Usage: dnssort\n".
+		       "Sorts DNS hostnames from input.\n");
+		exit 0;
+	}
+}
+
+my @list = ();
+
+while(<STDIN>)
+{
+	chomp;
+	split /\./;
+	push(@list, join('.', reverse(@_)));
+}
+
+foreach(sort { lc($a) cmp lc($b) } @list)
+{
+	split /\./;
+	print join('.', reverse(@_))."\n";
+}
+ 

@@ -25,9 +25,11 @@ AM_CPPFLAGS = -I$(top_srcdir)
 myexec_PROGRAMS = ndisc6 rdisc6 rltraceroute6
 myexec_SCRIPTS = tcptraceroute6 tracert6
 bin_PROGRAMS = tcpspray6
+bin_SCRIPTS = dnssort
 noinst_HEADERS = gettime.h
+EXTRA_DIST = dnssort.in
 
-MOSTLYCLEANFILES = $(myexec_SCRIPTS)
+MOSTLYCLEANFILES = $(myexec_SCRIPTS) $(bin_SCRIPTS)
 
 # ndisc6
 ndisc6_SOURCES = ndisc.c
@@ -56,6 +58,18 @@ tracert6: Makefile.in $(top_builddir)/config.status
 
 # tcpspray6
 tcpspray6_SOURCES = tcpspray.c
+
+subst_script = sed \
+	-e 's,[@]PERL[@],$(PERL),g' \
+	-e 's,[@]PACKAGE[@],$(PACKAGE),g' \
+	-e 's,[@]VERSION[@],$(VERSION),g'
+
+# dnssort
+dnssort: dnssort.in Makefile.in $(top_builddir)/config.status
+	rm -f $@.tmp $@
+	$(subst_script) < $< > $@.tmp
+	chmod +x $@.tmp
+	mv -f $@.tmp $@
 
 if NOSUID
 myexecdir = $(sbindir)
