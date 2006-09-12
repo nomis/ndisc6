@@ -24,43 +24,75 @@ use strict;
 #use locale; -- not very useful for DNS
 
 my $reverse = 0;
+my $end_opts = 0;
+my @files = ();
 
-for (shift)
+# Parse command line
+while ($_ = shift)
 {
-	if (/^--version$/ or /^-V$/)
+	if (/^-./ and not $end_opts)
 	{
-		print ("dnssort version @VERSION@\n");
-		exit 0;
+		if (/^--version$/ or /^-V$/)
+		{
+			print "dnssort version @VERSION@\n";
+			exit 0;
+		}
+		elsif (/^--help$/ or /^-h$/)
+		{
+			print "Usage: dnssort\n".
+			      "Sorts DNS hostnames from input.\n";
+			exit 0;
+		}
+		elsif (/^--reverse$/ or /^-r$/)
+		{
+			$reverse = 1;
+		}
+		elsif (/^--$/)
+		{
+			$end_opts = 1;
+		}
+		else
+		{
+			print STDERR "$_: unknown option\n";
+			exit 1;
+		}
 	}
-	if (/^--help$/ or /^-h$/)
+	else
 	{
-		print ("Usage: dnssort\n".
-		       "Sorts DNS hostnames from input.\n");
-		exit 0;
-	}
-	if (/^--reverse$/ or /^-r$/)
-	{
-		$reverse = 1;
+		push @files, $_;
 	}
 }
 
-
-my @list = ();
-
-while(<STDIN>)
+# No files specified -> Use standard input
+if ($#files < 0)
 {
-	chomp;
-	split /\./;
-	push @list, join('.', reverse @_);
+	push @files, '-';
 }
 
-@list = sort { lc($a) cmp lc($b) } @list;
+# Read files
+my @names = ();
+
+foreach (@files)
+{
+	open FD,"< $_" or die "$_: $!\n";
+	while(<FD>)
+	{
+		chomp;
+		split /\./;
+		push @names, join('.', reverse @_);
+	}
+	close FD;
+}
+
+# Sort entries
+@names = sort { lc($a) cmp lc($b) } @names;
 if ($reverse)
 {
-	@list = reverse @list;
+	@names = reverse @names;
 }
 
-foreach (@list)
+# Print results
+foreach (@names)
 {
 	split /\./;
 	print join('.', reverse @_)."\n";
