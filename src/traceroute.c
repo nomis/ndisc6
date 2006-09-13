@@ -732,7 +732,7 @@ parse_plen (const char *str)
 }
 
 
-static struct option opts[] = 
+static const struct option opts[] = 
 {
 	{ "ack",      no_argument,       NULL, 'A' },
 	{ "debug",    no_argument,       NULL, 'd' },

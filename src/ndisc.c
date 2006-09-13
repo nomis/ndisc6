@@ -724,7 +724,7 @@ NAME"6: IPv6 "TYPE_NAME" Discovery userland tool %s ($Rev$)\n"
 
 
 
-static struct option opts[] = 
+static const struct option opts[] = 
 {
 	{ "single",   no_argument,       NULL, '1' },
 	{ "help",     no_argument,       NULL, 'h' },
