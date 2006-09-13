@@ -24,8 +24,8 @@ AM_CPPFLAGS = -I$(top_srcdir)
 
 myexec_PROGRAMS = ndisc6 rdisc6 rltraceroute6
 myexec_SCRIPTS = tcptraceroute6 tracert6
-bin_PROGRAMS = tcpspray6
-bin_SCRIPTS = dnssort
+bin_PROGRAMS = tcpspray6 addrinfo
+bin_SCRIPTS = dnssort nameinfo
 noinst_HEADERS = gettime.h
 EXTRA_DIST = dnssort.in
 
@@ -59,6 +59,13 @@ tracert6: Makefile.in $(top_builddir)/config.status
 # tcpspray6
 tcpspray6_SOURCES = tcpspray.c
 
+nameinfo: Makefile.in $(top_builddir)/config.status
+	rm -f $@.tmp $@
+	echo '#! /bin/sh' > $@.tmp
+	echo 'exec "$$(dirname $$0)/addrinfo" -r "$$@"' >> $@.tmp
+	chmod +x $@.tmp
+	mv -f $@.tmp $@
+
 subst_script = sed \
 	-e 's,[@]PERL[@],$(PERL),g' \
 	-e 's,[@]PACKAGE[@],$(PACKAGE),g' \
@@ -82,3 +89,4 @@ install-exec-hook:
 		chmod u+s "$(DESTDIR)$(myexecdir)/$$f" || exit $$? ; \
 	done
 endif
+
