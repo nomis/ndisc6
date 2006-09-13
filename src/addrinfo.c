@@ -118,9 +118,9 @@ printnamesf (FILE *input, int family, int aflags, int nflags, bool single)
 
 static int usage (const char *path)
 {
-	fprintf (stderr, _(
+	printf (_(
 "Usage: %s [-1] [-4|-6] [hostnames]\n"
-"       Converts names to addresses.\n"
+"Converts names to addresses.\n"
 "\n"
 "  -4, --ipv4     only lookup IPv4 addresses\n"
 "  -6, --ipv6     only lookup IPv6 addresses\n"
