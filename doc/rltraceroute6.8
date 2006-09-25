@@ -176,9 +176,11 @@ is made to send or receive data from the network so as to reduce the possible
 impact of a security vulnerability.
 
 .SH BUGS
-However useful they might be, -i, -r and -t options are ignored by the
+However useful they might be, -i and -r options are ignored by the
 official Linux kernel at the time of writing this manpage,
 and hence do not work as documented.
+
+Support for option -t was broken until Linux kernel version 2.6.18.
 
 rltraceroute6 implements option -i on Linux only at the moment.
 It is not portable.
