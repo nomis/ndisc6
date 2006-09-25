@@ -34,7 +34,7 @@
 #include <poll.h>
 #include <sys/socket.h>
 #include <time.h>
-#include <net/if.h> // IFNAMSIZ
+#include <net/if.h> // IFNAMSIZ, if_nametoindex
 #include <netinet/in.h>
 #include <netinet/ip6.h>
 #include <netinet/icmp6.h>
@@ -549,28 +549,31 @@ traceroute (const char *dsthost, const char *dstport,
 		return -1;
 	}
 
-#ifdef SO_BINDTODEVICE
-	if (*ifname
-	 && setsockopt (protofd, SOL_SOCKET, SO_BINDTODEVICE, ifname,
-	                strlen (ifname) + 1))
+	/* Set outgoing interface */
+	if (*ifname)
 	{
-		perror (ifname);
-		close (protofd);
-		close (icmpfd);
-		return -1;
+		struct in6_pktinfo nfo;
+
+		memset (&nfo, 0, sizeof (nfo));
+		nfo.ipi6_ifindex = if_nametoindex (ifname);
+		if (nfo.ipi6_ifindex == 0)
+		{
+			fprintf (stderr, _("%s: %s\n"), ifname, strerror (ENXIO));
+			goto error;
+		}
+
+		if (setsockopt (protofd, SOL_IPV6, IPV6_PKTINFO, &nfo, sizeof (nfo)))
+		{
+			perror (ifname);
+			goto error;
+		}
 	}
-	/* FIXME: implement on non-Linux */
-#endif
 
 	/* Drops privileges permanently */
 	drop_priv ();
 
 	if (icmpfd <= 2)
-	{
-		close (icmpfd);
-		close (protofd);
-		return -1;
-	}
+		goto error;
 
 	setup_socket (icmpfd);
 	setup_socket (protofd);
