@@ -681,7 +681,6 @@ usage (const char *path)
 /*"  -v, --verbose  display all kind of ICMPv6 errors\n"*/
 "  -w  override the timeout for response in seconds (default: 5)\n"
 "  -z  specify a time to wait (in ms) between each probes (default: 0)\n"
-			/*  TCP: -t  UDP: -g? -t*/
 	));
 
 	return 0;
