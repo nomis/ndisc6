@@ -55,6 +55,9 @@
 #ifndef SOL_ICMPV6
 # define SOL_ICMPV6 IPPROTO_ICMPV6
 #endif
+#ifndef IPV6_RECVRTHDR
+# undef IPV6_RTHDR /* do NOT use RFC2292, it won't work */
+#endif
 
 
 /* All our evil global variables */
@@ -67,6 +70,11 @@ static bool debug = false;
 bool ecn = false;
 static char ifname[IFNAMSIZ] = "";
 
+#define NULL4	NULL, NULL, NULL, NULL
+#define NULL16	NULL4, NULL4, NULL4, NULL4
+#define NULL64	NULL16, NULL16, NULL16, NULL16
+static const char *rt_segv[128] = { NULL64, NULL64 };
+static int rt_segc = 0;
 
 /****************************************************************************/
 
@@ -607,6 +615,33 @@ static void setup_socket (int fd)
 }
 
 
+#ifdef IPV6_RTHDR
+static int setsock_rth (int fd, int type, const char **segv, int segc)
+{
+	uint8_t hdr[inet6_rth_space (type, segc)];
+	inet6_rth_init (hdr, sizeof (hdr), type, segc);
+
+	struct addrinfo hints;
+	memset (&hints, 0, sizeof (hints));
+	hints.ai_family = AF_INET6;
+
+	for (int i = 0; i < segc; i++)
+	{
+		struct addrinfo *res;
+
+		if (getaddrinfo_err (segv[i], NULL, &hints, &res))
+			return -1;
+
+		const struct sockaddr_in6 *a = (const void *)res->ai_addr;
+		if (inet6_rth_add (hdr, &a->sin6_addr))
+			return -1;
+	}
+
+	return setsockopt (fd, SOL_IPV6, IPV6_RTHDR, hdr, sizeof (hdr));
+}
+#endif
+
+
 static int
 traceroute (const char *dsthost, const char *dstport,
             const char *srchost, const char *srcport,
@@ -687,6 +722,14 @@ traceroute (const char *dsthost, const char *dstport,
 	setsockopt (protofd, SOL_IPV6, IPV6_TCLASS, &tclass, sizeof (tclass));
 #endif
 
+	/* Defines Type 0 Routing Header */
+	if (rt_segc > 0)
+#ifdef IPV6_RTHDR
+		setsock_rth (protofd, IPV6_RTHDR_TYPE_0, rt_segv, rt_segc);
+#else
+		fprintf (stderr, "setsockopt(IPV6_RTHDR): %s\n", strerror (ENOSYS));
+#endif
+
 	/* Set ICMPv6 filter for echo replies */
 	if (type->protocol == IPPROTO_ICMPV6)
 	{
@@ -746,7 +789,7 @@ usage (const char *path)
 "  -d  enable socket debugging\n"
 "  -E  set TCP Explicit Congestion Notification bits in TCP packets\n"
 "  -f  specify the initial hop limit (default: 1)\n"
-/*"  -g  add a loose route\n"*/
+"  -g  insert a route segment within a \"Type 0\" routing header\n"
 "  -h  display this help and exit\n"
 "  -I  use ICMPv6 Echo Request packets as probes\n"
 "  -i  force outgoing network interface\n"
@@ -826,6 +869,7 @@ static const struct option opts[] =
 	{ "ecn",      no_argument,       NULL, 'E' },
 	// -F is a stub
 	{ "first",    required_argument, NULL, 'f' },
+	{ "segment",  required_argument, NULL, 'g' },
 	{ "help",     no_argument,       NULL, 'h' },
 	{ "icmp",     no_argument,       NULL, 'I' },
 	{ "iface",    required_argument, NULL, 'i' },
@@ -848,7 +892,7 @@ static const struct option opts[] =
 };
 
 
-static const char optstr[] = "AdEf:hIi:m:Nnp:q:rSs:t:UVw:xz:";
+static const char optstr[] = "AdEf:g:hIi:m:Nnp:q:rSs:t:UVw:xz:";
 
 int
 main (int argc, char *argv[])
@@ -880,6 +924,17 @@ main (int argc, char *argv[])
 			case 'f':
 				if ((minhlim = parse_hlim (optarg)) == (unsigned)(-1))
 					return 1;
+				break;
+
+			case 'g':
+				if (rt_segc >= 127)
+				{
+					fprintf (stderr,
+					         "%s: Too many route segments specified.\n",
+					         optarg);
+					return 1;
+				}
+				rt_segv[rt_segc++] = optarg;
 				break;
 
 			case 'h':
