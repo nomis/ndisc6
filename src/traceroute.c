@@ -45,15 +45,16 @@
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
 #endif
+
 #include "gettime.h"
+#include "traceroute.h"
+
 #ifndef SOL_IPV6
 # define SOL_IPV6 IPPROTO_IPV6
 #endif
 #ifndef SOL_ICMPV6
 # define SOL_ICMPV6 IPPROTO_ICMPV6
 #endif
-
-#include "traceroute.h"
 
 
 /* All our evil global variables */
