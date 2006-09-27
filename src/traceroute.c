@@ -210,6 +210,88 @@ parse (trace_parser_t func, const void *data, size_t len,
 }
 
 
+static const void *
+skip_exthdrs (struct ip6_hdr *ip6, int *plen)
+{
+	const uint8_t *payload = (const uint8_t *)(ip6 + 1);
+	size_t len = *plen;
+	uint8_t nxt = ip6->ip6_nxt;
+
+	for (;;)
+	{
+		uint16_t hlen;
+
+		switch (nxt)
+		{
+			case IPPROTO_HOPOPTS:
+			case IPPROTO_DSTOPTS:
+			case IPPROTO_ROUTING:
+				if (len < 2)
+					return NULL;
+
+				hlen = (1 + (uint16_t)payload[1]) << 3;
+				break;
+
+			case IPPROTO_FRAGMENT:
+				hlen = 8;
+				break;
+
+			case IPPROTO_AH:
+				if (len < 2)
+					return NULL;
+
+				hlen = (2 + (uint16_t)payload[1]) << 2;
+				break;
+
+			default: // THE END
+				goto out;
+		}
+
+		if (len < hlen)
+			return NULL; // too short;
+
+		switch (nxt)
+		{
+			case IPPROTO_ROUTING:
+			{
+				/* Extract real destination */
+				if (payload[3] > 0) // segments left
+				{
+					if (payload[2] != 0)
+						return NULL; // unknown type
+	
+					/* Handle Routing Type 0 */
+					if ((hlen & 8) != 8)
+						return NULL; // != 8[16] -> invalid length
+
+					memcpy (&ip6->ip6_dst,
+					        payload + (16 * payload[3]) - 8, 16);
+				}
+				break;
+			}
+
+			case IPPROTO_FRAGMENT:
+			{
+				uint16_t offset;
+				memcpy (&offset, payload + 2, 2);
+				if (ntohs (offset) >> 3)
+					return NULL; // non-first fragment
+				break;
+			}
+		}
+
+		nxt = payload[0];
+		len -= hlen;
+		payload += hlen;
+	}
+
+out:
+	ip6->ip6_nxt = nxt;
+	*plen = len;
+	return payload;
+}
+
+
 static int
 probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
            unsigned ttl, unsigned retries, unsigned timeout, unsigned delay,
@@ -387,15 +469,17 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 						continue;
 				}
 
+				len -= sizeof (pkt.hdr) + sizeof (pkt.inhdr);
+
+				const void *payload = skip_exthdrs (&pkt.inhdr, &len);
+
 				if (memcmp (&pkt.inhdr.ip6_dst, &dst->sin6_addr, 16))
 					continue; // wrong destination
 
 				if (pkt.inhdr.ip6_nxt != type->protocol)
 					continue; // wrong protocol
 
-				len -= sizeof (pkt.hdr) + sizeof (pkt.inhdr);
-
-				len = parse (type->parse_err, pkt.buf, len, ttl, n,
+				len = parse (type->parse_err, payload, len, ttl, n,
 				             dst->sin6_port);
 				if (len < 0)
 					continue;
