@@ -385,7 +385,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 						found = ttl;
 					}
 					printdelay (&sent, &recvd);
-					break;
+					break; // response received, stop poll()ing
 				}
 
 				if (type->parse_resp == NULL)
@@ -422,7 +422,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 					printdelay (&sent, &recvd);
 					found = ttl;
-					break;
+					break; // response received, stop poll()ing
 				}
 			}
 
@@ -494,7 +494,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 				printdelay (&sent, &recvd);
 				print_icmp_code (&pkt.hdr);
-				break;
+				break; // response received, stop poll()ing
 			}
 		}
 
