@@ -179,7 +179,7 @@ typedef struct
 	uint8_t hw_addr[6];
 } solicit_packet;
 
-static int
+static ssize_t
 buildsol (solicit_packet *ns, struct sockaddr_in6 *tgt, const char *ifname)
 {
 	/* builds ICMPv6 Neighbor Solicitation packet */
@@ -259,7 +259,7 @@ parseadv (const uint8_t *buf, size_t len, const struct sockaddr_in6 *tgt,
 #else
 typedef struct nd_router_solicit solicit_packet;
 
-static int
+static ssize_t
 buildsol (solicit_packet *rs)
 {
 	/* builds ICMPv6 Router Solicitation packet */
@@ -431,7 +431,7 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 #endif
 
 
-static int
+static ssize_t
 recvfromLL (int fd, void *buf, size_t len, int flags,
             struct sockaddr_in6 *addr)
 {
@@ -451,7 +451,7 @@ recvfromLL (int fd, void *buf, size_t len, int flags,
 		.msg_controllen = sizeof (cbuf)
 	};
 
-	int val = recvmsg (fd, &hdr, flags);
+	ssize_t val = recvmsg (fd, &hdr, flags);
 	if (val == -1)
 		return val;
 
@@ -476,7 +476,7 @@ recvfromLL (int fd, void *buf, size_t len, int flags,
 }
 
 
-static int
+static ssize_t
 recvadv (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
          unsigned flags)
 {
@@ -497,7 +497,7 @@ recvadv (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
 	for (;;)
 	{
 		/* waits for reply until deadline */
-		int val = 0;
+		ssize_t val = 0;
 		if (end.tv_sec >= now.tv_sec)
 		{
 			val = (end.tv_sec - now.tv_sec) * 1000
@@ -607,7 +607,7 @@ ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
 	{
 		solicit_packet packet;
 		struct sockaddr_in6 dst;
-		int plen;
+		ssize_t plen;
 
 		memcpy (&dst, &tgt, sizeof (dst));
 		plen = buildsol (&packet, &dst, ifname);
@@ -616,8 +616,6 @@ ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
 
 		while (retry > 0)
 		{
-			int val;
-	
 			/* sends a Solitication */
 			if (sendto (fd, &packet, plen, MSG_DONTROUTE,
 			            (const struct sockaddr *)&dst,
@@ -629,7 +627,7 @@ ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
 			retry--;
 	
 			/* receives an Advertisement */
-			val = recvadv (fd, &tgt, wait_ms, flags);
+			ssize_t val = recvadv (fd, &tgt, wait_ms, flags);
 			if (val > 0)
 			{
 				close (fd);

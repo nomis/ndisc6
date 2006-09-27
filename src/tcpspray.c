@@ -152,8 +152,8 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 
 	if (verbose)
 	{
-		printf (_("Sending %lu bytes with blocksize %u bytes\n"), n * blen,
-		        (unsigned)blen);
+		printf (_("Sending %lu bytes with blocksize %lu bytes\n"), n * blen,
+		        (unsigned long)blen);
 	}
 
 	if (echo)
@@ -163,8 +163,8 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 			case 0:
 				for (unsigned i = 0; i < n; i++)
 				{
-					int val = recv (fd, block, blen, MSG_WAITALL);
-					if (val != (int)blen)
+					ssize_t val = recv (fd, block, blen, MSG_WAITALL);
+					if (val != (ssize_t)blen)
 					{
 						fprintf (stderr, _("Cannot receive data: %s\n"),
 								 (val == -1) ? strerror (errno)
@@ -199,8 +199,8 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 
 	for (unsigned i = 0; i < n; i++)
 	{
-		int val = write (fd, block, blen);
-		if (val != (int)blen)
+		ssize_t val = write (fd, block, blen);
+		if (val != (ssize_t)blen)
 		{
 			fprintf (stderr, _("Cannot send data: %s\n"),
 			         (val == -1) ? strerror (errno)

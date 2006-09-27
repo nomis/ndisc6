@@ -35,7 +35,7 @@
 
 
 /* ICMPv6 Echo probes */
-static int
+static ssize_t
 send_echo_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 {
 	if (plen < sizeof (struct icmp6_hdr))
@@ -57,7 +57,7 @@ send_echo_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 }
 
 
-static int
+static ssize_t
 parse_echo_reply (const void *data, size_t len, unsigned *ttl, unsigned *n,
                   uint16_t port)
 {
@@ -76,7 +76,7 @@ parse_echo_reply (const void *data, size_t len, unsigned *ttl, unsigned *n,
 }
 
 
-static int
+static ssize_t
 parse_echo_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
                   uint16_t port)
 {

@@ -37,7 +37,7 @@
 
 
 /* UDP probes (traditional traceroute) */
-static int
+static ssize_t
 send_udp_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 {
 	if (plen < sizeof (struct udphdr))
@@ -61,7 +61,7 @@ send_udp_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 }
 
 
-static int
+static ssize_t
 parse_udp_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
                  uint16_t port)
 {

@@ -22,12 +22,12 @@
 #ifndef NDISC6_TRACEROUTE_H
 # define NDISC6_TRACEROUTE_H
 
-typedef int (*trace_send_t) (int fd, unsigned ttl, unsigned n, size_t plen,
-                             uint16_t port);
+typedef ssize_t (*trace_send_t) (int fd, unsigned ttl, unsigned n,
+                                 size_t plen, uint16_t port);
 
-typedef int (*trace_parser_t) (const void *restrict data, size_t len,
-                               unsigned *restrict ttl, unsigned *restrict n,
-                               uint16_t port);
+typedef ssize_t (*trace_parser_t) (const void *restrict data, size_t len,
+                                   unsigned *restrict ttl,
+                                   unsigned *restrict n, uint16_t port);
 
 typedef struct tracetype
 {
@@ -42,7 +42,7 @@ typedef struct tracetype
 extern "C" {
 # endif
 
-int send_payload (int fd, const void *payload, size_t length);
+ssize_t send_payload (int fd, const void *payload, size_t length);
 
 # ifdef __cplusplus
 }

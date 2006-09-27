@@ -85,11 +85,11 @@ static uint16_t getsourceport (void)
 }
 
 
-int send_payload (int fd, const void *payload, size_t length)
+ssize_t send_payload (int fd, const void *payload, size_t length)
 {
-	int rc = send (fd, payload, length, sendflags);
+	ssize_t rc = send (fd, payload, length, sendflags);
 
-	if (rc == (int)length)
+	if (rc == (ssize_t)length)
 		return 0;
 
 	if (rc != -1)
@@ -190,13 +190,13 @@ print_icmp_code (const struct icmp6_hdr *hdr)
 }
 
 
-static int
+static ssize_t
 parse (trace_parser_t func, const void *data, size_t len,
        unsigned hlim, unsigned retry, uint16_t port)
 {
 	unsigned rhlim, rretry;
 
-	int rc = func (data, len, &rhlim, &rretry, port);
+	ssize_t rc = func (data, len, &rhlim, &rretry, port);
 	if (rc < 0)
 		return rc;
 
@@ -211,7 +211,7 @@ parse (trace_parser_t func, const void *data, size_t len,
 
 
 static const void *
-skip_exthdrs (struct ip6_hdr *ip6, int *plen)
+skip_exthdrs (struct ip6_hdr *ip6, size_t *plen)
 {
 	const uint8_t *payload = (const uint8_t *)(ip6 + 1);
 	size_t len = *plen;
@@ -356,7 +356,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 			{
 				uint8_t buf[1240];
 
-				int len = recv (protofd, buf, sizeof (buf), 0);
+				ssize_t len = recv (protofd, buf, sizeof (buf), 0);
 				if (len < 0)
 				{
 					switch (errno)
@@ -437,11 +437,11 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				} pkt;
 				struct sockaddr_in6 peer;
 
-				int len = recvfrom (icmpfd, &pkt, sizeof (pkt), 0,
-				                    (struct sockaddr *)&peer,
-				                    &(socklen_t){ sizeof (peer) });
+				ssize_t len = recvfrom (icmpfd, &pkt, sizeof (pkt), 0,
+				                        (struct sockaddr *)&peer,
+				                        &(socklen_t){ sizeof (peer) });
 
-				if (len < (int)(sizeof (pkt.hdr) + sizeof (pkt.inhdr)))
+				if (len < (ssize_t)(sizeof (pkt.hdr) + sizeof (pkt.inhdr)))
 					continue; // too small
 
 				switch (pkt.hdr.icmp6_type)
@@ -471,7 +471,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 				len -= sizeof (pkt.hdr) + sizeof (pkt.inhdr);
 
-				const void *payload = skip_exthdrs (&pkt.inhdr, &len);
+				const void *buf = skip_exthdrs (&pkt.inhdr, (size_t *)&len);
 
 				if (memcmp (&pkt.inhdr.ip6_dst, &dst->sin6_addr, 16))
 					continue; // wrong destination
@@ -479,7 +479,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				if (pkt.inhdr.ip6_nxt != type->protocol)
 					continue; // wrong protocol
 
-				len = parse (type->parse_err, payload, len, ttl, n,
+				len = parse (type->parse_err, buf, len, ttl, n,
 				             dst->sin6_port);
 				if (len < 0)
 					continue;

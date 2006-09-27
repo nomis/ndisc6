@@ -46,7 +46,7 @@
 #endif
 
 /* TCP/SYN probes */
-static int
+static ssize_t
 send_syn_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 {
 	struct tcphdr th;
@@ -64,7 +64,7 @@ send_syn_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 }
 
 
-static int
+static ssize_t
 parse_syn_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
                 uint16_t port)
 {
@@ -89,7 +89,7 @@ parse_syn_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
 }
 
 
-static int
+static ssize_t
 parse_syn_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
                  uint16_t port)
 {
@@ -117,7 +117,7 @@ const tracetype syn_type =
 
 
 /* TCP/ACK probes */
-static int
+static ssize_t
 send_ack_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 {
 	struct tcphdr th;
@@ -135,7 +135,7 @@ send_ack_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 }
 
 
-static int
+static ssize_t
 parse_ack_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
                 uint16_t port)
 {
@@ -161,7 +161,7 @@ parse_ack_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
 }
 
 
-static int
+static ssize_t
 parse_ack_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
                  uint16_t port)
 {
