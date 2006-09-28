@@ -17,9 +17,9 @@
 .SH NAME
 rltraceroute6 \- IPv6 traceroute tool
 .SH SYNOPSIS
-.BR "traceroute6" " [" "-AdEInrSU" "] [" "-f min_hop" "] [" "-i iface" "] ["
-.BR  "-m max_hop" "] [" "-p port" "] [" "-q attempts" "] [" "-s source" "] ["
-.BR "-t tclass" "] [" "-w wait" "] [" "-z delay_ms" "] <"
+.BR "traceroute6" " [" "-AdEInrSU" "] [" "-f min_hop" "] [" "-g hop" "] ["
+.BR "-i iface" "] [" "-m max_hop" "] [" "-p port" "] [" "-q attempts" "] ["
+.BR "-s source" "] [" "-t tclass" "] [" "-w wait" "] [" "-z delay_ms" "] <"
 .BR "hostname/address" "> [" "port/packet length" "]"
 
 .SH DESCRIPTON
@@ -76,8 +76,14 @@ This option is ignored for backward compatibility.
 IPv6 packets are never fragmented en route.
 
 .TP
-.B "\-f" "
+.B "\-f"
 Override the initial IPv6 packets hop limit (default: 1).
+
+.TP
+.B "\-g"
+Add an IPv6 route segment within an IPv6 Routing Header.
+This enables loose source routing.
+Currently, only "Type 0" routing header is supported.
 
 .TP
 .B "\-h"
