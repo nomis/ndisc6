@@ -16,6 +16,9 @@ provided manual pages.
 STABLE RELEASE 0.7.0 : Minor feature enhancement
 
 # Add dnssort, simple sort script for DNS hostnames.
+# IPv6 "Type 0" (loose source) routing support for traceroute6.
+# Outgoing interface selection with traceroute6 (even on non-Linux).
+# Minor fixes for LP64 architectures (incl. AMD64).
 
 ============================================================================
 STABLE RELEASE 0.6.8 : Major bug fixes
