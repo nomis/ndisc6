@@ -19,10 +19,6 @@
  *  http://www.gnu.org/copyleft/gpl.html                               *
  ***********************************************************************/
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
-
 #include <inttypes.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -61,3 +57,10 @@ int inet6_rth_add (void *bp, const struct in6_addr *addr)
 	return 0;
 }
 
+#ifndef IPV6_RECVRTHDR
+# ifdef __linux__
+#  define IPV6_RECVRTHDR 56
+#  undef IPV6_RTHDR
+#  define IPV6_RTHDR 57
+# endif
+#endif
