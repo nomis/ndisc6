@@ -26,12 +26,16 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#ifndef IPV6_RTHDR_TYPE_0
+# define IPV6_RTHDR_TYPE_0 0
+#endif
+
 #define LINKAGE static inline
 
 LINKAGE
 socklen_t inet6_rth_space (int type, int segments)
 {
-	if ((type != 0) || (segments < 0) || (segments > 127))
+	if ((type != IPV6_RTHDR_TYPE_0) || (segments < 0) || (segments > 127))
 		return 0;
 
 	return 8 + (segments * 16);
@@ -55,7 +59,7 @@ void *inet6_rth_init (void *bp, socklen_t bp_len, int type, int segments)
 LINKAGE
 int inet6_rth_add (void *bp, const struct in6_addr *addr)
 {
-	if (((uint8_t *)bp)[2] != 0)
+	if (((uint8_t *)bp)[2] != IPV6_RTHDR_TYPE_0)
 		return -1;
 
 	memcpy (((uint8_t *)bp) + 8 + 16 * ((uint8_t *)bp)[3]++, addr, 16);
@@ -65,11 +69,17 @@ int inet6_rth_add (void *bp, const struct in6_addr *addr)
 #endif /* ifndef HAVE_INET6_RTH_ADD */
 
 #ifndef IPV6_RECVRTHDR
+# undef IPV6_RTHDR
+
 # if defined (__linux__)
 #  define IPV6_RECVRTHDR 56
-#  undef IPV6_RTHDR
 #  define IPV6_RTHDR 57
+# elif defined (__FreeBSD__) || defined (__FreeBSD_kernel__) \
+       defined (__NetBSD__)  || defined (__NetBSD_kernel__)
+#  define IPV6_RECVRTHDR 38
+#  define IPV6_RTHDR 51
 # else
 #  warning Routing Header support missing! Define IPV6_(RECV)RTHDR!
 # endif
-#endif
+
+#endif /* ! IPV6_RECVRTHDR */
