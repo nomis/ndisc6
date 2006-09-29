@@ -47,16 +47,22 @@
 #endif
 
 #include "gettime.h"
+#include "inet6rth.h"
 #include "traceroute.h"
+
+#ifndef IPV6_TCLASS
+# if defined (__linux__)
+#  define IPV6_TCLASS 67
+# else
+#  warning Traffic class support missing! Define IPV6_TCLASS!
+# endif
+#endif
 
 #ifndef SOL_IPV6
 # define SOL_IPV6 IPPROTO_IPV6
 #endif
 #ifndef SOL_ICMPV6
 # define SOL_ICMPV6 IPPROTO_ICMPV6
-#endif
-#ifndef IPV6_RECVRTHDR
-# undef IPV6_RTHDR /* do NOT use RFC2292, it won't work */
 #endif
 
 
@@ -615,7 +621,6 @@ static void setup_socket (int fd)
 }
 
 
-#ifdef IPV6_RTHDR
 static int setsock_rth (int fd, int type, const char **segv, int segc)
 {
 	uint8_t hdr[inet6_rth_space (type, segc)];
@@ -637,9 +642,13 @@ static int setsock_rth (int fd, int type, const char **segv, int segc)
 			return -1;
 	}
 
+#ifdef IPV6_RTHDR
 	return setsockopt (fd, SOL_IPV6, IPV6_RTHDR, hdr, sizeof (hdr));
-}
+#else
+	errno = ENOSYS;
+	return -1;
 #endif
+}
 
 
 static int
@@ -720,17 +729,11 @@ traceroute (const char *dsthost, const char *dstport,
 #ifdef IPV6_TCLASS
 	/* Defines traffic class */
 	setsockopt (protofd, SOL_IPV6, IPV6_TCLASS, &tclass, sizeof (tclass));
-#else
-# warning Traffic class support missing! Define IPV6_TCLASS!
 #endif
 
 	/* Defines Type 0 Routing Header */
 	if (rt_segc > 0)
-#ifdef IPV6_RTHDR
 		setsock_rth (protofd, IPV6_RTHDR_TYPE_0, rt_segv, rt_segc);
-#else
-# warning Routing Header support missing! Define IPV6_(RECV)RTHDR!
-#endif
 
 	/* Set ICMPv6 filter for echo replies */
 	if (type->protocol == IPPROTO_ICMPV6)

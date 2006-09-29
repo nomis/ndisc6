@@ -19,11 +19,16 @@
  *  http://www.gnu.org/copyleft/gpl.html                               *
  ***********************************************************************/
 
+#ifndef HAVE_INET6_RTH_ADD
+
 #include <inttypes.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#define LINKAGE static inline
+
+LINKAGE
 socklen_t inet6_rth_space (int type, int segments)
 {
 	if ((type != 0) || (segments < 0) || (segments > 127))
@@ -32,7 +37,7 @@ socklen_t inet6_rth_space (int type, int segments)
 	return 8 + (segments * 16);
 }
 
-
+LINKAGE
 void *inet6_rth_init (void *bp, socklen_t bp_len, int type, int segments)
 {
 	socklen_t needlen;
@@ -47,7 +52,7 @@ void *inet6_rth_init (void *bp, socklen_t bp_len, int type, int segments)
 	return bp;
 }
 
-
+LINKAGE
 int inet6_rth_add (void *bp, const struct in6_addr *addr)
 {
 	if (((uint8_t *)bp)[2] != 0)
@@ -57,10 +62,14 @@ int inet6_rth_add (void *bp, const struct in6_addr *addr)
 	return 0;
 }
 
+#endif /* ifndef HAVE_INET6_RTH_ADD */
+
 #ifndef IPV6_RECVRTHDR
-# ifdef __linux__
+# if defined (__linux__)
 #  define IPV6_RECVRTHDR 56
 #  undef IPV6_RTHDR
 #  define IPV6_RTHDR 57
+# else
+#  warning Routing Header support missing! Define IPV6_(RECV)RTHDR!
 # endif
 #endif
