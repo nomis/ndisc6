@@ -28,7 +28,7 @@ socklen_t inet6_rth_space (int type, int segments)
 {
 	if ((type != 0) || (segments < 0) || (segments > 127))
 		return 0;
-  
+
 	return 8 + (segments * 16);
 }
 
