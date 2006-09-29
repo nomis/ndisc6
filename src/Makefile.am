@@ -26,7 +26,7 @@ myexec_PROGRAMS = ndisc6 rdisc6 rltraceroute6
 myexec_SCRIPTS = tcptraceroute6 tracert6
 bin_PROGRAMS = tcpspray6 addrinfo
 bin_SCRIPTS = dnssort nameinfo
-noinst_HEADERS = gettime.h
+noinst_HEADERS = gettime.h inet6rth.h
 EXTRA_DIST = dnssort.in
 
 MOSTLYCLEANFILES = $(myexec_SCRIPTS) $(bin_SCRIPTS)
