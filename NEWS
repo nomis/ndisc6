@@ -1,5 +1,5 @@
 RELEASE NOTES for NDisc6
-version 0.7.0
+version 0.7.1
 =========================
 $Id$
 
@@ -13,7 +13,14 @@ informations on this program, see README. For syntax details, read the
 provided manual pages.
 
 ============================================================================
-STABLE RELEASE 0.7.0 : Minor feature enhancement
+STABLE RELEASE 0.7.1 : Minor portability fixes
+
+# Traffic class and routing header compatibility code for old libc
+  (on Linux, FreeBSD and NetBSD).
+# Fix clock_nanosleep availability detection.
+
+============================================================================
+STABLE RELEASE 0.7.0 : Major feature enhancement
 
 # nameinfo and addrinfo DNS resolver for scripting added.
 # dnssort, simple sort script for DNS hostnames added.
