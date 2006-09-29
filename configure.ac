@@ -68,7 +68,7 @@ dnl RDC_STRUCT_SOCKADDR_LEN
 AS_MESSAGE([checking library functions...])
 RDC_REPLACE_FUNC_GETOPT_LONG
 AC_SEARCH_LIBS(clock_gettime, [rt])
-AC_CHECK_FUNC([clock_nanosleep])
+AC_CHECK_FUNCS([clock_nanosleep])
 
 # Network stuff
 RDC_FUNC_SOCKET
