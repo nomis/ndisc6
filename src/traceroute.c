@@ -720,6 +720,8 @@ traceroute (const char *dsthost, const char *dstport,
 #ifdef IPV6_TCLASS
 	/* Defines traffic class */
 	setsockopt (protofd, SOL_IPV6, IPV6_TCLASS, &tclass, sizeof (tclass));
+#else
+# warning Traffic class support missing! Define IPV6_TCLASS!
 #endif
 
 	/* Defines Type 0 Routing Header */
@@ -727,7 +729,7 @@ traceroute (const char *dsthost, const char *dstport,
 #ifdef IPV6_RTHDR
 		setsock_rth (protofd, IPV6_RTHDR_TYPE_0, rt_segv, rt_segc);
 #else
-		fprintf (stderr, "setsockopt(IPV6_RTHDR): %s\n", strerror (ENOSYS));
+# warning Routing Header support missing! Define IPV6_(RECV)RTHDR!
 #endif
 
 	/* Set ICMPv6 filter for echo replies */
