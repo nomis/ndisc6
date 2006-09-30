@@ -87,7 +87,7 @@ enum ndisc_flags
 	NDISC_SINGLE  =0x8,
 };
 
-static int fd;
+//static int fd;
 
 static int
 getipv6byname (const char *name, const char *ifname, int numeric,
@@ -150,18 +150,23 @@ getmacaddress (const char *ifname, uint8_t *addr)
 {
 # ifdef SIOCGIFHWADDR
 	struct ifreq req;
-
 	memset (&req, 0, sizeof (req));
 
 	if (((unsigned)strlen (ifname)) >= (unsigned)IFNAMSIZ)
 		return -1; /* buffer overflow = local root */
 	strcpy (req.ifr_name, ifname);
 
+	int fd = socket (AF_INET6, SOCK_DGRAM, 0);
+	if (fd == -1)
+		return -1;
+
 	if (ioctl (fd, SIOCGIFHWADDR, &req))
 	{
 		perror (ifname);
+		close (fd);
 		return -1;
 	}
+	close (fd);
 
 	memcpy (addr, req.ifr_hwaddr.sa_data, 6);
 	return 0;
@@ -561,7 +566,7 @@ ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
 {
 	struct sockaddr_in6 tgt;
 
-	fd = socket (PF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
+	int fd = socket (PF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
 	drop_priv (); // cannot fail - won't override errno
 
 	if (fd == -1)
