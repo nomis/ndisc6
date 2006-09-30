@@ -74,7 +74,7 @@ subst_script = sed \
 # dnssort
 dnssort: dnssort.in Makefile.in $(top_builddir)/config.status
 	rm -f $@.tmp $@
-	$(subst_script) < $< > $@.tmp
+	$(subst_script) < $@.in > $@.tmp
 	chmod +x $@.tmp
 	mv -f $@.tmp $@
 
