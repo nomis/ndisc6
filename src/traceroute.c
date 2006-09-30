@@ -84,13 +84,6 @@ static int rt_segc = 0;
 
 /****************************************************************************/
 
-static void
-drop_priv (void)
-{
-	setuid (getuid ());
-}
-
-
 static uint16_t getsourceport (void)
 {
 	uint16_t v = ~getpid ();
@@ -651,6 +644,62 @@ static int setsock_rth (int fd, int type, const char **segv, int segc)
 }
 
 
+/* Requests raw sockets ahead of use so we can drop root quicker */
+static struct
+{
+	int protocol;
+	int fd;
+	int errnum;
+} protofd[] =
+{
+	{ IPPROTO_ICMPV6, -1, EPERM },
+	{ IPPROTO_ICMPV6, -1, EPERM },
+	{ IPPROTO_UDP,    -1, EPERM },
+	{ IPPROTO_TCP,    -1, EPERM }
+};
+
+
+static int prepare_sockets (void)
+{
+	for (unsigned i = 0; i < sizeof (protofd) / sizeof (protofd[0]); i++)
+	{
+		protofd[i].fd = socket (AF_INET6, SOCK_RAW, protofd[i].protocol);
+		if (protofd[i].fd == -1)
+			protofd[i].errnum = errno;
+		else
+		if (protofd[i].fd <= 2)
+			return -1;
+	}
+	return 0;
+}
+
+
+static int get_socket (int protocol)
+{
+	for (unsigned i = 0; i < sizeof (protofd) / sizeof (protofd[0]); i++)
+		if (protofd[i].protocol == protocol)
+		{
+			int fd = protofd[i].fd;
+			if (fd != -1)
+			{
+				protofd[i].fd = -1;
+				return fd;
+			}
+			errno = protofd[i].errnum;
+		}
+
+	return -1;
+}
+
+
+static void drop_sockets (void)
+{
+	for (unsigned i = 0; i < sizeof (protofd) / sizeof (protofd[0]); i++)
+		if (protofd[i].fd != -1)
+			close (protofd[i].fd);
+}
+
+
 static int
 traceroute (const char *dsthost, const char *dstport,
             const char *srchost, const char *srcport,
@@ -662,7 +711,7 @@ traceroute (const char *dsthost, const char *dstport,
 	unsigned ttl;
 
 	/* Creates ICMPv6 socket to collect error packets */
-	icmpfd = socket (AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
+	icmpfd = get_socket (IPPROTO_ICMPV6);
 	if (icmpfd == -1)
 	{
 		perror (_("Raw IPv6 socket"));
@@ -670,13 +719,15 @@ traceroute (const char *dsthost, const char *dstport,
 	}
 
 	/* Creates protocol-specific socket */
-	protofd = socket (AF_INET6, SOCK_RAW, type->protocol);
+	protofd = get_socket (type->protocol);
 	if (protofd == -1)
 	{
 		perror (_("Raw IPv6 socket"));
 		close (icmpfd);
 		return -1;
 	}
+
+	drop_sockets ();
 
 	/* Set outgoing interface */
 	if (*ifname)
@@ -697,12 +748,6 @@ traceroute (const char *dsthost, const char *dstport,
 			goto error;
 		}
 	}
-
-	/* Drops privileges permanently */
-	drop_priv ();
-
-	if (icmpfd <= 2)
-		goto error;
 
 	setup_socket (icmpfd);
 	setup_socket (protofd);
@@ -773,8 +818,6 @@ error:
 static int
 quick_usage (const char *path)
 {
-	drop_priv ();
-
 	fprintf (stderr, _("Try \"%s -h\" for more information.\n"), path);
 	return 2;
 }
@@ -783,8 +826,6 @@ quick_usage (const char *path)
 static int
 usage (const char *path)
 {
-	drop_priv ();
-
 	printf (_(
 "Usage: %s [options] <IPv6 hostname/address> [port number/packet length]\n"
 "Print IPv6 network route to a host\n"), path);
@@ -823,8 +864,6 @@ usage (const char *path)
 static int
 version (void)
 {
-	drop_priv ();
-
 	printf (_(
 "traceroute6: TCP & UDP IPv6 traceroute tool %s ($Rev$)\n"
 " built %s on %s\n"), VERSION, __DATE__, PACKAGE_BUILD_HOSTNAME);
@@ -902,6 +941,9 @@ static const char optstr[] = "AdEf:g:hIi:m:Nnp:q:rSs:t:UVw:xz:";
 int
 main (int argc, char *argv[])
 {
+	if (prepare_sockets () || setuid (getuid ()))
+		return 1;
+
 	const char *dsthost, *srchost = NULL, *xxxport = NULL;
 	size_t plen = 16;
 	unsigned retries = 3, wait = 5, delay = 0, minhlim = 1, maxhlim = 30;
