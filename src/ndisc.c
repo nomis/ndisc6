@@ -71,11 +71,6 @@
 # define NDISC_DEFAULT NDISC_VERBOSE1
 #endif
 
-static void drop_priv (void)
-{
-	/* leaves root privileges if setuid not run y root */
-	setuid (getuid ());
-}
 
 enum ndisc_flags
 {
@@ -87,7 +82,6 @@ enum ndisc_flags
 	NDISC_SINGLE  =0x8,
 };
 
-//static int fd;
 
 static int
 getipv6byname (const char *name, const char *ifname, int numeric,
@@ -560,24 +554,17 @@ recvadv (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
 }
 
 
+static int fd;
+
 static int
 ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
        unsigned wait_ms)
 {
 	struct sockaddr_in6 tgt;
 
-	int fd = socket (PF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
-	drop_priv (); // cannot fail - won't override errno
-
 	if (fd == -1)
 	{
 		perror (_("Raw IPv6 socket"));
-		return -1;
-	}
-
-	if (fd <= 2)
-	{
-		close (fd);
 		return -1;
 	}
 
@@ -663,8 +650,6 @@ error:
 static int
 quick_usage (const char *path)
 {
-	drop_priv ();
-
 	fprintf (stderr, _("Try \"%s -h\" for more information.\n"), path);
 	return 2;
 }
@@ -673,8 +658,6 @@ quick_usage (const char *path)
 static int
 usage (const char *path)
 {
-	drop_priv ();
-
 	printf (
 #ifndef RDISC
 _("Usage: %s [options] <IPv6 address> <interface>\n"
@@ -710,8 +693,6 @@ _("Usage: %s [options] [IPv6 address] <interface>\n"
 static int
 version (void)
 {
-	drop_priv ();
-
 	printf (_(
 NAME"6: IPv6 "TYPE_NAME" Discovery userland tool %s ($Rev$)\n"
 " built %s on %s\n"), VERSION, __DATE__, PACKAGE_BUILD_HOSTNAME);
@@ -745,6 +726,14 @@ static const struct option opts[] =
 int
 main (int argc, char *argv[])
 {
+	fd = socket (PF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
+	int errval = errno;
+
+	/* Drops root privileges (if setuid not run by root).
+	 * Also make sure the socket is not STDIN/STDOUT/STDERR. */
+	if (setuid (getuid ()) || ((fd >= 0) && (fd <= 2)))
+		return 1;
+
 	int val;
 	unsigned retry = 3, flags = NDISC_DEFAULT, wait_ms = 1000;
 	const char *hostname, *ifname;
@@ -834,6 +823,7 @@ main (int argc, char *argv[])
 	if ((optind != argc) || (ifname == NULL))
 		return quick_usage (argv[0]);
 
+	errno = errval; /* restore socket() error value */
 	return -ndisc (hostname, ifname, flags, retry, wait_ms);
 }
 
