@@ -29,6 +29,7 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include <sys/types.h>
 #include <sys/socket.h> // SOCK_DGRAM
 #include <netinet/in.h>
 #include <netinet/udp.h>
