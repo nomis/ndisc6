@@ -79,10 +79,7 @@ static bool debug = false;
 bool ecn = false;
 static char ifname[IFNAMSIZ] = "";
 
-#define NULL4	NULL, NULL, NULL, NULL
-#define NULL16	NULL4, NULL4, NULL4, NULL4
-#define NULL64	NULL16, NULL16, NULL16, NULL16
-static const char *rt_segv[128] = { NULL64, NULL64 };
+static const char *rt_segv[127];
 static int rt_segc = 0;
 
 /****************************************************************************/
