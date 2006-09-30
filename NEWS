@@ -1,5 +1,5 @@
 RELEASE NOTES for NDisc6
-version 0.7.1
+version 0.7.2
 =========================
 $Id$
 
@@ -11,6 +11,14 @@ Thanks for your help.
   You can find major changes since version 0.1.5 below. For more general
 informations on this program, see README. For syntax details, read the
 provided manual pages.
+
+============================================================================
+STABLE RELEASE 0.7.2 : Minor features enhancement
+
+# rdisc6, ndisc6 and traceroute6 now drop root privilege at the very
+  beginning of execution to prevent all kind of would-be local root
+  compromise (in case of bug in the command line parsing code).
+# FreeBSD build fixes.
 
 ============================================================================
 STABLE RELEASE 0.7.1 : Minor portability fixes
