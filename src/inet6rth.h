@@ -26,6 +26,14 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+/*
+ * As usual, we have C libraries who define functions though they don't
+ * actually provide them. This time, the winner is FreeBSD 4.
+ */
+#define inet6_rth_space working_inet6_rth_space
+#define inet6_rth_init working_inet6_rth_init
+#define inet6_rth_add working_inet6_rth_add
+
 #ifndef IPV6_RTHDR_TYPE_0
 # define IPV6_RTHDR_TYPE_0 0
 #endif
