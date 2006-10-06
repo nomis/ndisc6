@@ -54,7 +54,7 @@
 # if defined (__linux__)
 #  define IPV6_TCLASS 67
 # elif defined (__FreeBSD__) || defined (__FreeBSD_kernel__) \
-       defined (__NetBSD__)  || defined (__NetBSD_kernel__)
+    || defined (__NetBSD__)  || defined (__NetBSD_kernel__)
 #  define IPV6_TCLASS 61
 # else
 #  warning Traffic class support missing! Define IPV6_TCLASS!
