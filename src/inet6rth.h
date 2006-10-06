@@ -75,7 +75,7 @@ int inet6_rth_add (void *bp, const struct in6_addr *addr)
 #  define IPV6_RECVRTHDR 56
 #  define IPV6_RTHDR 57
 # elif defined (__FreeBSD__) || defined (__FreeBSD_kernel__) \
-       defined (__NetBSD__)  || defined (__NetBSD_kernel__)
+    || defined (__NetBSD__)  || defined (__NetBSD_kernel__)
 #  define IPV6_RECVRTHDR 38
 #  define IPV6_RTHDR 51
 # else
