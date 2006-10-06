@@ -39,6 +39,7 @@ uninstall-hook:
 	for a in tcptraceroute6 tracert6; do \
 		rm -f "$(DESTDIR)$(man8dir)/$$a.8" ; \
 	done
+	unlink "$(DESTDIR)$(man1dir)/nameinfo.1"
 
 distclean-local:
 	test "$(top_srcdir)" = "$(top_builddir)" || rm -f ChangeLog
