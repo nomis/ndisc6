@@ -28,6 +28,7 @@
 #include <stdlib.h> /* div() */
 #include <inttypes.h>
 #include <limits.h> /* UINT_MAX */
+#include <locale.h>
 
 #include <errno.h> /* EMFILE */
 #include <sys/types.h>
@@ -54,6 +55,10 @@
 #ifndef IPV6_RECVHOPLIMIT
 /* Using obsolete RFC 2292 instead of RFC 3542 */ 
 # define IPV6_RECVHOPLIMIT IPV6_HOPLIMIT
+#endif
+
+#ifndef AI_IDN
+# define AI_IDN 0
 #endif
 
 #ifndef RDISC
@@ -735,6 +740,8 @@ main (int argc, char *argv[])
 	 * Also make sure the socket is not STDIN/STDOUT/STDERR. */
 	if (setuid (getuid ()) || ((fd >= 0) && (fd <= 2)))
 		return 1;
+
+	setlocale (LC_CTYPE, "");
 
 	int val;
 	unsigned retry = 3, flags = NDISC_DEFAULT, wait_ms = 1000;

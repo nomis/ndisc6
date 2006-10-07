@@ -42,6 +42,7 @@
 #include <arpa/inet.h> /* inet_ntop() */
 #include <fcntl.h>
 #include <errno.h>
+#include <locale.h> /* setlocale() */
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
 #endif
@@ -49,6 +50,10 @@
 #include "gettime.h"
 #include "inet6rth.h"
 #include "traceroute.h"
+
+#ifndef AI_IDN
+# define AI_IDN 0
+#endif
 
 #ifndef IPV6_TCLASS
 # if defined (__linux__)
@@ -591,6 +596,7 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
 	memset (&hints, 0, sizeof (hints));
 	hints.ai_family = AF_INET6;
 	hints.ai_socktype = type->gai_socktype;
+	hints.ai_flags = AI_IDN;
 
 	if ((srchost != NULL) || (srcport != NULL))
 	{
@@ -677,6 +683,7 @@ static int setsock_rth (int fd, int type, const char **segv, int segc)
 	struct addrinfo hints;
 	memset (&hints, 0, sizeof (hints));
 	hints.ai_family = AF_INET6;
+	hints.ai_flags = AI_IDN;
 
 	for (int i = 0; i < segc; i++)
 	{
@@ -1003,6 +1010,8 @@ main (int argc, char *argv[])
 {
 	if (prepare_sockets () || setuid (getuid ()))
 		return 1;
+
+	setlocale (LC_CTYPE, "");
 
 	const char *dsthost, *srchost = NULL, *xxxport = NULL;
 	size_t plen = 16;

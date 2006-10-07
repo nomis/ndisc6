@@ -29,11 +29,15 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <unistd.h>
+#include <locale.h>
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
 #endif
-#include <unistd.h>
 
+#ifndef AI_IDN
+# define AI_IDN 0
+#endif
 
 static void
 gai_perror (int errval, const char *msg)
@@ -171,7 +175,9 @@ static const char sopts[] = "46hmnrV";
 
 int main (int argc, char *argv[])
 {
-	int val, family = AF_UNSPEC, aflags = 0, nflags = NI_NUMERICHOST;
+	setlocale (LC_CTYPE, "");
+
+	int val, family = AF_UNSPEC, aflags = AI_IDN, nflags = NI_NUMERICHOST;
 	bool single = true;
 
 	while ((val = getopt_long (argc, argv, sopts, lopts, NULL)) != EOF)

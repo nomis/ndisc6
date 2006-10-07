@@ -44,9 +44,14 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include "gettime.h"
+#include <locale.h>
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
+#endif
+
+#include "gettime.h"
+#ifndef AI_IDN
+# define AI_IDN 0
 #endif
 
 static int family = 0;
@@ -60,6 +65,7 @@ static int tcpconnect (const char *host, const char *serv)
 	hints.ai_family = family;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
+	hints.ai_flags = AI_IDN;
 
 	int val = getaddrinfo (host, serv, &hints, &res);
 	if (val)
@@ -321,6 +327,8 @@ static const char optstr[] = "46b:d:ef:hn:Vv";
 
 int main (int argc, char *argv[])
 {
+	setlocale (LC_CTYPE, "");
+
 	unsigned long block_count = 100;
 	size_t block_length = 1024;
 	unsigned delay_ms = 0;
