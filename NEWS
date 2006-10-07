@@ -16,6 +16,7 @@ provided manual pages.
 STABLE RELEASE 0.7.3 : Minor features enhancement
 
 # traceroute6 can print hop limit of received packet with option -l.
+# Support for resolving IDN (Internationalized Domain Names).
 
 ============================================================================
 STABLE RELEASE 0.7.2 : Minor features enhancement
