@@ -33,14 +33,17 @@ MOSTLYCLEANFILES = $(myexec_SCRIPTS) $(bin_SCRIPTS)
 
 # ndisc6
 ndisc6_SOURCES = ndisc.c
+ndisc6_LDADD = $(LIBRT)
 
 # rdisc6
 rdisc6_SOURCES = ndisc.c
 rdisc6_CFLAGS = -DRDISC
+rdisc6_LDADD = $(LIBRT)
 
 # traceroute6
 rltraceroute6_SOURCES = traceroute.c traceroute.h \
 			trace-tcp.c trace-udp.c trace-icmp.c
+rltraceroute6_LDADD = $(LIBRT)
 
 tcptraceroute6: Makefile.in $(top_builddir)/config.status
 	rm -f $@.tmp $@
@@ -58,6 +61,7 @@ tracert6: Makefile.in $(top_builddir)/config.status
 
 # tcpspray6
 tcpspray6_SOURCES = tcpspray.c
+tcpspray6_LDADD = $(LIBRT)
 
 nameinfo: Makefile.in $(top_builddir)/config.status
 	rm -f $@.tmp $@

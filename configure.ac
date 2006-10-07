@@ -46,6 +46,11 @@ AC_ARG_VAR(PERL, [Perl interpreter])
 
 # Checks for libraries.
 AS_MESSAGE([checking required libraries...])
+
+LIBRT=""
+AC_CHECK_LIB([rt], clock_gettime, [LIBRT="-lrt"])
+AC_SUBST(LIBRT)
+
 dnl AM_GNU_GETTEXT_VERSION([0.12.1])
 dnl AM_GNU_GETTEXT([external])
 
@@ -67,8 +72,10 @@ dnl RDC_STRUCT_SOCKADDR_LEN
 # Checks for library functions.
 AS_MESSAGE([checking library functions...])
 RDC_REPLACE_FUNC_GETOPT_LONG
-AC_SEARCH_LIBS(clock_gettime, [rt])
+LIBS_save="$LIBS"
+LIBS="$LIBRT $LIBS"
 AC_CHECK_FUNCS([clock_nanosleep inet6_rth_add])
+LIBS="$LIBS_save"
 
 # Network stuff
 RDC_FUNC_SOCKET
