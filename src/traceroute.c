@@ -72,10 +72,9 @@
 /* All our evil global variables */
 static const tracetype *type = NULL;
 static int niflags = 0;
-static int sendflags = 0;
 static int tclass = -1;
 uint16_t sport;
-static bool debug = false;
+static bool debug = false, dontroute = false;
 bool ecn = false;
 static char ifname[IFNAMSIZ] = "";
 
@@ -95,7 +94,7 @@ static uint16_t getsourceport (void)
 
 ssize_t send_payload (int fd, const void *payload, size_t length)
 {
-	ssize_t rc = send (fd, payload, length, sendflags);
+	ssize_t rc = send (fd, payload, length, 0);
 
 	if (rc == (ssize_t)length)
 		return 0;
@@ -776,6 +775,10 @@ traceroute (const char *dsthost, const char *dstport,
 	setsockopt (protofd, SOL_IPV6, IPV6_TCLASS, &tclass, sizeof (tclass));
 #endif
 
+	if (dontroute)
+		setsockopt (protofd, SOL_SOCKET, SO_DONTROUTE, &(int){ 1 },
+		            sizeof (int));
+
 	/* Defines Type 0 Routing Header */
 	if (rt_segc > 0)
 		setsock_rth (protofd, IPV6_RTHDR_TYPE_0, rt_segv, rt_segc);
@@ -1028,7 +1031,7 @@ main (int argc, char *argv[])
 			}
 
 			case 'r':
-				sendflags |= MSG_DONTROUTE;
+				dontroute = true;
 				break;
 
 			case 'S':
