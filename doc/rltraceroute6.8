@@ -17,7 +17,7 @@
 .SH NAME
 rltraceroute6 \- IPv6 traceroute tool
 .SH SYNOPSIS
-.BR "traceroute6" " [" "-AdEInrSU" "] [" "-f min_hop" "] [" "-g hop" "] ["
+.BR "traceroute6" " [" "-AdEIlnrSU" "] [" "-f min_hop" "] [" "-g hop" "] ["
 .BR "-i iface" "] [" "-m max_hop" "] [" "-p port" "] [" "-q attempts" "] ["
 .BR "-s source" "] [" "-t tclass" "] [" "-w wait" "] [" "-z delay_ms" "] <"
 .BR "hostname/address" "> [" "port/packet length" "]"
@@ -98,6 +98,11 @@ That's the default for tracert6.
 .B "\-i"
 Only send packets through the specified interface.
 See also BUGS.
+
+.TP
+.B "\-l"
+Print the hop limit of received packets.
+This is mostly used to detect asymmetric routing.
 
 .TP
 .B "\-m"
