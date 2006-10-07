@@ -579,10 +579,12 @@ ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
 		setsockopt (fd, IPPROTO_ICMPV6, ICMP6_FILTER, &f, sizeof (f));
 	}
 
+	setsockopt (fd, SOL_SOCKET, SO_DONTROUTE, &(int){ 1 }, sizeof (int));
+
 	/* sets Hop-by-hop limit to 255 */
 	setmcasthoplimit (fd, 255);
-	setsockopt(fd, IPPROTO_IPV6, IPV6_RECVHOPLIMIT,
-	           &(int){ 1 }, sizeof (int));
+	setsockopt (fd, IPPROTO_IPV6, IPV6_RECVHOPLIMIT,
+	            &(int){ 1 }, sizeof (int));
 
 	/* resolves target's IPv6 address */
 	if (getipv6byname (name, ifname, (flags & NDISC_NUMERIC) ? 1 : 0, &tgt))
@@ -609,7 +611,7 @@ ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
 		while (retry > 0)
 		{
 			/* sends a Solitication */
-			if (sendto (fd, &packet, plen, MSG_DONTROUTE,
+			if (sendto (fd, &packet, plen, 0,
 			            (const struct sockaddr *)&dst,
 			            sizeof (dst)) != plen)
 			{
