@@ -61,6 +61,11 @@
 # endif
 #endif
 
+#ifndef IPV6_RECVHOPLIMIT
+/* Using obsolete RFC 2292 instead of RFC 3542 */
+# define IPV6_RECVHOPLIMIT IPV6_HOPLIMIT
+#endif
+
 #ifndef SOL_IPV6
 # define SOL_IPV6 IPPROTO_IPV6
 #endif
@@ -74,7 +79,7 @@ static const tracetype *type = NULL;
 static int niflags = 0;
 static int tclass = -1;
 uint16_t sport;
-static bool debug = false, dontroute = false;
+static bool debug = false, dontroute = false, show_hlim = false;
 bool ecn = false;
 static char ifname[IFNAMSIZ] = "";
 
@@ -103,6 +108,43 @@ ssize_t send_payload (int fd, const void *payload, size_t length)
 		errno = EMSGSIZE;
 	return -1;
 }
+
+
+static ssize_t
+recv_payload (int fd, void *buf, size_t len,
+              struct sockaddr_in6 *addr, int *hlim)
+{
+	char cbuf[CMSG_SPACE (sizeof (int))];
+	struct iovec iov =
+	{
+		.iov_base = buf,
+		.iov_len = len
+	};
+	struct msghdr hdr =
+	{
+		.msg_name = addr,
+		.msg_namelen = (addr != NULL) ? sizeof (*addr) : 0,
+		.msg_iov = &iov,
+		.msg_iovlen = 1,
+		.msg_control = cbuf,
+		.msg_controllen = sizeof (cbuf)
+	};
+
+	ssize_t val = recvmsg (fd, &hdr, 0);
+	if (val == -1)
+		return val;
+
+	/* ensures the hop limit is 255 */
+	for (struct cmsghdr *cmsg = CMSG_FIRSTHDR (&hdr);
+	     cmsg != NULL;
+	     cmsg = CMSG_NXTHDR (&hdr, cmsg))
+		if ((cmsg->cmsg_level == IPPROTO_IPV6)
+		 && (cmsg->cmsg_type == IPV6_HOPLIMIT))
+			memcpy (hlim, CMSG_DATA (cmsg), sizeof (hlim));
+
+	return val;
+}
+
 
 
 static bool has_port (int protocol)
@@ -158,10 +200,17 @@ printdelay (const struct timespec *from, const struct timespec *to)
 	{
 		d.quot--;
 		d.rem += 1000;
-        }
+	}
 	d.quot += 1000 * (to->tv_sec - from->tv_sec);
 
 	printf (_(" %u.%03u ms "), (unsigned)(d.quot), (unsigned)d.rem);
+}
+
+
+static inline void print_hlim (int hlim)
+{
+	if (hlim != -1)
+		printf (_("(%d) "), hlim);
 }
 
 
@@ -362,8 +411,10 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 			if (ufds[0].revents)
 			{
 				uint8_t buf[1240];
+				int hlim = -1;
+				ssize_t len;
 
-				ssize_t len = recv (protofd, buf, sizeof (buf), 0);
+				len = recv_payload (protofd, buf, sizeof (buf), NULL, &hlim);
 				if (len < 0)
 				{
 					switch (errno)
@@ -428,6 +479,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 					}
 
 					printdelay (&sent, &recvd);
+					print_hlim (hlim);
 					found = ttl;
 					break; // response received, stop poll()ing
 				}
@@ -443,10 +495,10 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 					uint8_t buf[1192];
 				} pkt;
 				struct sockaddr_in6 peer;
+				int hlim = -1;
 
-				ssize_t len = recvfrom (icmpfd, &pkt, sizeof (pkt), 0,
-				                        (struct sockaddr *)&peer,
-				                        &(socklen_t){ sizeof (peer) });
+				ssize_t len = recv_payload (icmpfd, &pkt, sizeof (pkt),
+				                            &peer, &hlim);
 
 				if (len < (ssize_t)(sizeof (pkt.hdr) + sizeof (pkt.inhdr)))
 					continue; // too small
@@ -500,6 +552,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				}
 
 				printdelay (&sent, &recvd);
+				print_hlim (hlim);
 				print_icmp_code (&pkt.hdr);
 				break; // response received, stop poll()ing
 			}
@@ -602,8 +655,11 @@ error:
 static void setup_socket (int fd)
 {
 	if (debug)
-		setsockopt (fd, SOL_SOCKET, SO_DEBUG, &(int) { 1 }, sizeof (int));
-	setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &(int) { 1 }, sizeof (int));
+		setsockopt (fd, SOL_SOCKET, SO_DEBUG, &(int){ 1 }, sizeof (int));
+	setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof (int));
+
+	if (show_hlim)
+		setsockopt (fd, SOL_IPV6, IPV6_RECVHOPLIMIT, &(int){1}, sizeof (int));
 
 	int val = fcntl (fd, F_GETFL);
 	if (val == -1)
@@ -842,7 +898,7 @@ usage (const char *path)
 "  -h  display this help and exit\n"
 "  -I  use ICMPv6 Echo Request packets as probes\n"
 "  -i  force outgoing network interface\n"
-/*"  -l  display incoming packets hop limit (UDP)\n"*/
+"  -l  display incoming packets hop limit\n"
 /*"  -l  set TCP probes byte size\n"*/
 "  -m  set the maximum hop limit (default: 30)\n"
 "  -N  perform reverse name lookups on the addresses of every hop\n"
@@ -920,6 +976,7 @@ static const struct option opts[] =
 	{ "help",     no_argument,       NULL, 'h' },
 	{ "icmp",     no_argument,       NULL, 'I' },
 	{ "iface",    required_argument, NULL, 'i' },
+	{ "hlim",     no_argument,       NULL, 'l' },
 	{ "max",      required_argument, NULL, 'm' },
 	// -N is not really a stub, should have a long name
 	{ "numeric",  no_argument,       NULL, 'n' },
@@ -939,7 +996,7 @@ static const struct option opts[] =
 };
 
 
-static const char optstr[] = "AdEf:g:hIi:m:Nnp:q:rSs:t:UVw:xz:";
+static const char optstr[] = "AdEf:g:hIi:lm:Nnp:q:rSs:t:UVw:xz:";
 
 int
 main (int argc, char *argv[])
@@ -997,6 +1054,10 @@ main (int argc, char *argv[])
 			case 'i':
 				strncpy (ifname, optarg, IFNAMSIZ - 1);
 				ifname[IFNAMSIZ - 1] = '\0';
+				break;
+
+			case 'l':
+				show_hlim = true;
 				break;
 
 			case 'm':
