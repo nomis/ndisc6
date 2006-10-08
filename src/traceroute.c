@@ -445,9 +445,9 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 					{
 						printipv6 (dst);
 						state = 1;
-						found = ttl;
 					}
 					printdelay (&sent, &recvd);
+					found = ttl;
 					break; // response received, stop poll()ing
 				}
 
@@ -511,17 +511,15 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				switch (pkt.hdr.icmp6_type)
 				{
 					case ICMP6_DST_UNREACH:
-						if (found == 0)
+						switch (pkt.hdr.icmp6_code)
 						{
-							switch (pkt.hdr.icmp6_code)
-							{
-								case ICMP6_DST_UNREACH_NOPORT:
-									found = ttl;
-									break;
+							case ICMP6_DST_UNREACH_NOPORT:
+								found = ttl;
+								break;
 
-								default:
+							default:
+								if (found == 0)
 									found = -ttl;
-							}
 						}
 						break;
 
