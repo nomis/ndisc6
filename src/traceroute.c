@@ -791,6 +791,7 @@ traceroute (const char *dsthost, const char *dstport,
 
 	drop_sockets ();
 
+#ifndef IPV6_PKTINFO
 	/* Set outgoing interface */
 	if (*ifname)
 	{
@@ -810,6 +811,7 @@ traceroute (const char *dsthost, const char *dstport,
 			goto error;
 		}
 	}
+#endif
 
 	setup_socket (icmpfd);
 	setup_socket (protofd);
