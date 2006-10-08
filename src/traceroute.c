@@ -785,7 +785,7 @@ traceroute (const char *dsthost, const char *dstport,
 
 	drop_sockets ();
 
-#ifndef IPV6_PKTINFO
+#ifdef IPV6_PKTINFO
 	/* Set outgoing interface */
 	if (*ifname)
 	{
