@@ -766,12 +766,8 @@ traceroute (const char *dsthost, const char *dstport,
             unsigned timeout, unsigned delay, unsigned retries,
             size_t packet_len, unsigned min_ttl, unsigned max_ttl)
 {
-	struct sockaddr_in6 dst;
-	int protofd, icmpfd, val;
-	unsigned ttl;
-
 	/* Creates ICMPv6 socket to collect error packets */
-	icmpfd = get_socket (IPPROTO_ICMPV6);
+	int icmpfd = get_socket (IPPROTO_ICMPV6);
 	if (icmpfd == -1)
 	{
 		perror (_("Raw IPv6 socket"));
@@ -779,7 +775,7 @@ traceroute (const char *dsthost, const char *dstport,
 	}
 
 	/* Creates protocol-specific socket */
-	protofd = get_socket (type->protocol);
+	int protofd = get_socket (type->protocol);
 	if (protofd == -1)
 	{
 		perror (_("Raw IPv6 socket"));
@@ -858,6 +854,7 @@ traceroute (const char *dsthost, const char *dstport,
 	}
 
 	/* Defines destination */
+	struct sockaddr_in6 dst;
 	memset (&dst, 0, sizeof (dst));
 	if (connect_proto (protofd, &dst, dsthost, dstport, srchost, srcport))
 		goto error;
@@ -865,9 +862,14 @@ traceroute (const char *dsthost, const char *dstport,
 	printf (_("%lu byte packets\n"), (unsigned long)packet_len);
 
 	/* Performs traceroute */
-	for (ttl = min_ttl, val = 0; (ttl <= max_ttl) && !val; ttl++)
+	int val = 0;
+	for (unsigned ttl = min_ttl; ttl <= max_ttl; ttl++)
+	{
 		val = probe_ttl (protofd, icmpfd, &dst, ttl,
 		                 retries, timeout, delay, packet_len);
+		if (val)
+			break;
+	}
 
 	/* Cleans up */
 	close (protofd);
