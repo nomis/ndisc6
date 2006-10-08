@@ -508,6 +508,22 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				if (len < (ssize_t)(sizeof (pkt.hdr) + sizeof (pkt.inhdr)))
 					continue; // too small
 
+				len -= sizeof (pkt.hdr) + sizeof (pkt.inhdr);
+
+				const void *buf = skip_exthdrs (&pkt.inhdr, (size_t *)&len);
+
+				if (memcmp (&pkt.inhdr.ip6_dst, &dst->sin6_addr, 16))
+					continue; // wrong destination
+
+				if (pkt.inhdr.ip6_nxt != type->protocol)
+					continue; // wrong protocol
+
+				len = parse (type->parse_err, buf, len, ttl, n,
+				             dst->sin6_port);
+				if (len < 0)
+					continue;
+
+				/* genuine ICMPv6 error that concerns us */
 				switch (pkt.hdr.icmp6_type)
 				{
 					case ICMP6_DST_UNREACH:
@@ -531,22 +547,6 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 						continue;
 				}
 
-				len -= sizeof (pkt.hdr) + sizeof (pkt.inhdr);
-
-				const void *buf = skip_exthdrs (&pkt.inhdr, (size_t *)&len);
-
-				if (memcmp (&pkt.inhdr.ip6_dst, &dst->sin6_addr, 16))
-					continue; // wrong destination
-
-				if (pkt.inhdr.ip6_nxt != type->protocol)
-					continue; // wrong protocol
-
-				len = parse (type->parse_err, buf, len, ttl, n,
-				             dst->sin6_port);
-				if (len < 0)
-					continue;
-
-				/* genuine ICMPv6 error that concerns us */
 				if ((state == -1) || memcmp (&hop, &peer.sin6_addr, 16))
 				{
 					memcpy (&hop, &peer.sin6_addr, 16);

@@ -13,8 +13,9 @@ informations on this program, see README. For syntax details, read the
 provided manual pages.
 
 ============================================================================
-STABLE RELEASE 0.7.3 : Minor features enhancement
+STABLE RELEASE 0.7.3 : Minor features enhancement, major bug fixes
 
+# traceroute6 won't stop at the first non-responsive hop anymore.
 # traceroute6 can print hop limit of received packet with option -l.
 # Support for resolving IDN (Internationalized Domain Names).
 
