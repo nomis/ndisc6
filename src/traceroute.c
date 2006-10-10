@@ -1005,7 +1005,7 @@ static const struct option opts[] =
 };
 
 
-static const char optstr[] = "AdEf:g:hIi:lm:Nnp:q:rSs:t:UVw:xz:";
+static const char optstr[] = "AdEFf:g:hIi:lm:Nnp:q:rSs:t:UVw:xz:";
 
 int
 main (int argc, char *argv[])
