@@ -19,11 +19,13 @@
 
 bindir = @bindir@
 sbindir = @sbindir@
+mysuidexecdir = $(myexecdir)
 
-AM_CPPFLAGS = -I$(top_srcdir)
+AM_CPPFLAGS = -I$(top_srcdir) -DMYEXECDIR=\"$(myexecdir)\"
 
-myexec_PROGRAMS = ndisc6 rdisc6 rltraceroute6
-myexec_SCRIPTS = tcptraceroute6 tracert6
+mysuidexec_PROGRAMS = ndisc6 rdisc6 rltraceroute6
+myexec_PROGRAMS = tcptraceroute6
+myexec_SCRIPTS = tracert6
 bin_PROGRAMS = tcpspray6 addrinfo
 bin_SCRIPTS = dnssort nameinfo
 noinst_HEADERS = gettime.h inet6rth.h
@@ -45,12 +47,15 @@ rltraceroute6_SOURCES = traceroute.c traceroute.h \
 			trace-tcp.c trace-udp.c trace-icmp.c
 rltraceroute6_LDADD = $(LIBRT)
 
-tcptraceroute6: Makefile.in $(top_builddir)/config.status
-	rm -f $@.tmp $@
-	echo '#! /bin/sh' > $@.tmp
-	echo 'exec "$$(dirname $$0)/rltraceroute6" -S "$$@"' >> $@.tmp
-	chmod +x $@.tmp
-	mv -f $@.tmp $@
+# tcptraceroute6
+tcptraceroute6_SOURCES = tcptraceroute.c
+
+#tcptraceroute6: Makefile.in $(top_builddir)/config.status
+#	rm -f $@.tmp $@
+#	echo '#! /bin/sh' > $@.tmp
+#	echo 'exec "$$(dirname $$0)/rltraceroute6" -S "$$@"' >> $@.tmp
+#	chmod +x $@.tmp
+#	mv -f $@.tmp $@
 
 tracert6: Makefile.in $(top_builddir)/config.status
 	rm -f $@.tmp $@
@@ -88,9 +93,9 @@ else
 myexecdir = $(bindir)
 
 install-exec-hook:
-	@for f in $(myexec_PROGRAMS); do \
-		echo chmod u+s "$(DESTDIR)$(myexecdir)/$$f" ; \
-		chmod u+s "$(DESTDIR)$(myexecdir)/$$f" || exit $$? ; \
+	@for f in $(mysuidexec_PROGRAMS); do \
+		echo chmod u+s "$(DESTDIR)$(mysuidexecdir)/$$f" ; \
+		chmod u+s "$(DESTDIR)$(mysuidexecdir)/$$f" || exit $$? ; \
 	done
 endif
 
