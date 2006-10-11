@@ -895,7 +895,7 @@ static int
 usage (const char *path)
 {
 	printf (_(
-"Usage: %s [options] <IPv6 hostname/address> [port number/packet length]\n"
+"Usage: %s [options] <IPv6 hostname/address> [packet length]\n"
 "Print IPv6 network route to a host\n"), path);
 
 	puts (_("\n"
@@ -908,11 +908,10 @@ usage (const char *path)
 "  -I  use ICMPv6 Echo Request packets as probes\n"
 "  -i  force outgoing network interface\n"
 "  -l  display incoming packets hop limit\n"
-/*"  -l  set TCP probes byte size\n"*/
 "  -m  set the maximum hop limit (default: 30)\n"
 "  -N  perform reverse name lookups on the addresses of every hop\n"
 "  -n  don't perform reverse name lookup on addresses\n"
-"  -p  override source TCP port or base destination UDP port\n"
+"  -p  override destination port\n"
 "  -q  override the number of probes per hop (default: 3)\n"
 "  -r  do not route packets\n"
 "  -S  send TCP SYN probes\n"
@@ -933,8 +932,9 @@ static int
 version (void)
 {
 	printf (_(
-"traceroute6: TCP & UDP IPv6 traceroute tool %s ($Rev$)\n"
-" built %s on %s\n"), VERSION, __DATE__, PACKAGE_BUILD_HOSTNAME);
+"traceroute6: TCP & UDP IPv6 traceroute tool %s (%s)\n"
+" built %s on %s\n"), VERSION, "$Rev$",
+	        __DATE__, PACKAGE_BUILD_HOSTNAME);
 	printf (_("Configured with: %s\n"), PACKAGE_CONFIGURE_INVOCATION);
 	puts (_("Written by Remi Denis-Courmont\n"));
 
@@ -1015,7 +1015,7 @@ main (int argc, char *argv[])
 
 	setlocale (LC_CTYPE, "");
 
-	const char *dsthost, *srchost = NULL, *xxxport = NULL;
+	const char *dsthost, *srchost = NULL, *dstport = "33434", *srcport = NULL;
 	size_t plen = 16;
 	unsigned retries = 3, wait = 5, delay = 0, minhlim = 1, maxhlim = 30;
 	int val;
@@ -1089,7 +1089,7 @@ main (int argc, char *argv[])
 				break;
 
 			case 'p':
-				xxxport = optarg;
+				dstport = optarg;
 				break;
 
 			case 'q':
@@ -1163,31 +1163,20 @@ main (int argc, char *argv[])
 	if (type == NULL)
 		type = &udp_type;
 
-	const char *srcport = NULL, *dstport = NULL;
+	if (optind >= argc)
+		return quick_usage (argv[0]);
 
-	if (type->protocol == IPPROTO_TCP)
-		srcport = xxxport;
-	else
-		dstport = xxxport;
+	dsthost = argv[optind++];
 
 	if (optind < argc)
 	{
-		dsthost = argv[optind++];
-
-		if (optind < argc)
-		{
-			if (type->protocol == IPPROTO_TCP)
-				dstport = argv[optind++];
-			else
-			if ((plen = parse_plen (argv[optind++])) == (size_t)(-1))
-				return 1;
-		}
+		plen = parse_plen (argv[optind++]);
+		if (plen == (size_t)(-1))
+			return 1;
 	}
-	else
-		return quick_usage (argv[0]);
 
-	if (dstport == NULL)
-		dstport = (type->protocol == IPPROTO_TCP) ? "80" : "33434";
+	if (optind < argc)
+		return quick_usage (argv[0]);
 
 	setvbuf (stdout, NULL, _IONBF, 0);
 	return -traceroute (dsthost, dstport, srchost, srcport, wait, delay,
