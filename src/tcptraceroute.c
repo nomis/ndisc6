@@ -146,6 +146,8 @@ int main (int argc, char *argv[])
 		assert (optbuf + sizeof (optbuf) > buf);
 		assert ((sizeof (optv) / sizeof (optv[0])) > (unsigned)optc);
 
+		char name;
+
 		switch (val)
 		{
 			case 'h':
@@ -161,15 +163,19 @@ int main (int argc, char *argv[])
 				psize = optarg;
 				continue;
 
-			//case 'p': /* Source port number */
-				/* FIXME: need a downstream option for this */
+			case 'p': /* Source port number */
+				name = 'P'; // traceroute6 secret name for this
+				break;
+
+			default:
+				name = (char)val;
 		}
 
 		assert (strchr (optstr, val) != NULL);
 
 		optv[optc++] = buf;
 		*buf++ = '-';
-		*buf++ = val;
+		*buf++ = name;
 		*buf++ = '\0';
 
 		if ((strchr (optstr, val))[1] != ':')

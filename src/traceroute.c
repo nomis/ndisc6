@@ -1005,7 +1005,7 @@ static const struct option opts[] =
 };
 
 
-static const char optstr[] = "AdEFf:g:hIi:lm:Nnp:q:rSs:t:UVw:xz:";
+static const char optstr[] = "AdEFf:g:hIi:lm:Nnp:q:rSs:t:UVw:xz:" "P:";
 
 int
 main (int argc, char *argv[])
@@ -1086,6 +1086,10 @@ main (int argc, char *argv[])
 
 			case 'n':
 				niflags |= NI_NUMERICHOST | NI_NUMERICSERV;
+				break;
+
+			case 'P':
+				srcport = optarg;
 				break;
 
 			case 'p':
