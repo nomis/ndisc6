@@ -178,26 +178,31 @@ int main (int argc, char *argv[])
 		optv[optc++] = optarg;
 	}
 
-	char *dsthost = NULL;
+	switch (argc - optind)
+	{
+		case 2:
+		case 1:
+			break;
+
+		default:
+			return quick_usage (argv[0]);
+	}
 
 	/* Destination host */
-	if (optind >= argc)
-		return quick_usage (argv[0]);
-	dsthost = argv[optind++];
+	char *dsthost = argv[optind++];
 
 	/* Destination port number */
-	if (optind < argc)
-	{
-		optv[optc++] = "-p";
-		optv[optc++] = argv[optind++];
-	}
+	optv[optc++] = "-p";
+	optv[optc++] = (optind < argc) ? argv[optind] : "80";
+	optind++;
 
 	/* Inserts destination */
 	if (dsthost != NULL)
 		optv[optc++] = dsthost;
 
 	/* Inserts packet size */
-	optv[optc++] = (psize != NULL) ? psize : "80";
+	if (psize != NULL)
+		optv[optc++] = psize;
 
 	assert (optbuf + sizeof (optbuf) >= buf);
 	assert ((sizeof (optv) / sizeof (optv[0])) > (unsigned)optc);
