@@ -49,18 +49,24 @@
 static ssize_t
 send_syn_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 {
-	struct tcphdr th;
+	if (plen < sizeof (struct tcphdr))
+		plen = sizeof (struct tcphdr);
 
-	memset (&th, 0, sizeof (th));
-	th.th_sport = sport;
-	th.th_dport = port;
-	th.th_seq = htonl ((ttl << 24) | (n << 16) | getpid ());
-	th.th_off = sizeof (th) / 4;
-	th.th_flags = TH_SYN | (ecn ? (TH_ECE | TH_CWR) : 0);
-	th.th_win = htons (TCP_WINDOW);
-	(void)plen; // FIXME
+	struct
+	{
+		struct tcphdr th;
+		uint8_t payload[plen - sizeof (struct tcphdr)];
+	} packet;
 
-	return send_payload (fd, &th, sizeof (th));
+	memset (&packet, 0, sizeof (packet));
+	packet.th.th_sport = sport;
+	packet.th.th_dport = port;
+	packet.th.th_seq = htonl ((ttl << 24) | (n << 16) | getpid ());
+	packet.th.th_off = sizeof (packet.th) / 4;
+	packet.th.th_flags = TH_SYN | (ecn ? (TH_ECE | TH_CWR) : 0);
+	packet.th.th_win = htons (TCP_WINDOW);
+
+	return send_payload (fd, &packet, plen);
 }
 
 
@@ -120,18 +126,24 @@ const tracetype syn_type =
 static ssize_t
 send_ack_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 {
-	struct tcphdr th;
+	if (plen < sizeof (struct tcphdr))
+		plen = sizeof (struct tcphdr);
 
-	memset (&th, 0, sizeof (th));
-	th.th_sport = sport;
-	th.th_dport = port;
-	th.th_ack = htonl ((ttl << 24) | (n << 16) | getpid ());
-	th.th_off = sizeof (th) / 4;
-	th.th_flags = TH_ACK;
-	th.th_win = htons (TCP_WINDOW);
-	(void)plen; // FIXME
+	struct
+	{
+		struct tcphdr th;
+		uint8_t payload[plen - sizeof (struct tcphdr)];
+	} packet;
 
-	return send_payload (fd, &th, sizeof (th));
+	memset (&packet, 0, sizeof (packet));
+	packet.th.th_sport = sport;
+	packet.th.th_dport = port;
+	packet.th.th_ack = htonl ((ttl << 24) | (n << 16) | getpid ());
+	packet.th.th_off = sizeof (packet.th) / 4;
+	packet.th.th_flags = TH_ACK;
+	packet.th.th_win = htons (TCP_WINDOW);
+
+	return send_payload (fd, &packet, plen);
 }
 
 
