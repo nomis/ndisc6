@@ -117,7 +117,6 @@ This is mostly used to detect asymmetric routing.
 .TP
 .BR "\-l" " (tcptraceroute6 only)"
 Specify the size (bytes) of sent packets.
-FIXME: this is currently ignored.
 
 .TP
 .B "\-m"
@@ -212,8 +211,19 @@ and hence do not work as documented.
 
 Support for option -t was broken until Linux kernel version 2.6.18.
 
-rltraceroute6 implements option -i on Linux only at the moment.
-It is not portable.
+Usage of Routing Header, with option -g, triggers an OOPS on Linux kernel
+versions below 2.6.17.12.
+
+Receiving TCP/SYN-ACK packets does not work on FreeBSD at all.
+This severely limits the usefulness of tcptraceroute6 on FreeBSD.
+
+Packet length does not take the IPv6 extension headers into account, however
+it includes IPv6 header.
+rltraceroute6 versions before 0.7.4 used it as IPv6 payload length instead,
+i.e. did not include the IPv6 header in the computation.
+Linux iputils traceroute6 does not even include the UDP header.
+On the whole, the packet length semantic is very inconsistent among IPv6
+traceroute implementations.
 
 .SH "SEE ALSO"
 ipv6(7), traceroute(8), tcptraceroute(8), traceroute6(8)
