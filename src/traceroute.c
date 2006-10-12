@@ -860,6 +860,8 @@ traceroute (const char *dsthost, const char *dstport,
 		goto error;
 	printf (_("%u hops max, "), max_ttl);
 	printf (_("%lu byte packets\n"), (unsigned long)packet_len);
+	packet_len -= 40;
+	/* FIXME: should we take Routing Header into account? */
 
 	/* Performs traceroute */
 	int val = 0;
@@ -965,7 +967,7 @@ parse_plen (const char *str)
 {
 	char *end;
 	unsigned long u = strtoul (str, &end, 0);
-	if ((u > 65535) || *end)
+	if ((u > 65575) || *end)
 	{
 		fprintf (stderr, _("%s: invalid packet length\n"), str);
 		return (size_t)(-1);
@@ -1016,7 +1018,7 @@ main (int argc, char *argv[])
 	setlocale (LC_CTYPE, "");
 
 	const char *dsthost, *srchost = NULL, *dstport = "33434", *srcport = NULL;
-	size_t plen = 16;
+	size_t plen = 60;
 	unsigned retries = 3, wait = 5, delay = 0, minhlim = 1, maxhlim = 30;
 	int val;
 
