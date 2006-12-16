@@ -290,12 +290,12 @@ out:
 
 typedef struct
 {
-	struct in6_addr addr;  // hop address
-	struct timespec rtt;   // estimated round trip time
-	int             rhlim; // received hop limit
-	int             rcode; // ICMPv6 unreachable code or -1
-	unsigned        result;// 0: no reply, 1: ok, 2: closed, 3: open
-	bool            end;   // true: route determination completed
+	struct sockaddr_in6 addr;  // hop address
+	struct timespec     rtt;   // estimated round trip time
+	int                 rhlim; // received hop limit
+	int                 rcode; // ICMPv6 unreachable code or -1
+	unsigned            result;// 0: no reply, 1: ok, 2: closed, 3: open
+	bool                end;   // true: route determination completed
 } tracetest_t;
 
 
@@ -385,7 +385,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 							return -1;
 					}
 
-					memcpy (&res->addr, &dst->sin6_addr, sizeof (res->addr));
+					memcpy (&res->addr, &dst, sizeof (res->addr));
 					res->result = TRACE_CLOSED; // FIXME: closed != EPROTO
 					res->end = true;
 					found = ttl;
@@ -401,7 +401,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				if (len >= 0)
 				{
 					/* Route determination complete! */
-					memcpy (&res->addr, &dst->sin6_addr, sizeof (res->addr));
+					memcpy (&res->addr, &dst, sizeof (res->addr));
 					res->result = 1 + len;
 					res->end = true;
 					found = ttl;
@@ -419,11 +419,10 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 					struct ip6_hdr inhdr;
 					uint8_t buf[1192];
 				} pkt;
-				struct sockaddr_in6 peer;
 				res->rhlim = -1;
 
 				ssize_t len = recv_payload (icmpfd, &pkt, sizeof (pkt),
-				                            &peer, &res->rhlim);
+				                            &res->addr, &res->rhlim);
 
 				if (len < (ssize_t)(sizeof (pkt.hdr) + sizeof (pkt.inhdr)))
 					continue; // too small
@@ -474,7 +473,6 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				}
 
 				res->result = TRACE_OK;
-				memcpy (&res->addr, &peer.sin6_addr, sizeof (res->addr));
 				tsdiff (&res->rtt, &sent, &recvd);
 				break; // response received, stop poll()ing
 			}
@@ -560,18 +558,9 @@ static inline void print_hlim (int hlim)
 }
 
 
-static inline void printipv6 (const struct in6_addr *ip6)
+static inline void printipv6 (const struct sockaddr_in6 *addr)
 {
-	struct sockaddr_in6 addr =
-	{
-		.sin6_family = AF_INET6,
-#ifdef HAVE_SA_LEN
-		.sin6_len = sizeof (struct sockaddr_in6),
-#endif
-		.sin6_addr = *ip6
-	};
-
-	printname ((struct sockaddr *)&addr, sizeof (addr));
+	printname ((struct sockaddr *)addr, sizeof (*addr));
 }
 
 
@@ -581,12 +570,11 @@ display (const tracetest_t *tab, unsigned min_ttl, unsigned max_ttl,
 {
 	for (unsigned ttl = min_ttl; ttl <= max_ttl; ttl++)
 	{
-		struct in6_addr hop;
+		struct sockaddr_in6 hop = { .sin6_family = AF_UNSPEC };
 		bool end = false;
 		const tracetest_t *line = tab + (retries * (ttl - min_ttl));
 
 		printf ("%2d ", ttl);
-		memset (&hop, 0, sizeof (hop));
 
 		for (unsigned col = 0; col < retries; col++)
 		{
