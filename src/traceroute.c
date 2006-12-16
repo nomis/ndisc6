@@ -181,35 +181,6 @@ tsdiff (struct timespec *res,
 }
 
 
-static inline void print_hlim (int hlim);
-static inline void printrtt (const struct timespec *rtt);
-static inline void print_unreach_code (int code);
-static void printname (const struct sockaddr *addr, size_t addrlen);
-
-
-static inline void
-prints6 (const struct sockaddr_in6 *addr)
-{
-	printname ((const struct sockaddr *)addr, sizeof (*addr));
-}
-
-static void
-printdelay (const struct timespec *from, const struct timespec *to)
-{
-	struct timespec rtt;
-	tsdiff (&rtt, from, to);
-	printrtt (&rtt);
-}
-
-
-static void
-print_icmp_code (const struct icmp6_hdr *hdr)
-{
-	if (hdr->icmp6_type == ICMP6_DST_UNREACH)
-		print_unreach_code (hdr->icmp6_code);
-}
-
-
 static ssize_t
 parse (trace_parser_t func, const void *data, size_t len,
        unsigned hlim, unsigned retry, uint16_t port)
@@ -312,17 +283,29 @@ out:
 }
 
 
+#define TRACE_TIMEOUT 0
+#define TRACE_OK      1
+#define TRACE_CLOSED  2
+#define TRACE_OPEN    3
+
+typedef struct
+{
+	struct in6_addr addr;  // hop address
+	struct timespec rtt;   // estimated round trip time
+	int             rhlim; // received hop limit
+	int             rcode; // ICMPv6 unreachable code or -1
+	unsigned        result;// 0: no reply, 1: ok, 2: closed, 3: open
+	bool            end;   // true: route determination completed
+} tracetest_t;
+
+
 static int
 probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
            unsigned ttl, unsigned retries, unsigned timeout, unsigned delay,
-           size_t plen)
+           size_t plen, tracetest_t *line)
 {
-	struct in6_addr hop; /* hop if known from previous probes */
-	unsigned n;
+	/* (0: not found, <0: unreachable, >0: reached) */
 	int found = 0;
-	int state = -1; /* type of response received so far (-1: none,
-		0: normal, 1: closed, 2: open) */
-	/* see also: found (0: not found, <0: unreachable, >0: reached) */
 	struct timespec delay_ts;
 	{
 		div_t d = div (delay, 1000);
@@ -330,12 +313,13 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		delay_ts.tv_nsec = d.rem * 1000000;
 	}
 
-	memset (&hop, 0, sizeof (hop));
-	printf ("%2d ", ttl);
 	setsockopt (protofd, SOL_IPV6, IPV6_UNICAST_HOPS, &ttl, sizeof (ttl));
 
-	for (n = 0; n < retries; n++)
+	for (unsigned n = 0; n < retries; n++)
 	{
+		// FIXME: ultimately, the results matrix should be transposed
+		// the current layout is really provisional
+		tracetest_t *res = line + n;
 		struct timespec sent, recvd;
 
 		mono_gettime (&sent);
@@ -365,7 +349,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 			if (val == 0)
 			{
-				fputs (" *", stdout);
+				res->result = TRACE_TIMEOUT;
 				break;
 			}
 
@@ -375,10 +359,11 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 			if (ufds[0].revents)
 			{
 				uint8_t buf[1240];
-				int hlim = -1;
 				ssize_t len;
+				res->rhlim = res->rcode = -1;
 
-				len = recv_payload (protofd, buf, sizeof (buf), NULL, &hlim);
+				len = recv_payload (protofd, buf, sizeof (buf), NULL,
+				                    &res->rhlim);
 				if (len < 0)
 				{
 					switch (errno)
@@ -400,13 +385,11 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 							return -1;
 					}
 
-					if (state == -1)
-					{
-						prints6 (dst);
-						state = 1;
-					}
-					printdelay (&sent, &recvd);
+					memcpy (&res->addr, &dst->sin6_addr, sizeof (res->addr));
+					res->result = TRACE_CLOSED; // FIXME: closed != EPROTO
+					res->end = true;
 					found = ttl;
+					tsdiff (&res->rtt, &sent, &recvd);
 					break; // response received, stop poll()ing
 				}
 
@@ -418,33 +401,11 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				if (len >= 0)
 				{
 					/* Route determination complete! */
-					if (state == -1)
-						prints6 (dst);
-
-					if (len != state)
-					{
-						const char *msg = NULL;
-
-						switch (len)
-						{
-							case 1:
-								msg = N_("closed");
-								break;
-
-							case 2:
-								msg = N_("open");
-								break;
-						}
-
-						if (msg != NULL)
-							printf ("[%s] ", msg);
-
-						state = len;
-					}
-
-					printdelay (&sent, &recvd);
-					print_hlim (hlim);
+					memcpy (&res->addr, &dst->sin6_addr, sizeof (res->addr));
+					res->result = 1 + len;
+					res->end = true;
 					found = ttl;
+					tsdiff (&res->rtt, &sent, &recvd);
 					break; // response received, stop poll()ing
 				}
 			}
@@ -459,10 +420,10 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 					uint8_t buf[1192];
 				} pkt;
 				struct sockaddr_in6 peer;
-				int hlim = -1;
+				res->rhlim = -1;
 
 				ssize_t len = recv_payload (icmpfd, &pkt, sizeof (pkt),
-				                            &peer, &hlim);
+				                            &peer, &res->rhlim);
 
 				if (len < (ssize_t)(sizeof (pkt.hdr) + sizeof (pkt.inhdr)))
 					continue; // too small
@@ -486,6 +447,8 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				switch (pkt.hdr.icmp6_type)
 				{
 					case ICMP6_DST_UNREACH:
+						res->rcode = pkt.hdr.icmp6_code;
+						res->end = true;
 						switch (pkt.hdr.icmp6_code)
 						{
 							case ICMP6_DST_UNREACH_NOPORT:
@@ -500,22 +463,19 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 					case ICMP6_TIME_EXCEEDED:
 						if (pkt.hdr.icmp6_code == ICMP6_TIME_EXCEED_TRANSIT)
+						{
+							res->rcode = -1;
+							res->end = false;
 							break;
+						}
 
 					default: // should not happen (ICMPv6 filter)
 						continue;
 				}
 
-				if ((state == -1) || memcmp (&hop, &peer.sin6_addr, 16))
-				{
-					memcpy (&hop, &peer.sin6_addr, 16);
-					prints6 (&peer);
-					state = 0;
-				}
-
-				printdelay (&sent, &recvd);
-				print_hlim (hlim);
-				print_icmp_code (&pkt.hdr);
+				res->result = TRACE_OK;
+				memcpy (&res->addr, &peer.sin6_addr, sizeof (res->addr));
+				tsdiff (&res->rtt, &sent, &recvd);
 				break; // response received, stop poll()ing
 			}
 		}
@@ -523,7 +483,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		if (delay)
 			mono_nanosleep (&delay_ts);
 	}
-	puts ("");
+
 	return found;
 }
 
@@ -599,7 +559,7 @@ static inline void print_hlim (int hlim)
 		printf (_("(%d) "), hlim);
 }
 
-#if 0
+
 static inline void printipv6 (const struct in6_addr *ip6)
 {
 	struct sockaddr_in6 addr =
@@ -615,41 +575,35 @@ static inline void printipv6 (const struct in6_addr *ip6)
 }
 
 
-typedef struct
-{
-	struct in6_addr addr;  // hop address
-	struct timespec rtt;   // estimated round trip time
-	int             rhlim; // received hop limit
-	int             rcode; // ICMPv6 unreachable code or -1
-	unsigned        result:2; // 0: no reply, 1: ok, 2: closed, 3: open
-	unsigned        end:1;
-} tracetest_t;
-
-
 static void
 display (const tracetest_t *tab, unsigned min_ttl, unsigned max_ttl,
          unsigned retries)
 {
 	for (unsigned ttl = min_ttl; ttl <= max_ttl; ttl++)
 	{
+		struct in6_addr hop;
 		bool end = false;
 		const tracetest_t *line = tab + (retries * (ttl - min_ttl));
+
 		printf ("%2d ", ttl);
+		memset (&hop, 0, sizeof (hop));
 
 		for (unsigned col = 0; col < retries; col++)
 		{
 			const tracetest_t *test = line + col;
 			if (test->end)
 				end = true;
-			if (test->result == 0)
+			if (test->result == TRACE_TIMEOUT)
 			{
 				fputs (" *", stdout);
 				continue;
 			}
 
-			if ((col == 0) || (test[-1].result == 0)
-			 || memcmp (&test[-1].addr, &test->addr, 16))
+			if ((col == 0) || memcmp (&hop, &test->addr, sizeof (hop)))
+			{
+				memcpy (&hop, &test->addr, sizeof (hop));
 				printipv6 (&test->addr);
+			}
 
 			printrtt (&test->rtt);
 
@@ -659,11 +613,11 @@ display (const tracetest_t *tab, unsigned min_ttl, unsigned max_ttl,
 
 				switch (test->result)
 				{
-					case 2:
+					case TRACE_CLOSED:
 						msg = N_("closed");
 						break;
 
-					case 3:
+					case TRACE_OPEN:
 						msg = N_("open");
 						break;
 
@@ -679,12 +633,12 @@ display (const tracetest_t *tab, unsigned min_ttl, unsigned max_ttl,
 			print_unreach_code (test->rcode);
 		}
 
-		puts (""); // new line
+		fputc ('\n', stdout);
 		if (end)
 			break;
 	}
 }
-#endif
+
 
 
 static int
@@ -983,12 +937,20 @@ traceroute (const char *dsthost, const char *dstport,
 
 	/* Performs traceroute */
 	int val = 0;
-	for (unsigned ttl = min_ttl; ttl <= max_ttl; ttl++)
+	if (max_ttl >= min_ttl)
 	{
-		val = probe_ttl (protofd, icmpfd, &dst, ttl,
-		                 retries, timeout, delay, packet_len);
-		if (val)
-			break;
+		tracetest_t tab[(1 + max_ttl - min_ttl) * retries];
+
+		for (unsigned ttl = min_ttl; ttl <= max_ttl; ttl++)
+		{
+			val = probe_ttl (protofd, icmpfd, &dst, ttl,
+			                 retries, timeout, delay, packet_len,
+			                 tab + retries * (ttl - min_ttl));
+			if (val)
+				break;
+		}
+
+		display (tab, min_ttl, max_ttl, retries);
 	}
 
 	/* Cleans up */
