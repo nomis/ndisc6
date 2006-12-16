@@ -185,6 +185,9 @@ static ssize_t
 parse (trace_parser_t func, const void *data, size_t len,
        unsigned hlim, unsigned retry, uint16_t port)
 {
+	if (func == NULL)
+		return -1;
+
 	unsigned rhlim, rretry;
 
 	ssize_t rc = func (data, len, &rhlim, &rretry, port);
@@ -392,9 +395,6 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 					tsdiff (&res->rtt, &sent, &recvd);
 					break; // response received, stop poll()ing
 				}
-
-				if (type->parse_resp == NULL)
-					continue;
 
 				len = parse (type->parse_resp, buf, len, ttl, n,
 				             dst->sin6_port);
