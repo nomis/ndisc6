@@ -936,6 +936,14 @@ traceroute (const char *dsthost, const char *dstport,
 
 			for (unsigned ttl = min_ttl; ttl <= max_ttl; ttl++)
 			{
+				if (isatty (1))
+				{
+					unsigned done = n * (max_ttl - min_ttl + 1);
+					done += ttl - min_ttl;
+					unsigned total = retries * (max_ttl - min_ttl + 1);
+					printf (_("%3u%% completed...\r"), 100 * done / total);
+				}
+
 				mono_gettime (&test->rtt);
 				if (type->send_probe (protofd, ttl, n, packet_len,
 				                      dst.sin6_port))
@@ -953,11 +961,6 @@ traceroute (const char *dsthost, const char *dstport,
 				}
 
 				test += retries;
-
-				if (isatty (1))
-					printf (_("%3u%% completed...\r"),
-					        100 * (retries * (ttl - min_ttl + 1) + n)
-					            / (retries * (max_ttl - min_ttl + 1)));
 			}
 
 			if (delay)
