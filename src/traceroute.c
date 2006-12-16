@@ -953,6 +953,11 @@ traceroute (const char *dsthost, const char *dstport,
 				}
 
 				test += retries;
+
+				if (isatty (1))
+					printf (_("%3u%% completed...\r"),
+					        100 * (retries * (ttl - min_ttl + 1) + n)
+					            / (retries * (max_ttl - min_ttl + 1)));
 			}
 
 			if (delay)
