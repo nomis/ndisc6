@@ -58,7 +58,7 @@ send_udp_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 	/*if (plen > sizeof (struct udphdr))
 		packet.payload[0] = (uint8_t)ttl;*/
 
-	return send_payload (fd, &packet, plen);
+	return send_payload (fd, &packet, plen, ttl);
 }
 
 

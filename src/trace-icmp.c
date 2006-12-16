@@ -53,7 +53,7 @@ send_echo_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 	packet.ih.icmp6_seq = htons ((ttl << 8) | (n & 0xff));
 	(void)port;
 
-	return send_payload (fd, &packet.ih, plen);
+	return send_payload (fd, &packet.ih, plen, ttl);
 }
 
 

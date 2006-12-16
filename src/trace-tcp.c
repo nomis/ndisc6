@@ -66,7 +66,7 @@ send_syn_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 	packet.th.th_flags = TH_SYN | (ecn ? (TH_ECE | TH_CWR) : 0);
 	packet.th.th_win = htons (TCP_WINDOW);
 
-	return send_payload (fd, &packet, plen);
+	return send_payload (fd, &packet, plen, ttl);
 }
 
 
@@ -143,7 +143,7 @@ send_ack_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 	packet.th.th_flags = TH_ACK;
 	packet.th.th_win = htons (TCP_WINDOW);
 
-	return send_payload (fd, &packet, plen);
+	return send_payload (fd, &packet, plen, ttl);
 }
 
 

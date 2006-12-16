@@ -42,7 +42,7 @@ typedef struct tracetype
 extern "C" {
 # endif
 
-ssize_t send_payload (int fd, const void *payload, size_t length);
+ssize_t send_payload (int fd, const void *payload, size_t length, int hlim);
 
 # ifdef __cplusplus
 }

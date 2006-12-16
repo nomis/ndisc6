@@ -102,10 +102,32 @@ static uint16_t getsourceport (void)
 }
 
 
-ssize_t send_payload (int fd, const void *payload, size_t length)
+ssize_t send_payload (int fd, const void *payload, size_t length, int hlim)
 {
-	ssize_t rc = send (fd, payload, length, 0);
+	char cbuf[CMSG_SPACE (sizeof (int))];
+	struct iovec iov =
+	{
+		.iov_base = (void *)payload,
+		.iov_len = length
+	};
+	struct msghdr hdr =
+	{
+		.msg_name = NULL,
+		.msg_namelen = 0,
+		.msg_iov = &iov,
+		.msg_iovlen = 1,
+		.msg_control = cbuf,
+		.msg_controllen = sizeof (cbuf)
+	};
 
+	struct cmsghdr *cmsg = CMSG_FIRSTHDR (&hdr);
+	cmsg->cmsg_level = IPPROTO_IPV6;
+	cmsg->cmsg_type = IPV6_HOPLIMIT;
+	cmsg->cmsg_len = CMSG_LEN (sizeof (hlim));
+
+	memcpy (CMSG_DATA (cmsg), &hlim, sizeof (hlim));
+
+	ssize_t rc = sendmsg (fd, &hdr, 0);
 	if (rc == (ssize_t)length)
 		return 0;
 
@@ -149,7 +171,6 @@ recv_payload (int fd, void *buf, size_t len,
 
 	return val;
 }
-
 
 
 static bool has_port (int protocol)
@@ -315,8 +336,6 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		delay_ts.tv_sec = d.quot;
 		delay_ts.tv_nsec = d.rem * 1000000;
 	}
-
-	setsockopt (protofd, SOL_IPV6, IPV6_UNICAST_HOPS, &ttl, sizeof (ttl));
 
 	for (unsigned n = 0; n < retries; n++)
 	{
