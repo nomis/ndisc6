@@ -576,13 +576,13 @@ display (const tracetest_t *tab, unsigned min_ttl, unsigned max_ttl,
 	{
 		struct sockaddr_in6 hop = { .sin6_family = AF_UNSPEC };
 		bool end = false;
-		const tracetest_t *line = tab + ttl - min_ttl;
+		const tracetest_t *line = tab + retries * (ttl - min_ttl);
 
 		printf ("%2d ", ttl);
 
 		for (unsigned col = 0; col < retries; col++)
 		{
-			const tracetest_t *test = line + (max_ttl - min_ttl) * col;
+			const tracetest_t *test = line + col;
 			if (test->end)
 				end = true;
 			if (test->result == TRACE_TIMEOUT)
@@ -935,16 +935,18 @@ traceroute (const char *dsthost, const char *dstport,
 	{
 		tracetest_t tab[(1 + max_ttl - min_ttl) * retries];
 
-		for (unsigned n = 0; n < retries; n++)
+		for (unsigned ttl = min_ttl; ttl <= max_ttl; ttl++)
 		{
-			for (unsigned ttl = min_ttl; ttl <= max_ttl; ttl++)
+			for (unsigned n = 0; n < retries; n++)
 			{
-				val = probe_ttl (protofd, icmpfd, &dst, ttl, n,
-				                 timeout, delay, packet_len,
-				                 tab + (max_ttl - min_ttl) * n
-				                     + ttl - min_ttl);
-				if (val)
-					break;
+				int res = probe_ttl (protofd, icmpfd, &dst, ttl, n,
+				                     timeout, delay, packet_len,
+				                     tab + retries * (ttl - min_ttl) + n);
+				if (res && (val <= 0))
+				{
+					val = res;
+					max_ttl = ttl;
+				}
 			}
 		}
 
