@@ -438,9 +438,12 @@ proto_recv (int fd, tracetest_t *res, int n, int *hlim,
 
 static int
 probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
-       unsigned n, unsigned timeout, tracetest_t *res)
+       unsigned attempt, int min_hlim, int max_hlim, unsigned timeout,
+       tracetest_t *res)
 {
-	for (;;)
+	int found = 0;
+
+	for (int pending = max_hlim + 1 - min_hlim; pending > 0;)
 	{
 		struct pollfd ufds[2];
 
@@ -458,8 +461,8 @@ probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		val = poll (ufds, 2, val > 0 ? val : 0);
 		mono_gettime (&recvd);
 
-		if (val < 0) /* interrupted by signal - well, not really */
-			return -1;
+		if (val < 0)
+			continue;
 		if (val == 0)
 			break;
 
@@ -467,10 +470,11 @@ probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		if (ufds[0].revents)
 		{
 			int hlim;
-			if (proto_recv (protofd, res, n, &hlim, dst) > 0)
+			if (proto_recv (protofd, res, attempt, &hlim, dst) > 0)
 			{
 				tsdiff (&res->rtt, &res->rtt, &recvd);
-				return 1;
+				pending--;
+				found = hlim;
 			}
 		}
 
@@ -478,21 +482,26 @@ probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		if (ufds[1].revents)
 		{
 			int hlim;
-			val = icmp_recv (icmpfd, res, n, &hlim, dst);
+			val = icmp_recv (icmpfd, res, attempt, &hlim, dst);
 			tsdiff (&res->rtt, &res->rtt, &recvd);
 
-			switch (val)
+			if (val)
 			{
-				case 1:
-					return 0; // TTL exceeded
-				case 2:
-					return -1; // unreachable
-				case 3:
-					return 1; // reached (port unreachable)
+				pending--;
+				switch (val)
+				{
+					case 2:
+						if (found <= 0)
+							found = -hlim; // unreachable
+						break;
+					case 3:
+						found = hlim; // reached (port unreachable)
+				}
 			}
 		}
 	}
-	return 0;
+
+	return found;
 }
 
 
@@ -960,7 +969,7 @@ traceroute (const char *dsthost, const char *dstport,
 					return -1;
 				}
 
-				int res = probe (protofd, icmpfd, &dst, n, timeout, test);
+				int res = probe (protofd, icmpfd, &dst, n, ttl, ttl, timeout, test);
 				if (res && (val <= 0))
 				{
 					val = res;
