@@ -325,7 +325,7 @@ typedef struct
 
 static int
 icmp_recv (int fd, tracetest_t *res, int n, int *hlim,
-           const struct sockaddr_in6 *dst, const struct timespec *recvd)
+           const struct sockaddr_in6 *dst)
 {
 	struct
 	{
@@ -384,14 +384,13 @@ icmp_recv (int fd, tracetest_t *res, int n, int *hlim,
 	}
 
 	res->result = TRACE_OK;
-	tsdiff (&res->rtt, &res->rtt, recvd);
 	return retval; // response received
 }
 
 
 static int
 proto_recv (int fd, tracetest_t *res, int n, int *hlim,
-            const struct sockaddr_in6 *dst, const struct timespec *recvd)
+            const struct sockaddr_in6 *dst)
 {
 	res->rhlim = res->rcode = -1;
 
@@ -402,7 +401,8 @@ proto_recv (int fd, tracetest_t *res, int n, int *hlim,
 	{
 		switch (errno)
 		{
-#ifdef EPROTO
+#if 0 //def EPROTO
+			// FIXME: need to determine hop limit :(
 			case EPROTO:
 				/* Parameter problem seemingly can't be read from
 				 * the ICMPv6 socket, regardless of the filter. */
@@ -418,11 +418,11 @@ proto_recv (int fd, tracetest_t *res, int n, int *hlim,
 				perror (_("Receive error"));
 				return 0;
 		}
-
+#if 0
 		memcpy (&res->addr, dst, sizeof (res->addr));
 		res->result = TRACE_CLOSED; // FIXME: closed != EPROTO
-		tsdiff (&res->rtt, &res->rtt, recvd);
 		return 1; // response received
+#endif
 	}
 
 	len = parse (type->parse_resp, buf, len, hlim, n, dst->sin6_port);
@@ -432,7 +432,6 @@ proto_recv (int fd, tracetest_t *res, int n, int *hlim,
 	/* Route determination complete! */
 	memcpy (&res->addr, dst, sizeof (res->addr));
 	res->result = 1 + len;
-	tsdiff (&res->rtt, &res->rtt, recvd);
 	return 1; // response received
 }
 
@@ -472,15 +471,21 @@ probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		if (ufds[0].revents)
 		{
 			int hlim;
-			if (proto_recv (protofd, res, n, &hlim, dst, &recvd) > 0)
+			if (proto_recv (protofd, res, n, &hlim, dst) > 0)
+			{
+				tsdiff (&res->rtt, &res->rtt, &recvd);
 				return 1;
+			}
 		}
 
 		/* Receive ICMP errors along the way */
 		if (ufds[1].revents)
 		{
 			int hlim;
-			switch (icmp_recv (icmpfd, res, n, &hlim, dst, &recvd))
+			int r = icmp_recv (icmpfd, res, n, &hlim, dst);
+			tsdiff (&res->rtt, &res->rtt, &recvd);
+
+			switch (r)
 			{
 				case 1:
 					return 0; // TTL exceeded
