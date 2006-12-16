@@ -320,17 +320,127 @@ typedef struct
 	int                 rhlim; // received hop limit
 	int                 rcode; // ICMPv6 unreachable code or -1
 	unsigned            result;// 0: no reply, 1: ok, 2: closed, 3: open
-	bool                end;   // true: route determination completed
 } tracetest_t;
+
+
+static int
+icmp_recv (int fd, tracetest_t *res, int n, int *hlim,
+           const struct sockaddr_in6 *dst, const struct timespec *recvd)
+{
+	struct
+	{
+		struct icmp6_hdr hdr;
+		struct ip6_hdr inhdr;
+		uint8_t buf[1192];
+	} pkt;
+	res->rhlim = -1;
+
+	ssize_t len = recv_payload (fd, &pkt, sizeof (pkt), &res->addr,
+	                            &res->rhlim);
+
+	if (len < (ssize_t)(sizeof (pkt.hdr) + sizeof (pkt.inhdr)))
+		return 0; // too small
+
+	len -= sizeof (pkt.hdr) + sizeof (pkt.inhdr);
+
+	const void *buf = skip_exthdrs (&pkt.inhdr, (size_t *)&len);
+
+	if (memcmp (&pkt.inhdr.ip6_dst, &dst->sin6_addr, 16))
+		return 0; // wrong destination
+
+	if (pkt.inhdr.ip6_nxt != type->protocol)
+		return 0; // wrong protocol
+
+	len = parse (type->parse_err, buf, len, hlim, n, dst->sin6_port);
+	if (len < 0)
+		return 0;
+
+	/* interesting CMPv6 error */
+	int retval = 1;
+	switch (pkt.hdr.icmp6_type)
+	{
+		case ICMP6_DST_UNREACH:
+			res->rcode = pkt.hdr.icmp6_code;
+			switch (pkt.hdr.icmp6_code)
+			{
+				case ICMP6_DST_UNREACH_NOPORT:
+					retval = 3;
+					break;
+
+				default:
+					retval = 2;
+			}
+			break;
+
+		case ICMP6_TIME_EXCEEDED:
+			if (pkt.hdr.icmp6_code == ICMP6_TIME_EXCEED_TRANSIT)
+			{
+				res->rcode = -1;
+				break;
+			}
+			// fall through
+		default: // should not happen (ICMPv6 filter)
+			return 0;
+	}
+
+	res->result = TRACE_OK;
+	tsdiff (&res->rtt, &res->rtt, recvd);
+	return retval; // response received
+}
+
+
+static int
+proto_recv (int fd, tracetest_t *res, int n, int *hlim,
+            const struct sockaddr_in6 *dst, const struct timespec *recvd)
+{
+	res->rhlim = res->rcode = -1;
+
+	uint8_t buf[1240];
+	ssize_t len = recv_payload (fd, buf, sizeof (buf), NULL,
+	                            &res->rhlim);
+	if (len < 0)
+	{
+		switch (errno)
+		{
+#ifdef EPROTO
+			case EPROTO:
+				/* Parameter problem seemingly can't be read from
+				 * the ICMPv6 socket, regardless of the filter. */
+				break;
+#endif
+
+			case EAGAIN:
+			case ECONNREFUSED:
+				return 0;
+
+			default:
+				/* These are very bad errors (-> bugs) */
+				perror (_("Receive error"));
+				return 0;
+		}
+
+		memcpy (&res->addr, dst, sizeof (res->addr));
+		res->result = TRACE_CLOSED; // FIXME: closed != EPROTO
+		tsdiff (&res->rtt, &res->rtt, recvd);
+		return 1; // response received
+	}
+
+	len = parse (type->parse_resp, buf, len, hlim, n, dst->sin6_port);
+	if (len < 0)
+		return 0;
+
+	/* Route determination complete! */
+	memcpy (&res->addr, dst, sizeof (res->addr));
+	res->result = 1 + len;
+	tsdiff (&res->rtt, &res->rtt, recvd);
+	return 1; // response received
+}
 
 
 static int
 probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
        unsigned n, unsigned timeout, tracetest_t *res)
 {
-	/* (0: not found, -1: unreachable, 1: reached) */
-	int found = 0;
-
 	for (;;)
 	{
 		struct pollfd ufds[2];
@@ -361,125 +471,27 @@ probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		/* Receive final packet when host reached */
 		if (ufds[0].revents)
 		{
-			uint8_t buf[1240];
-			ssize_t len;
-			res->rhlim = res->rcode = -1;
-
-			len = recv_payload (protofd, buf, sizeof (buf), NULL,
-			                    &res->rhlim);
-			if (len < 0)
-			{
-				switch (errno)
-				{
-#ifdef EPROTO
-					case EPROTO:
-						/* Parameter problem seemingly can't be read from
-						 * the ICMPv6 socket, regardless of the filter. */
-						break;
-#endif
-
-					case EAGAIN:
-					case ECONNREFUSED:
-						continue;
-
-					default:
-						/* These are very bad errors (-> bugs) */
-						perror (_("Receive error"));
-						return -1;
-				}
-
-				memcpy (&res->addr, &dst, sizeof (res->addr));
-				res->result = TRACE_CLOSED; // FIXME: closed != EPROTO
-				res->end = true;
-				found = 1;
-				tsdiff (&res->rtt, &res->rtt, &recvd);
-				break; // response received, stop poll()ing
-			}
-
 			int hlim;
-			len = parse (type->parse_resp, buf, len, &hlim, n,
-			             dst->sin6_port);
-			if (len >= 0)
-			{
-				/* Route determination complete! */
-				memcpy (&res->addr, &dst, sizeof (res->addr));
-				res->result = 1 + len;
-				res->end = true;
-				found = 1;
-				tsdiff (&res->rtt, &res->rtt, &recvd);
-				break; // response received, stop poll()ing
-			}
+			if (proto_recv (protofd, res, n, &hlim, dst, &recvd) > 0)
+				return 1;
 		}
 
 		/* Receive ICMP errors along the way */
 		if (ufds[1].revents)
 		{
-			struct
-			{
-				struct icmp6_hdr hdr;
-				struct ip6_hdr inhdr;
-				uint8_t buf[1192];
-			} pkt;
-			res->rhlim = -1;
-
-			ssize_t len = recv_payload (icmpfd, &pkt, sizeof (pkt),
-			                            &res->addr, &res->rhlim);
-
-			if (len < (ssize_t)(sizeof (pkt.hdr) + sizeof (pkt.inhdr)))
-				continue; // too small
-
-			len -= sizeof (pkt.hdr) + sizeof (pkt.inhdr);
-
-			const void *buf = skip_exthdrs (&pkt.inhdr, (size_t *)&len);
-
-			if (memcmp (&pkt.inhdr.ip6_dst, &dst->sin6_addr, 16))
-				continue; // wrong destination
-
-			if (pkt.inhdr.ip6_nxt != type->protocol)
-				continue; // wrong protocol
-
 			int hlim;
-			len = parse (type->parse_err, buf, len, &hlim, n,
-			             dst->sin6_port);
-			if (len < 0)
-				continue;
-
-			/* genuine ICMPv6 error that concerns us */
-			switch (pkt.hdr.icmp6_type)
+			switch (icmp_recv (icmpfd, res, n, &hlim, dst, &recvd))
 			{
-				case ICMP6_DST_UNREACH:
-					res->rcode = pkt.hdr.icmp6_code;
-					res->end = true;
-					switch (pkt.hdr.icmp6_code)
-					{
-						case ICMP6_DST_UNREACH_NOPORT:
-							found = 1;
-							break;
-
-						default:
-							found = -1;
-					}
-					break;
-
-				case ICMP6_TIME_EXCEEDED:
-					if (pkt.hdr.icmp6_code == ICMP6_TIME_EXCEED_TRANSIT)
-					{
-						res->rcode = -1;
-						res->end = false;
-						break;
-					}
-
-				default: // should not happen (ICMPv6 filter)
-					continue;
+				case 1:
+					return 0; // TTL exceeded
+				case 2:
+					return -1; // unreachable
+				case 3:
+					return 1; // reached (port unreachable)
 			}
-
-			res->result = TRACE_OK;
-			tsdiff (&res->rtt, &res->rtt, &recvd);
-			break; // response received, stop poll()ing
 		}
 	}
-
-	return found;
+	return 0;
 }
 
 
@@ -561,7 +573,6 @@ display (const tracetest_t *tab, unsigned min_ttl, unsigned max_ttl,
 	for (unsigned ttl = min_ttl; ttl <= max_ttl; ttl++)
 	{
 		struct sockaddr_in6 hop = { .sin6_family = AF_UNSPEC };
-		bool end = false;
 		const tracetest_t *line = tab + retries * (ttl - min_ttl);
 
 		printf ("%2d ", ttl);
@@ -569,8 +580,6 @@ display (const tracetest_t *tab, unsigned min_ttl, unsigned max_ttl,
 		for (unsigned col = 0; col < retries; col++)
 		{
 			const tracetest_t *test = line + col;
-			if (test->end)
-				end = true;
 			if (test->result == TRACE_TIMEOUT)
 			{
 				fputs (" *", stdout);
@@ -614,8 +623,6 @@ display (const tracetest_t *tab, unsigned min_ttl, unsigned max_ttl,
 		}
 
 		fputc ('\n', stdout);
-		if (end)
-			break;
 	}
 }
 
@@ -965,6 +972,8 @@ traceroute (const char *dsthost, const char *dstport,
 				mono_nanosleep (&delay_ts);
 		}
 
+		if (isatty (1))
+			fputs (_("                 \r"), stdout);
 		display (tab, min_ttl, max_ttl, retries);
 	}
 
