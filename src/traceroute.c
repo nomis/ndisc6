@@ -330,7 +330,6 @@ probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 {
 	/* (0: not found, -1: unreachable, 1: reached) */
 	int found = 0;
-	struct timespec recvd;
 
 	for (;;)
 	{
@@ -342,6 +341,7 @@ probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		ufds[1].fd = icmpfd;
 		ufds[1].events = POLLIN;
 
+		struct timespec recvd;
 		mono_gettime (&recvd);
 		int val = ((res->rtt.tv_sec + timeout - recvd.tv_sec) * 1000)
 			+ (int)((res->rtt.tv_nsec - recvd.tv_nsec) / 1000000);
@@ -457,8 +457,7 @@ probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 							break;
 
 						default:
-							if (found == 0)
-								found = -1;
+							found = -1;
 					}
 					break;
 
