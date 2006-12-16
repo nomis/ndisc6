@@ -493,13 +493,16 @@ printname (const struct sockaddr *addr, size_t addrlen)
 {
 	char buf[NI_MAXHOST];
 
-	if (getnameinfo (addr, addrlen, buf, sizeof (buf), NULL, 0, niflags))
-		return;
-	printf (" %s", buf);
+	int c = getnameinfo (addr, addrlen, buf, sizeof (buf), NULL, 0, niflags);
+	if (c == 0)
+		printf (" %s", buf);
 
 	if (getnameinfo (addr, addrlen, buf, sizeof (buf), NULL, 0,
 	                 NI_NUMERICHOST | niflags))
 		return;
+	if (c != 0)
+		printf (" %s", buf); // work around DNS resolution failure
+
 	printf (" (%s) ", buf);
 }
 
