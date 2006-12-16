@@ -215,10 +215,7 @@ parse (trace_parser_t func, const void *data, size_t len,
 		return -1;
 
 	unsigned rretry;
-	unsigned dummy = -1;
-
-	ssize_t rc = func (data, len, &dummy, &rretry, port);
-	*hlim = dummy;
+	ssize_t rc = func (data, len, hlim, &rretry, port);
 	if (rc < 0)
 		return rc;
 

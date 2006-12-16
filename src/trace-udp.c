@@ -63,7 +63,7 @@ send_udp_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 
 
 static ssize_t
-parse_udp_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
+parse_udp_error (const void *data, size_t len, int *ttl, unsigned *n,
                  uint16_t port)
 {
 	const struct udphdr *puh = (const struct udphdr *)data;

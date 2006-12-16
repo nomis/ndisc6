@@ -58,7 +58,7 @@ send_echo_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 
 
 static ssize_t
-parse_echo_reply (const void *data, size_t len, unsigned *ttl, unsigned *n,
+parse_echo_reply (const void *data, size_t len, int *ttl, unsigned *n,
                   uint16_t port)
 {
 	const struct icmp6_hdr *pih = (const struct icmp6_hdr *)data;
@@ -77,7 +77,7 @@ parse_echo_reply (const void *data, size_t len, unsigned *ttl, unsigned *n,
 
 
 static ssize_t
-parse_echo_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
+parse_echo_error (const void *data, size_t len, int *ttl, unsigned *n,
                   uint16_t port)
 {
 	const struct icmp6_hdr *pih = (const struct icmp6_hdr *)data;

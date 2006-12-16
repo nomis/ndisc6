@@ -71,7 +71,7 @@ send_syn_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 
 
 static ssize_t
-parse_syn_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
+parse_syn_resp (const void *data, size_t len, int *ttl, unsigned *n,
                 uint16_t port)
 {
 	const struct tcphdr *pth = (const struct tcphdr *)data;
@@ -96,7 +96,7 @@ parse_syn_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
 
 
 static ssize_t
-parse_syn_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
+parse_syn_error (const void *data, size_t len, int *ttl, unsigned *n,
                  uint16_t port)
 {
 	const struct tcphdr *pth = (const struct tcphdr *)data;
@@ -148,7 +148,7 @@ send_ack_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 
 
 static ssize_t
-parse_ack_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
+parse_ack_resp (const void *data, size_t len, int *ttl, unsigned *n,
                 uint16_t port)
 {
 	const struct tcphdr *pth = (const struct tcphdr *)data;
@@ -174,7 +174,7 @@ parse_ack_resp (const void *data, size_t len, unsigned *ttl, unsigned *n,
 
 
 static ssize_t
-parse_ack_error (const void *data, size_t len, unsigned *ttl, unsigned *n,
+parse_ack_error (const void *data, size_t len, int *ttl, unsigned *n,
                  uint16_t port)
 {
 	const struct tcphdr *pth = (const struct tcphdr *)data;

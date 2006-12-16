@@ -26,7 +26,7 @@ typedef ssize_t (*trace_send_t) (int fd, unsigned ttl, unsigned n,
                                  size_t plen, uint16_t port);
 
 typedef ssize_t (*trace_parser_t) (const void *restrict data, size_t len,
-                                   unsigned *restrict ttl,
+                                   int *restrict ttl,
                                    unsigned *restrict n, uint16_t port);
 
 typedef struct tracetype
