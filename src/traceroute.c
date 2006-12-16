@@ -331,18 +331,11 @@ typedef struct
 static int
 probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
            unsigned ttl, unsigned n, unsigned timeout,
-           size_t plen, tracetest_t *res)
+           tracetest_t *res)
 {
 	/* (0: not found, <0: unreachable, >0: reached) */
 	int found = 0;
-	struct timespec sent, recvd;
-
-	mono_gettime (&sent);
-	if (type->send_probe (protofd, ttl, n, plen, dst->sin6_port))
-	{
-		perror (_("Cannot send packet"));
-		return -1;
-	}
+	struct timespec recvd;
 
 	for (;;)
 	{
@@ -355,8 +348,8 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		ufds[1].events = POLLIN;
 
 		mono_gettime (&recvd);
-		int val = ((sent.tv_sec + timeout - recvd.tv_sec) * 1000)
-			+ (int)((sent.tv_nsec - recvd.tv_nsec) / 1000000);
+		int val = ((res->rtt.tv_sec + timeout - recvd.tv_sec) * 1000)
+			+ (int)((res->rtt.tv_nsec - recvd.tv_nsec) / 1000000);
 
 		val = poll (ufds, 2, val > 0 ? val : 0);
 		if (val < 0) /* interrupted by signal - well, not really */
@@ -404,7 +397,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				res->result = TRACE_CLOSED; // FIXME: closed != EPROTO
 				res->end = true;
 				found = ttl;
-				tsdiff (&res->rtt, &sent, &recvd);
+				tsdiff (&res->rtt, &res->rtt, &recvd);
 				break; // response received, stop poll()ing
 			}
 
@@ -417,7 +410,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				res->result = 1 + len;
 				res->end = true;
 				found = ttl;
-				tsdiff (&res->rtt, &sent, &recvd);
+				tsdiff (&res->rtt, &res->rtt, &recvd);
 				break; // response received, stop poll()ing
 			}
 		}
@@ -485,7 +478,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 			}
 
 			res->result = TRACE_OK;
-			tsdiff (&res->rtt, &sent, &recvd);
+			tsdiff (&res->rtt, &res->rtt, &recvd);
 			break; // response received, stop poll()ing
 		}
 	}
@@ -939,16 +932,27 @@ traceroute (const char *dsthost, const char *dstport,
 
 		for (unsigned n = 0; n < retries; n++)
 		{
+			tracetest_t *test = tab + n;
+
 			for (unsigned ttl = min_ttl; ttl <= max_ttl; ttl++)
 			{
+				mono_gettime (&test->rtt);
+				if (type->send_probe (protofd, ttl, n, packet_len,
+				                      dst.sin6_port))
+				{
+					perror (_("Cannot send packet"));
+					return -1;
+				}
+
 				int res = probe_ttl (protofd, icmpfd, &dst, ttl, n,
-				                     timeout, packet_len,
-				                     tab + retries * (ttl - min_ttl) + n);
+				                     timeout, test);
 				if (res && (val <= 0))
 				{
 					val = res;
 					max_ttl = ttl;
 				}
+
+				test += retries;
 			}
 
 			if (delay)
