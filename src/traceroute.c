@@ -456,16 +456,12 @@ probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 			+ (int)((res->rtt.tv_nsec - recvd.tv_nsec) / 1000000);
 
 		val = poll (ufds, 2, val > 0 ? val : 0);
+		mono_gettime (&recvd);
+
 		if (val < 0) /* interrupted by signal - well, not really */
 			return -1;
-
 		if (val == 0)
-		{
-			res->result = TRACE_TIMEOUT;
 			break;
-		}
-
-		mono_gettime (&recvd);
 
 		/* Receive final packet when host reached */
 		if (ufds[0].revents)
@@ -482,10 +478,10 @@ probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		if (ufds[1].revents)
 		{
 			int hlim;
-			int r = icmp_recv (icmpfd, res, n, &hlim, dst);
+			val = icmp_recv (icmpfd, res, n, &hlim, dst);
 			tsdiff (&res->rtt, &res->rtt, &recvd);
 
-			switch (r)
+			switch (val)
 			{
 				case 1:
 					return 0; // TTL exceeded
@@ -940,6 +936,7 @@ traceroute (const char *dsthost, const char *dstport,
 	if (max_ttl >= min_ttl)
 	{
 		tracetest_t tab[(1 + max_ttl - min_ttl) * retries];
+		memset (tab, 0, sizeof (tab));
 
 		for (unsigned n = 0; n < retries; n++)
 		{
