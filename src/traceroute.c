@@ -166,56 +166,39 @@ static bool has_port (int protocol)
 }
 
 
-/* Performs reverse lookup; print hostname and address */
-static void
-printname (const struct sockaddr *addr, size_t addrlen)
+static inline void
+tsdiff (struct timespec *res,
+        const struct timespec *from, const struct timespec *to)
 {
-	char buf[NI_MAXHOST];
-
-	if (getnameinfo (addr, addrlen, buf, sizeof (buf), NULL, 0, niflags))
-		return;
-	printf (" %s", buf);
-
-	if (getnameinfo (addr, addrlen, buf, sizeof (buf), NULL, 0,
-	                 NI_NUMERICHOST | niflags))
-		return;
-	printf (" (%s) ", buf);
+	res->tv_sec = to->tv_sec - from->tv_sec;
+	if (to->tv_nsec < from->tv_nsec)
+	{
+		res->tv_sec--;
+		res->tv_nsec = 1000000000 + to->tv_nsec - from->tv_nsec;
+	}
+	else
+		res->tv_nsec = to->tv_nsec - from->tv_nsec;
 }
 
 
+static inline void print_hlim (int hlim);
+static inline void printrtt (const struct timespec *rtt);
+static inline void print_unreach_code (int code);
+static void printname (const struct sockaddr *addr, size_t addrlen);
+
+
 static inline void
-printipv6 (const struct sockaddr_in6 *addr)
+prints6 (const struct sockaddr_in6 *addr)
 {
 	printname ((const struct sockaddr *)addr, sizeof (*addr));
 }
 
-
-/* Prints delay between two dates */
 static void
 printdelay (const struct timespec *from, const struct timespec *to)
 {
-	div_t d = div ((to->tv_nsec - from->tv_nsec) / 1000, 1000);
-
-	/*
-	 * For some stupid reasons, div() returns a negative remainder when
-	 * the numerator is negative, instead of following the mathematician
-	 * convention that the remainder always be positive.
-	 */
-	if (d.rem < 0)
-	{
-		d.quot--;
-		d.rem += 1000;
-	}
-	d.quot += 1000 * (to->tv_sec - from->tv_sec);
-
-	printf (_(" %u.%03u ms "), (unsigned)(d.quot), (unsigned)d.rem);
-}
-
-
-static inline void print_hlim (int hlim)
-{
-	if (hlim != -1)
-		printf (_("(%d) "), hlim);
+	struct timespec rtt;
+	tsdiff (&rtt, from, to);
+	printrtt (&rtt);
 }
 
 
@@ -223,31 +206,7 @@ static void
 print_icmp_code (const struct icmp6_hdr *hdr)
 {
 	if (hdr->icmp6_type == ICMP6_DST_UNREACH)
-	{
-		/* No path to destination */
-		char c = '\0';
-
-		switch (hdr->icmp6_code)
-		{
-			case ICMP6_DST_UNREACH_NOROUTE:
-				c = 'N';
-				break;
-
-			case ICMP6_DST_UNREACH_ADMIN:
-				c = 'S';
-				break;
-
-			case ICMP6_DST_UNREACH_ADDR:
-				c = 'H';
-				break;
-
-			case ICMP6_DST_UNREACH_NOPORT:
-				break;
-		}
-
-		if (c)
-			printf ("!%c ", c);
-	}
+		print_unreach_code (hdr->icmp6_code);
 }
 
 
@@ -443,7 +402,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 					if (state == -1)
 					{
-						printipv6 (dst);
+						prints6 (dst);
 						state = 1;
 					}
 					printdelay (&sent, &recvd);
@@ -460,7 +419,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				{
 					/* Route determination complete! */
 					if (state == -1)
-						printipv6 (dst);
+						prints6 (dst);
 
 					if (len != state)
 					{
@@ -550,7 +509,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				if ((state == -1) || memcmp (&hop, &peer.sin6_addr, 16))
 				{
 					memcpy (&hop, &peer.sin6_addr, 16);
-					printipv6 (&peer);
+					prints6 (&peer);
 					state = 0;
 				}
 
@@ -567,6 +526,165 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 	puts ("");
 	return found;
 }
+
+
+/* Performs reverse lookup; print hostname and address */
+static void
+printname (const struct sockaddr *addr, size_t addrlen)
+{
+	char buf[NI_MAXHOST];
+
+	if (getnameinfo (addr, addrlen, buf, sizeof (buf), NULL, 0, niflags))
+		return;
+	printf (" %s", buf);
+
+	if (getnameinfo (addr, addrlen, buf, sizeof (buf), NULL, 0,
+	                 NI_NUMERICHOST | niflags))
+		return;
+	printf (" (%s) ", buf);
+}
+
+
+static inline void
+printrtt (const struct timespec *rtt)
+{
+	div_t d = div (rtt->tv_nsec / 1000, 1000);
+
+	/*
+	 * For some stupid reasons, div() returns a negative remainder when
+	 * the numerator is negative, instead of following the mathematicians
+	 * convention that the remainder always be positive.
+	 */
+	if (d.rem < 0)
+	{
+		d.quot--;
+		d.rem += 1000;
+	}
+	d.quot += 1000 * rtt->tv_sec;
+
+	printf (_(" %u.%03u ms "), (unsigned)(d.quot), (unsigned)d.rem);
+}
+
+
+static inline void
+print_unreach_code (int code)
+{
+	char c = '\0';
+
+	switch (code)
+	{
+		case ICMP6_DST_UNREACH_NOROUTE:
+			c = 'N';
+			break;
+		case ICMP6_DST_UNREACH_ADMIN:
+			c = 'S';
+			break;
+
+		case ICMP6_DST_UNREACH_ADDR:
+			c = 'H';
+			break;
+
+		case ICMP6_DST_UNREACH_NOPORT:
+			break;
+	}
+
+	if (c)
+		printf ("!%c ", c);
+}
+
+
+static inline void print_hlim (int hlim)
+{
+	if (hlim != -1)
+		printf (_("(%d) "), hlim);
+}
+
+#if 0
+static inline void printipv6 (const struct in6_addr *ip6)
+{
+	struct sockaddr_in6 addr =
+	{
+		.sin6_family = AF_INET6,
+#ifdef HAVE_SA_LEN
+		.sin6_len = sizeof (struct sockaddr_in6),
+#endif
+		.sin6_addr = *ip6
+	};
+
+	printname ((struct sockaddr *)&addr, sizeof (addr));
+}
+
+
+typedef struct
+{
+	struct in6_addr addr;  // hop address
+	struct timespec rtt;   // estimated round trip time
+	int             rhlim; // received hop limit
+	int             rcode; // ICMPv6 unreachable code or -1
+	unsigned        result:2; // 0: no reply, 1: ok, 2: closed, 3: open
+	unsigned        end:1;
+} tracetest_t;
+
+
+static void
+display (const tracetest_t *tab, unsigned min_ttl, unsigned max_ttl,
+         unsigned retries)
+{
+	for (unsigned ttl = min_ttl; ttl <= max_ttl; ttl++)
+	{
+		bool end = false;
+		const tracetest_t *line = tab + (retries * (ttl - min_ttl));
+		printf ("%2d ", ttl);
+
+		for (unsigned col = 0; col < retries; col++)
+		{
+			const tracetest_t *test = line + col;
+			if (test->end)
+				end = true;
+			if (test->result == 0)
+			{
+				fputs (" *", stdout);
+				continue;
+			}
+
+			if ((col == 0) || (test[-1].result == 0)
+			 || memcmp (&test[-1].addr, &test->addr, 16))
+				printipv6 (&test->addr);
+
+			printrtt (&test->rtt);
+
+			if ((col == 0) || (test[-1].result != test->result))
+			{
+				const char *msg;
+
+				switch (test->result)
+				{
+					case 2:
+						msg = N_("closed");
+						break;
+
+					case 3:
+						msg = N_("open");
+						break;
+
+					default:
+						msg = NULL;
+				}
+
+				if (msg != NULL)
+					printf ("[%s] ", msg);
+			}
+
+			print_hlim (test->rhlim);
+			print_unreach_code (test->rcode);
+		}
+
+		puts (""); // new line
+		if (end)
+			break;
+	}
+}
+#endif
 
 
 static int
@@ -920,7 +1038,7 @@ usage (const char *path)
 "  -s  specify the source IPv6 address of probe packets\n"
 "  -t  set traffic class of probe packets\n"
 "  -U  send UDP probes (default)\n"
-"  -V, --version  display program version and exit\n"
+"  -V  display program version and exit\n"
 /*"  -v, --verbose  display all kind of ICMPv6 errors\n"*/
 "  -w  override the timeout for response in seconds (default: 5)\n"
 "  -z  specify a time to wait (in ms) between each probes (default: 0)\n"
