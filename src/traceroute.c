@@ -209,19 +209,18 @@ tsdiff (struct timespec *res,
 
 static ssize_t
 parse (trace_parser_t func, const void *data, size_t len,
-       unsigned hlim, unsigned retry, uint16_t port)
+       int *hlim, unsigned retry, uint16_t port)
 {
 	if (func == NULL)
 		return -1;
 
-	unsigned rhlim, rretry;
+	unsigned rretry;
+	unsigned dummy = -1;
 
-	ssize_t rc = func (data, len, &rhlim, &rretry, port);
+	ssize_t rc = func (data, len, &dummy, &rretry, port);
+	*hlim = dummy;
 	if (rc < 0)
 		return rc;
-
-	if (rhlim != hlim)
-		return -1;
 
 	if ((rretry != (unsigned)(-1)) && (rretry != retry))
 		return -1;
@@ -329,11 +328,10 @@ typedef struct
 
 
 static int
-probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
-           unsigned ttl, unsigned n, unsigned timeout,
-           tracetest_t *res)
+probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
+       unsigned n, unsigned timeout, tracetest_t *res)
 {
-	/* (0: not found, <0: unreachable, >0: reached) */
+	/* (0: not found, -1: unreachable, 1: reached) */
 	int found = 0;
 	struct timespec recvd;
 
@@ -396,12 +394,13 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				memcpy (&res->addr, &dst, sizeof (res->addr));
 				res->result = TRACE_CLOSED; // FIXME: closed != EPROTO
 				res->end = true;
-				found = ttl;
+				found = 1;
 				tsdiff (&res->rtt, &res->rtt, &recvd);
 				break; // response received, stop poll()ing
 			}
 
-			len = parse (type->parse_resp, buf, len, ttl, n,
+			int hlim;
+			len = parse (type->parse_resp, buf, len, &hlim, n,
 			             dst->sin6_port);
 			if (len >= 0)
 			{
@@ -409,7 +408,7 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				memcpy (&res->addr, &dst, sizeof (res->addr));
 				res->result = 1 + len;
 				res->end = true;
-				found = ttl;
+				found = 1;
 				tsdiff (&res->rtt, &res->rtt, &recvd);
 				break; // response received, stop poll()ing
 			}
@@ -442,7 +441,8 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 			if (pkt.inhdr.ip6_nxt != type->protocol)
 				continue; // wrong protocol
 
-			len = parse (type->parse_err, buf, len, ttl, n,
+			int hlim;
+			len = parse (type->parse_err, buf, len, &hlim, n,
 			             dst->sin6_port);
 			if (len < 0)
 				continue;
@@ -456,12 +456,12 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 					switch (pkt.hdr.icmp6_code)
 					{
 						case ICMP6_DST_UNREACH_NOPORT:
-							found = ttl;
+							found = 1;
 							break;
 
 						default:
 							if (found == 0)
-								found = -ttl;
+								found = -1;
 					}
 					break;
 
@@ -955,8 +955,7 @@ traceroute (const char *dsthost, const char *dstport,
 					return -1;
 				}
 
-				int res = probe_ttl (protofd, icmpfd, &dst, ttl, n,
-				                     timeout, test);
+				int res = probe (protofd, icmpfd, &dst, n, timeout, test);
 				if (res && (val <= 0))
 				{
 					val = res;
