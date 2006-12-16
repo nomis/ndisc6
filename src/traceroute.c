@@ -531,6 +531,9 @@ print_unreach_code (int code)
 
 	switch (code)
 	{
+		case -1:
+			break;
+
 		case ICMP6_DST_UNREACH_NOROUTE:
 			c = 'N';
 			break;
@@ -548,19 +551,6 @@ print_unreach_code (int code)
 
 	if (c)
 		printf ("!%c ", c);
-}
-
-
-static inline void print_hlim (int hlim)
-{
-	if (hlim != -1)
-		printf (_("(%d) "), hlim);
-}
-
-
-static inline void printipv6 (const struct sockaddr_in6 *addr)
-{
-	printname ((struct sockaddr *)addr, sizeof (*addr));
 }
 
 
@@ -590,7 +580,7 @@ display (const tracetest_t *tab, unsigned min_ttl, unsigned max_ttl,
 			if ((col == 0) || memcmp (&hop, &test->addr, sizeof (hop)))
 			{
 				memcpy (&hop, &test->addr, sizeof (hop));
-				printipv6 (&test->addr);
+				printname ((struct sockaddr *)&hop, sizeof (hop));
 			}
 
 			printrtt (&test->rtt);
@@ -617,7 +607,9 @@ display (const tracetest_t *tab, unsigned min_ttl, unsigned max_ttl,
 					printf ("[%s] ", msg);
 			}
 
-			print_hlim (test->rhlim);
+			if (test->rhlim != -1)
+				printf (_("(%d) "), test->rhlim);
+
 			print_unreach_code (test->rcode);
 		}
 
