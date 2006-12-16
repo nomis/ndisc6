@@ -438,7 +438,7 @@ proto_recv (int fd, tracetest_t *res, int n, int *hlim,
 
 static int
 probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
-       unsigned n, unsigned timeout, tracetest_t *res)
+       unsigned n, const struct timespec *deadline, tracetest_t *res)
 {
 	for (;;)
 	{
@@ -452,8 +452,8 @@ probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 
 		struct timespec recvd;
 		mono_gettime (&recvd);
-		int val = ((res->rtt.tv_sec + timeout - recvd.tv_sec) * 1000)
-			+ (int)((res->rtt.tv_nsec - recvd.tv_nsec) / 1000000);
+		int val = ((deadline->tv_sec  - recvd.tv_sec ) * 1000)
+		   + (int)((deadline->tv_nsec - recvd.tv_nsec) / 1000000);
 
 		val = poll (ufds, 2, val > 0 ? val : 0);
 		mono_gettime (&recvd);
@@ -960,7 +960,10 @@ traceroute (const char *dsthost, const char *dstport,
 					return -1;
 				}
 
-				int res = probe (protofd, icmpfd, &dst, n, timeout, test);
+				struct timespec deadline = test->rtt;
+				deadline.tv_sec += timeout;
+
+				int res = probe (protofd, icmpfd, &dst, n, &deadline, test);
 				if (res && (val <= 0))
 				{
 					val = res;
