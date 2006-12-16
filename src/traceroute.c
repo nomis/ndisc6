@@ -187,6 +187,11 @@ static bool has_port (int protocol)
 }
 
 
+/**
+ * Stores difference between two struct timespec in a third struct timespec.
+ * The destination CAN be one (or both) term of the difference,
+ * and both terms can be identical (though this is rather pointless).
+ */
 static inline void
 tsdiff (struct timespec *res,
         const struct timespec *from, const struct timespec *to)
