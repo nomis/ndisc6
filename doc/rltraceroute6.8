@@ -195,8 +195,9 @@ The IPv6 header has no checksum field.
 
 .TP
 .B "\-z"
-Specify a milliseconds delay to wait between each probe. This can be useful to
-work-around ICMPv6 rate limitation on some hosts.
+Specify a milliseconds delay to wait between each probe
+with identical hop limit.
+This can be useful to work-around ICMPv6 rate limitation on some hosts.
 
 .SH SECURITY
 .RI "rltraceroute6 should be " "setuid" " " "root" " to allow use by non "

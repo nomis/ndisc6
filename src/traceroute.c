@@ -325,7 +325,7 @@ typedef struct
 
 static int
 probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
-           unsigned ttl, unsigned n, unsigned timeout, unsigned delay,
+           unsigned ttl, unsigned n, unsigned timeout,
            size_t plen, tracetest_t *res)
 {
 	/* (0: not found, <0: unreachable, >0: reached) */
@@ -483,17 +483,6 @@ probe_ttl (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 			tsdiff (&res->rtt, &sent, &recvd);
 			break; // response received, stop poll()ing
 		}
-	}
-
-	if (delay)
-	{
-		struct timespec delay_ts;
-		{
-			div_t d = div (delay, 1000);
-			delay_ts.tv_sec = d.quot;
-			delay_ts.tv_nsec = d.rem * 1000000;
-		}
-		mono_nanosleep (&delay_ts);
 	}
 
 	return found;
@@ -929,18 +918,26 @@ traceroute (const char *dsthost, const char *dstport,
 	packet_len -= 40;
 	/* FIXME: should we take Routing Header into account? */
 
+	struct timespec delay_ts;
+	if (delay)
+	{
+		div_t d = div (delay, 1000);
+		delay_ts.tv_sec = d.quot;
+		delay_ts.tv_nsec = d.rem * 1000000;
+	}
+
 	/* Performs traceroute */
 	int val = 0;
 	if (max_ttl >= min_ttl)
 	{
 		tracetest_t tab[(1 + max_ttl - min_ttl) * retries];
 
-		for (unsigned ttl = min_ttl; ttl <= max_ttl; ttl++)
+		for (unsigned n = 0; n < retries; n++)
 		{
-			for (unsigned n = 0; n < retries; n++)
+			for (unsigned ttl = min_ttl; ttl <= max_ttl; ttl++)
 			{
 				int res = probe_ttl (protofd, icmpfd, &dst, ttl, n,
-				                     timeout, delay, packet_len,
+				                     timeout, packet_len,
 				                     tab + retries * (ttl - min_ttl) + n);
 				if (res && (val <= 0))
 				{
@@ -948,6 +945,9 @@ traceroute (const char *dsthost, const char *dstport,
 					max_ttl = ttl;
 				}
 			}
+
+			if (delay)
+				mono_nanosleep (&delay_ts);
 		}
 
 		display (tab, min_ttl, max_ttl, retries);
