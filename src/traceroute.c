@@ -372,6 +372,18 @@ icmp_recv (int fd, tracetest_t *res, int *attempt, int *hlim,
 			}
 			break;
 
+		case ICMP6_PARAM_PROB:
+			switch (pkt.hdr.icmp6_code)
+			{
+				case ICMP6_PARAMPROB_NEXTHEADER:
+					retval = 3;
+					break;
+
+				default:
+					retval = 2;
+			}
+			break;
+
 		case ICMP6_TIME_EXCEEDED:
 			if (pkt.hdr.icmp6_code == ICMP6_TIME_EXCEED_TRANSIT)
 			{
@@ -401,16 +413,11 @@ proto_recv (int fd, tracetest_t *res, int *attempt, int *hlim,
 	{
 		switch (errno)
 		{
-#if 0 //def EPROTO
-			// FIXME: need to determine hop limit :(
-			case EPROTO:
-				/* Parameter problem seemingly can't be read from
-				 * the ICMPv6 socket, regardless of the filter. */
-				break;
-#endif
-
 			case EAGAIN:
 			case ECONNREFUSED:
+#ifdef EPROTO
+			case EPROTO:
+#endif
 				return 0;
 
 			default:
@@ -418,11 +425,6 @@ proto_recv (int fd, tracetest_t *res, int *attempt, int *hlim,
 				perror (_("Receive error"));
 				return 0;
 		}
-#if 0
-		memcpy (&res->addr, dst, sizeof (res->addr));
-		res->result = TRACE_CLOSED; // FIXME: closed != EPROTO
-		return 1; // response received
-#endif
 	}
 
 	len = parse (type->parse_resp, buf, len, hlim, attempt, dst->sin6_port);
@@ -882,6 +884,7 @@ traceroute (const char *dsthost, const char *dstport,
 		ICMP6_FILTER_SETBLOCKALL (&f);
 		ICMP6_FILTER_SETPASS (ICMP6_DST_UNREACH, &f);
 		ICMP6_FILTER_SETPASS (ICMP6_TIME_EXCEEDED, &f);
+		ICMP6_FILTER_SETPASS (ICMP6_PARAM_PROB, &f);
 		setsockopt (icmpfd, SOL_ICMPV6, ICMP6_FILTER, &f, sizeof (f));
 	}
 
