@@ -60,7 +60,8 @@ dnl AC_DEFINE_UNQUOTED(PACKAGE_HOST, "$host",
 dnl                    [Define to the canonical host-system name])
 
 # Checks for header files.
-dnl AS_MESSAGE([checking header files...])
+AS_MESSAGE([checking header files...])
+AC_HEADER_ASSERT
 
 
 # Checks for typedefs, structures, and compiler characteristics.
