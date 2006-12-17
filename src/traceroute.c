@@ -29,6 +29,7 @@
 #include <limits.h>
 #include <stdbool.h>
 #include <time.h> /* nanosleep() */
+#include <assert.h>
 
 #include <unistd.h>
 #include <poll.h>
@@ -209,18 +210,16 @@ tsdiff (struct timespec *res,
 
 static ssize_t
 parse (trace_parser_t func, const void *data, size_t len,
-       int *hlim, unsigned retry, uint16_t port)
+       int *hlim, int *attempt, uint16_t port)
 {
 	if (func == NULL)
 		return -1;
 
-	unsigned rretry;
-	ssize_t rc = func (data, len, hlim, &rretry, port);
+	unsigned dummy = -1;
+	ssize_t rc = func (data, len, hlim, &dummy, port);
+	*attempt = dummy;
 	if (rc < 0)
 		return rc;
-
-	if ((rretry != (unsigned)(-1)) && (rretry != retry))
-		return -1;
 
 	return rc;
 }
@@ -325,7 +324,7 @@ typedef struct
 
 
 static int
-icmp_recv (int fd, tracetest_t *res, int n, int *hlim,
+icmp_recv (int fd, tracetest_t *res, int *attempt, int *hlim,
            const struct sockaddr_in6 *dst)
 {
 	struct
@@ -352,7 +351,7 @@ icmp_recv (int fd, tracetest_t *res, int n, int *hlim,
 	if (pkt.inhdr.ip6_nxt != type->protocol)
 		return 0; // wrong protocol
 
-	len = parse (type->parse_err, buf, len, hlim, n, dst->sin6_port);
+	len = parse (type->parse_err, buf, len, hlim, attempt, dst->sin6_port);
 	if (len < 0)
 		return 0;
 
@@ -390,7 +389,7 @@ icmp_recv (int fd, tracetest_t *res, int n, int *hlim,
 
 
 static int
-proto_recv (int fd, tracetest_t *res, int n, int *hlim,
+proto_recv (int fd, tracetest_t *res, int *attempt, int *hlim,
             const struct sockaddr_in6 *dst)
 {
 	res->rhlim = res->rcode = -1;
@@ -426,7 +425,7 @@ proto_recv (int fd, tracetest_t *res, int n, int *hlim,
 #endif
 	}
 
-	len = parse (type->parse_resp, buf, len, hlim, n, dst->sin6_port);
+	len = parse (type->parse_resp, buf, len, hlim, attempt, dst->sin6_port);
 	if (len < 0)
 		return 0;
 
@@ -439,8 +438,8 @@ proto_recv (int fd, tracetest_t *res, int n, int *hlim,
 
 static int
 probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
-       unsigned n, const struct timespec *deadline,
-       tracetest_t *res, int *hlim)
+       const struct timespec *deadline,
+       tracetest_t *res, int *hlim, int *attempt)
 {
 	for (;;)
 	{
@@ -471,7 +470,7 @@ probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		/* Receive final packet when host reached */
 		if (ufds[0].revents)
 		{
-			if (proto_recv (protofd, res, n, hlim, dst) > 0)
+			if (proto_recv (protofd, res, attempt, hlim, dst) > 0)
 			{
 				res->rcvd = recvd;
 				return 1;
@@ -481,7 +480,7 @@ probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		/* Receive ICMP errors along the way */
 		if (ufds[1].revents)
 		{
-			val = icmp_recv (icmpfd, res, n, hlim, dst);
+			val = icmp_recv (icmpfd, res, attempt, hlim, dst);
 			if (val)
 				res->rcvd = recvd;
 
@@ -944,63 +943,88 @@ traceroute (const char *dsthost, const char *dstport,
 		tracetest_t tab[(1 + max_ttl - min_ttl) * retries];
 		memset (tab, 0, sizeof (tab));
 
-		for (unsigned n = 0; n < retries; n++)
+		for (unsigned step = 1;
+		     step < (1 + max_ttl - min_ttl) + retries;
+		     step++)
 		{
-			tracetest_t *test = tab + n;
+			unsigned pending = 0;
 
 			/* Sends requests */
-			for (int ttl = min_ttl; ttl <= max_ttl; ttl++)
+			for (unsigned i = 0; i < retries; i++)
 			{
-				if (type->send_probe (protofd, ttl, n, packet_len,
+				int attempt = (retries - 1) - i;
+				int hlim = min_ttl + step + i - retries;
+
+				if ((hlim > max_ttl) || (hlim < min_ttl))
+					continue;
+
+				tracetest_t *t = tab + (hlim - min_ttl) * retries + attempt;
+				assert (t >= tab);
+				assert (t < tab + (sizeof (tab) / sizeof (tab[0])));
+
+				printf ("Sending  (hlim = %d, attempt = %d) ", hlim, attempt);
+				printf ("at offset %d\n", t - tab);
+				if (type->send_probe (protofd, hlim, attempt, packet_len,
 				                      dst.sin6_port))
 				{
 					perror (_("Cannot send packet"));
 					return -1;
 				}
-				mono_gettime (&test->sent);
-				test += retries;
+
+				mono_gettime (&t->sent);
+				pending++;
 			}
 
 			struct timespec deadline;
 			mono_gettime (&deadline);
 			deadline.tv_sec += timeout;
-			test = tab + n;
 
 			/* Receives replies */
-			for (int got = 0; got < max_ttl + 1 - min_ttl;)
+			printf ("Waiting for %u replies...\n", pending);
+			while (pending > 0)
 			{
 				tracetest_t results;
 				int hlim = -1;
-				int res = probe (protofd, icmpfd, &dst, n, &deadline,
-				                 &results, &hlim);
-
-				if ((hlim >= min_ttl) && (hlim <= max_ttl))
-				{
-					tracetest_t *p = test + retries * (hlim - min_ttl);
-					if (p->result == TRACE_TIMEOUT)
-					{
-						struct timespec buf = p->sent;
-						memcpy (p, &results, sizeof (*p));
-						p->sent = buf;
-						got++;
-						if (isatty (1))
-						{
-							unsigned done = n * (max_ttl - min_ttl + 1) + got;
-							unsigned tot = retries * (max_ttl - min_ttl + 1);
-							printf (_("%3u%% completed...\r"),
-							        100 * done / tot);
-						}
-					}
-
-					if (res && (val <= 0))
-					{
-						val = res > 0 ? 1 : -1; // sign <-> reachability
-						max_ttl = hlim;
-					}
-				}
+				int attempt = -1;
+				int res = probe (protofd, icmpfd, &dst, &deadline,
+				                 &results, &hlim, &attempt);
 
 				if (hlim == -1)
-					break; // timeout
+					break;
+
+				if ((hlim > max_ttl) || (hlim < min_ttl))
+					continue;
+
+				if (attempt == -1)
+					attempt = min_ttl + step - (hlim + 1);
+
+				if ((attempt < 0) || ((unsigned)attempt >= retries))
+					continue;
+
+				tracetest_t *t = tab + (hlim - min_ttl) * retries + attempt;
+				assert (t >= tab);
+				assert (t < tab + (sizeof (tab) / sizeof (tab[0])));
+
+				if (t->result == TRACE_TIMEOUT)
+				{
+					struct timespec buf = t->sent;
+					memcpy (t, &results, sizeof (*t));
+					t->sent = buf;
+					pending--;
+					/*if (isatty (1))
+					{
+						unsigned done = n * (max_ttl - min_ttl + 1) + got;
+						unsigned tot = retries * (max_ttl - min_ttl + 1);
+						printf (_("%3u%% completed...\r"),
+						        100 * done / tot);
+					}*/
+				}
+
+				if (res && (val <= 0))
+				{
+					val = res > 0 ? 1 : -1; // sign <-> reachability
+					max_ttl = hlim;
+				}
 			}
 
 			if (delay)
