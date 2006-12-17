@@ -1029,11 +1029,16 @@ traceroute (const char *dsthost, const char *dstport,
 					max_ttl = hlim;
 				}
 			}
-		}
 
-		if (isatty (1))
-			fputs (_("                 \r"), stdout);
-		display (tab, min_ttl, max_ttl, retries);
+			if (isatty (1))
+				fputs (_("                 \r"), stdout);
+
+			if (step >= retries)
+			{
+				int hl = min_ttl + step - retries;
+				display (tab + retries *(hl - min_ttl), hl, hl, retries);
+			}
+		}
 	}
 
 	/* Cleans up */
