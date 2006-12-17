@@ -1032,7 +1032,7 @@ traceroute (const char *dsthost, const char *dstport,
 			}
 
 			if (isatty (1))
-				fputs (_("                 \r"), stdout);
+				fputs (_("                  \r"), stdout);
 
 			if (step >= retries)
 			{
