@@ -307,10 +307,18 @@ out:
 }
 
 
-#define TRACE_TIMEOUT 0
-#define TRACE_OK      1
-#define TRACE_CLOSED  2
-#define TRACE_OPEN    3
+#define TRACE_TIMEOUT     0
+#define TRACE_OK          1 // TTL exceeded, echo reply, port unreachable...
+#define TRACE_CLOSED      2
+#define TRACE_OPEN        3
+#define TRACE_NOROUTE 0x100 // !N network unreachable
+#define TRACE_ADMIN   0x101 // !A administratively prohibited
+#define TRACE_NOHOST  0x103 // !H address unreachable
+//#define TRACE_TOOBIG  0x100 // !F-%u packet too big
+//#define TRACE_NOSUP   0x400 // header field error
+#define TRACE_NOPROTO 0x401 // !P unrecognized next header
+//#define TRACE_NOOPT 0x402 // unrecognized option
+
 
 typedef struct
 {
@@ -318,7 +326,6 @@ typedef struct
 	struct timespec     sent;  // request date
 	struct timespec     rcvd;  // reply date
 	int                 rhlim; // received hop limit
-	int                 rcode; // ICMPv6 unreachable code or -1
 	unsigned            result;// 0: no reply, 1: ok, 2: closed, 3: open
 } tracetest_t;
 
@@ -357,18 +364,24 @@ icmp_recv (int fd, tracetest_t *res, int *attempt, int *hlim,
 
 	/* interesting CMPv6 error */
 	int retval = 1;
+	res->result = TRACE_OK;
+
 	switch (pkt.hdr.icmp6_type)
 	{
 		case ICMP6_DST_UNREACH:
-			res->rcode = pkt.hdr.icmp6_code;
 			switch (pkt.hdr.icmp6_code)
 			{
 				case ICMP6_DST_UNREACH_NOPORT:
 					retval = 3;
 					break;
 
+				case ICMP6_DST_UNREACH_NOROUTE:
+				case ICMP6_DST_UNREACH_ADMIN:
+				case ICMP6_DST_UNREACH_ADDR:
+					res->result = 0x100 | pkt.hdr.icmp6_code;
 				default:
 					retval = 2;
+					break;
 			}
 			break;
 
@@ -376,6 +389,7 @@ icmp_recv (int fd, tracetest_t *res, int *attempt, int *hlim,
 			switch (pkt.hdr.icmp6_code)
 			{
 				case ICMP6_PARAMPROB_NEXTHEADER:
+					res->result = 0x400 | pkt.hdr.icmp6_code;
 					retval = 3;
 					break;
 
@@ -386,16 +400,12 @@ icmp_recv (int fd, tracetest_t *res, int *attempt, int *hlim,
 
 		case ICMP6_TIME_EXCEEDED:
 			if (pkt.hdr.icmp6_code == ICMP6_TIME_EXCEED_TRANSIT)
-			{
-				res->rcode = -1;
 				break;
-			}
 			// fall through
 		default: // should not happen (ICMPv6 filter)
 			return 0;
 	}
 
-	res->result = TRACE_OK;
 	return retval; // response received
 }
 
@@ -404,7 +414,7 @@ static int
 proto_recv (int fd, tracetest_t *res, int *attempt, int *hlim,
             const struct sockaddr_in6 *dst)
 {
-	res->rhlim = res->rcode = -1;
+	res->rhlim = -1;
 
 	uint8_t buf[1240];
 	ssize_t len = recv_payload (fd, buf, sizeof (buf), NULL,
@@ -542,36 +552,6 @@ printrtt (const struct timespec *rtt)
 }
 
 
-static inline void
-print_unreach_code (int code)
-{
-	char c = '\0';
-
-	switch (code)
-	{
-		case -1:
-			break;
-
-		case ICMP6_DST_UNREACH_NOROUTE:
-			c = 'N';
-			break;
-		case ICMP6_DST_UNREACH_ADMIN:
-			c = 'S';
-			break;
-
-		case ICMP6_DST_UNREACH_ADDR:
-			c = 'H';
-			break;
-
-		case ICMP6_DST_UNREACH_NOPORT:
-			break;
-	}
-
-	if (c)
-		printf ("!%c ", c);
-}
-
-
 static void
 display (const tracetest_t *tab, unsigned min_ttl, unsigned max_ttl,
          unsigned retries)
@@ -609,11 +589,11 @@ display (const tracetest_t *tab, unsigned min_ttl, unsigned max_ttl,
 				switch (test->result)
 				{
 					case TRACE_CLOSED:
-						msg = N_("closed");
+						msg = N_("[closed] ");
 						break;
 
 					case TRACE_OPEN:
-						msg = N_("open");
+						msg = N_("[open] ");
 						break;
 
 					default:
@@ -621,13 +601,37 @@ display (const tracetest_t *tab, unsigned min_ttl, unsigned max_ttl,
 				}
 
 				if (msg != NULL)
-					printf ("[%s] ", msg);
+					fputs (gettext (msg), stdout);
 			}
 
 			if (test->rhlim != -1)
 				printf (_("(%d) "), test->rhlim);
 
-			print_unreach_code (test->rcode);
+			const char *msg2;
+			switch (test->result)
+			{
+				case TRACE_NOROUTE:
+					msg2 = "!N ";
+					break;
+
+				case TRACE_ADMIN:
+					msg2 = "!A ";
+					break;
+
+				case TRACE_NOHOST:
+					msg2 = "!H ";
+					break;
+
+				case TRACE_NOPROTO:
+					msg2 = "!P ";
+					break;
+
+				default:
+					msg2 = NULL;
+			}
+
+			if (msg2 != NULL)
+				fputs (gettext (msg2), stdout);
 		}
 
 		fputc ('\n', stdout);
