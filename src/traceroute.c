@@ -507,18 +507,25 @@ static void
 printname (const struct sockaddr *addr, size_t addrlen)
 {
 	char buf[NI_MAXHOST];
+	int flags = niflags;
 
-	int c = getnameinfo (addr, addrlen, buf, sizeof (buf), NULL, 0, niflags);
+	int c = getnameinfo (addr, addrlen, buf, sizeof (buf), NULL, 0, flags);
 	if (c == 0)
-		printf (" %s", buf);
+	{
+		printf (" %s ", buf);
 
-	if (getnameinfo (addr, addrlen, buf, sizeof (buf), NULL, 0,
-	                 NI_NUMERICHOST | niflags))
-		return;
+		if (flags & NI_NUMERICHOST)
+			return;
+	}
+	flags |= NI_NUMERICHOST;
+
+	if (getnameinfo (addr, addrlen, buf, sizeof (buf), NULL, 0, flags))
+		strcpy (buf, "???");
+
 	if (c != 0)
-		printf (" %s", buf); // work around DNS resolution failure
+		printf (" %s ", buf); // work around DNS resolution failure
 
-	printf (" (%s) ", buf);
+	printf ("(%s) ", buf);
 }
 
 
