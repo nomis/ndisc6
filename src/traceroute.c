@@ -471,11 +471,9 @@ probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 		/* Receive final packet when host reached */
 		if (ufds[0].revents)
 		{
-			printf ("\nEnd? hlim = %d\n", *hlim);
 			if (proto_recv (protofd, res, n, hlim, dst) > 0)
 			{
 				res->rcvd = recvd;
-				printf ("\nEnd: hlim = %d\n", *hlim);
 				return 1;
 			}
 		}
