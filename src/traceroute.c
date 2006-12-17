@@ -363,25 +363,18 @@ icmp_recv (int fd, tracetest_t *res, int *attempt, int *hlim,
 		return 0;
 
 	/* interesting CMPv6 error */
-	int retval = 1;
-	res->result = TRACE_OK;
-
 	switch (pkt.hdr.icmp6_type)
 	{
 		case ICMP6_DST_UNREACH:
 			switch (pkt.hdr.icmp6_code)
 			{
-				case ICMP6_DST_UNREACH_NOPORT:
-					retval = 3;
-					break;
-
 				case ICMP6_DST_UNREACH_NOROUTE:
 				case ICMP6_DST_UNREACH_ADMIN:
 				case ICMP6_DST_UNREACH_ADDR:
 					res->result = 0x100 | pkt.hdr.icmp6_code;
-				default:
-					retval = 2;
 					break;
+				case ICMP6_DST_UNREACH_NOPORT:
+					res->result = TRACE_OK;
 			}
 			break;
 
@@ -390,23 +383,21 @@ icmp_recv (int fd, tracetest_t *res, int *attempt, int *hlim,
 			{
 				case ICMP6_PARAMPROB_NEXTHEADER:
 					res->result = 0x400 | pkt.hdr.icmp6_code;
-					retval = 3;
-					break;
-
-				default:
-					retval = 2;
 			}
 			break;
 
 		case ICMP6_TIME_EXCEEDED:
 			if (pkt.hdr.icmp6_code == ICMP6_TIME_EXCEED_TRANSIT)
-				break;
-			// fall through
+			{
+				res->result = TRACE_OK;
+				return 1; // intermediary reponse
+			}
 		default: // should not happen (ICMPv6 filter)
 			return 0;
 	}
 
-	return retval; // response received
+	// final response received
+	return memcmp (&res->addr.sin6_addr, &dst->sin6_addr, 16) ? 2 : 3;
 }
 
 
@@ -503,7 +494,7 @@ probe (int protofd, int icmpfd, const struct sockaddr_in6 *dst,
 				case 2:
 					return -1; // unreachable
 				case 3:
-					return 1; // reached (port unreachable)
+					return 1; // reached
 			}
 		}
 	}
