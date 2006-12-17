@@ -949,6 +949,9 @@ traceroute (const char *dsthost, const char *dstport,
 		{
 			unsigned pending = 0;
 
+			if (delay && (step > 1))
+				mono_nanosleep (&delay_ts);
+
 			/* Sends requests */
 			for (unsigned i = 0; i < retries; i++)
 			{
@@ -1026,9 +1029,6 @@ traceroute (const char *dsthost, const char *dstport,
 					max_ttl = hlim;
 				}
 			}
-
-			if (delay)
-				mono_nanosleep (&delay_ts);
 		}
 
 		if (isatty (1))
