@@ -1,5 +1,5 @@
 RELEASE NOTES for NDisc6
-version 0.7.4
+version 0.9.0
 =========================
 $Id$
 
@@ -13,7 +13,14 @@ informations on this program, see README. For syntax details, read the
 provided manual pages.
 
 ============================================================================
-STABLE RELEASE 0.7.4 : ?
+TEST RELEASE 0.9.0 : Major features enhancement, major bug fixes
+
+# traceroute6 parallelized in a safe manner.
+# traceroute6 handles Parameter Problem / Next Header errors better.
+# traceroute6 prints numerical IPv6 address when DNS fails.
+
+============================================================================
+STABLE RELEASE 0.7.4 : Minor feature enhancement
 
 # traceroute6 can send TCP probes of different sizes.
 
