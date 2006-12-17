@@ -943,11 +943,17 @@ traceroute (const char *dsthost, const char *dstport,
 		tracetest_t tab[(1 + max_ttl - min_ttl) * retries];
 		memset (tab, 0, sizeof (tab));
 
-		for (unsigned step = 1;
+		for (unsigned step = 1, progress = 0;
 		     step < (1 + max_ttl - min_ttl) + retries;
 		     step++)
 		{
 			unsigned pending = 0;
+
+			if (isatty (1))
+			{
+				unsigned total = retries * (max_ttl - min_ttl + 1);
+				printf (_(" %3u%% completed...\r"), 100 * progress / total);
+			}
 
 			if (delay && (step > 1))
 				mono_nanosleep (&delay_ts);
@@ -965,8 +971,6 @@ traceroute (const char *dsthost, const char *dstport,
 				assert (t >= tab);
 				assert (t < tab + (sizeof (tab) / sizeof (tab[0])));
 
-				printf ("Sending  (hlim = %d, attempt = %d) ", hlim, attempt);
-				printf ("at offset %d\n", t - tab);
 				if (type->send_probe (protofd, hlim, attempt, packet_len,
 				                      dst.sin6_port))
 				{
@@ -983,7 +987,6 @@ traceroute (const char *dsthost, const char *dstport,
 			deadline.tv_sec += timeout;
 
 			/* Receives replies */
-			printf ("Waiting for %u replies...\n", pending);
 			while (pending > 0)
 			{
 				tracetest_t results;
@@ -1014,13 +1017,13 @@ traceroute (const char *dsthost, const char *dstport,
 					memcpy (t, &results, sizeof (*t));
 					t->sent = buf;
 					pending--;
-					/*if (isatty (1))
+
+					if (isatty (1))
 					{
-						unsigned done = n * (max_ttl - min_ttl + 1) + got;
-						unsigned tot = retries * (max_ttl - min_ttl + 1);
-						printf (_("%3u%% completed...\r"),
-						        100 * done / tot);
-					}*/
+						unsigned total = retries * (max_ttl - min_ttl + 1);
+						printf (_(" %3u%% completed...\r"),
+						        100 * ++progress / total);
+					}
 				}
 
 				if (res && (val <= 0))
