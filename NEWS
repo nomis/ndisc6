@@ -18,6 +18,7 @@ TEST RELEASE 0.9.0 : Major features enhancement, major bug fixes
 # traceroute6 parallelized in a safe manner.
 # traceroute6 handles Parameter Problem / Next Header errors better.
 # traceroute6 prints numerical IPv6 address when DNS fails.
+# traceroute6 includes IPv6 and extensions headers in packet size.
 
 ============================================================================
 STABLE RELEASE 0.7.4 : Minor feature enhancement

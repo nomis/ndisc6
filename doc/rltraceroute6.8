@@ -218,10 +218,10 @@ versions below 2.6.17.12.
 Receiving TCP/SYN-ACK packets does not work on FreeBSD at all.
 This severely limits the usefulness of tcptraceroute6 on FreeBSD.
 
-Packet length does not take the IPv6 extension headers into account, however
-it includes IPv6 header.
+Packet length takes the IPv6 header and, if present, extension headers
+into account.
 rltraceroute6 versions before 0.7.4 used it as IPv6 payload length instead,
-i.e. did not include the IPv6 header in the computation.
+i.e. did not include the layer-3 headers in the computation.
 Linux iputils traceroute6 does not even include the UDP header.
 On the whole, the packet length semantic is very inconsistent among IPv6
 traceroute implementations.

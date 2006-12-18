@@ -899,6 +899,17 @@ traceroute (const char *dsthost, const char *dstport,
 		goto error;
 	}
 
+	/* Set ICMPv6 filter for echo replies */
+	if (type->protocol == IPPROTO_ICMPV6)
+	{
+		// NOTE: we assume any ICMP probes type uses ICMP echo
+		struct icmp6_filter f;
+
+		ICMP6_FILTER_SETBLOCKALL (&f);
+		ICMP6_FILTER_SETPASS (ICMP6_ECHO_REPLY, &f);
+		setsockopt (protofd, SOL_ICMPV6, ICMP6_FILTER, &f, sizeof (f));
+	}
+
 #ifdef IPV6_TCLASS
 	/* Defines traffic class */
 	setsockopt (protofd, SOL_IPV6, IPV6_TCLASS, &tclass, sizeof (tclass));
@@ -912,26 +923,22 @@ traceroute (const char *dsthost, const char *dstport,
 	if (rt_segc > 0)
 		setsock_rth (protofd, IPV6_RTHDR_TYPE_0, rt_segv, rt_segc);
 
-	/* Set ICMPv6 filter for echo replies */
-	if (type->protocol == IPPROTO_ICMPV6)
-	{
-		// This is ok as long as only one “type” uses ICMPv6 as protocol
-		struct icmp6_filter f;
-
-		ICMP6_FILTER_SETBLOCKALL (&f);
-		ICMP6_FILTER_SETPASS (ICMP6_ECHO_REPLY, &f);
-		setsockopt (protofd, SOL_ICMPV6, ICMP6_FILTER, &f, sizeof (f));
-	}
-
 	/* Defines destination */
 	struct sockaddr_in6 dst;
 	memset (&dst, 0, sizeof (dst));
 	if (connect_proto (protofd, &dst, dsthost, dstport, srchost, srcport))
 		goto error;
 	printf (_("%u hops max, "), max_ttl);
+
+	/* Adjusts packets length */
+	size_t overhead = sizeof (struct ip6_hdr);
+	if (rt_segc > 0)
+		overhead += inet6_rth_space (IPV6_RTHDR_TYPE_0, rt_segc);
+	if (packet_len < overhead)
+		packet_len = overhead;
+
 	printf (_("%lu byte packets\n"), (unsigned long)packet_len);
-	packet_len -= 40;
-	/* FIXME: should we take Routing Header into account? */
+	packet_len -= overhead;
 
 	struct timespec delay_ts;
 	if (delay)
