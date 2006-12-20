@@ -26,8 +26,8 @@ AM_CPPFLAGS = -I$(top_srcdir) -DMYEXECDIR=\"$(myexecdir)\"
 mysuidexec_PROGRAMS = ndisc6 rdisc6 rltraceroute6
 myexec_PROGRAMS = tcptraceroute6
 myexec_SCRIPTS = tracert6
-bin_PROGRAMS = tcpspray6 addrinfo
-bin_SCRIPTS = dnssort nameinfo
+bin_PROGRAMS = tcpspray addrinfo
+bin_SCRIPTS = tcpspray4 tcpspray6 dnssort nameinfo
 noinst_HEADERS = gettime.h inet6rth.h
 dist_noinst_SCRIPTS = gen-alias
 EXTRA_DIST = dnssort.in
@@ -53,9 +53,15 @@ tcptraceroute6_SOURCES = tcptraceroute.c
 tracert6: Makefile.am gen-alias
 	$(gen_alias) tracert6 rltraceroute6 -I
 
-# tcpspray6
-tcpspray6_SOURCES = tcpspray.c
-tcpspray6_LDADD = $(LIBRT)
+# tcpspray
+tcpspray_SOURCES = tcpspray.c
+tcpspray_LDADD = $(LIBRT)
+
+tcpspray4: Makefile.am gen-alias
+	$(gen_alias) tcpspray4 tcpspray -4
+
+tcpspray6: Makefile.am gen-alias
+	$(gen_alias) tcpspray6 tcpspray -6
 
 # addrinfo
 nameinfo: Makefile.am gen-alias

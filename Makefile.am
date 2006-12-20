@@ -21,7 +21,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = src
 DIST_SUBDIRS = m4 $(SUBDIRS)
-man1_MANS = doc/addrinfo.1 doc/dnssort.1 doc/tcpspray6.1
+man1_MANS = doc/addrinfo.1 doc/dnssort.1 doc/tcpspray.1
 man8_MANS = doc/ndisc6.8 doc/rdisc6.8 doc/rltraceroute6.8
 
 EXTRA_DIST = $(man1_MANS) $(man8_MANS)
@@ -32,12 +32,19 @@ install-data-hook:
 		ln -sf "$(man8dir)/rltraceroute6.8" \
 			"$(DESTDIR)$(man8dir)/$$a.8" ; \
 	done
+	for a in 4 6; do \
+		ln -sf "$(man1dir)/tcpspray.1" \
+			"$(DESTDIR)$(man1dir)/tcpspray$$a.1" ; \
+	done
 	ln -sf "$(man1dir)/addrinfo.1" \
 		"$(DESTDIR)$(man1dir)/nameinfo.1"
 
 uninstall-hook:
 	for a in tcptraceroute6 tracert6; do \
 		rm -f "$(DESTDIR)$(man8dir)/$$a.8" ; \
+	done
+	for a in 4 6; do \
+		rm -f "$(DESTDIR)$(man1dir)/tcpspray$$a.1" ; \
 	done
 	unlink "$(DESTDIR)$(man1dir)/nameinfo.1"
 
