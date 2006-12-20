@@ -13,15 +13,15 @@
 .\" *  along with this program; if not, you can get it from:              *
 .\" *  http://www.gnu.org/copyleft/gpl.html                               *
 .\" ***********************************************************************
-.TH "TCPSPRAY6" "1" "$Date$" "tcpspray6" "User's Manual"
+.TH "TCPSPRAY" "1" "$Date$" "tcpspray" "User's Manual"
 .SH NAME
-tcpspray6 \- TCP/IP bandwidth measurement tool (Discard and Echo client)
+tcpspray \- TCP/IP bandwidth measurement tool (Discard and Echo client)
 .SH SYNOPSIS
-.BR "tcpspray6" " [" "-46ev" "] [" "-b block_size" "] [" "-d wait_\[char181]s" "] ["
+.BR "tcpspray" " [" "-46ev" "] [" "-b block_size" "] [" "-d wait_\[char181]s" "] ["
 .BR "-f filename" "] [" "-n count" "] <" "hostname" "> [" "port" "]"
 
 .SH DESCRIPTON
-.B tcpspray6
+.B tcpspray
 .RI "uses the " "Discard" " resp. " "Echo" " protocol (RFC\ 863 resp. RFC\ 862)"
 .RI "to perform bandwidth measurements of " "TCP" " sessions between the"
 .RI "local system, and a " "Discard" " resp. " "Echo" " server."
@@ -32,9 +32,10 @@ Unix-based hosts can provide a Discard and/or Echo servers with the Internet
 .I simple network protocols
 optional component will do the same.
 
-The name or address of the server node must be specified. tcpspray6 will
+The name or address of the server node must be specified. tcpspray will
 automatically try to use IPv6 when available. If not, or if it fails, it will
-fallback to IPv4.
+fallback to IPv4. However, tcpspray4 resp. tcpspray6 only try to use IPv4
+resp. IPv6.
 
 .SH OPTIONS
 
@@ -57,7 +58,7 @@ before attempting to send the next one. There is no delay by default.
 
 .TP
 .BR "\-e" " or " "\-\-echo"
-Use the Echo protocol instead of Discard. tcpspray6 will measure the
+Use the Echo protocol instead of Discard. tcpspray will measure the
 time required to send data and receive it back, instead of simply
 sending it.
 
@@ -82,7 +83,7 @@ Display program version and license and exit.
 
 .TP
 .BR "\-v" " or " "\-\-verbose"
-Display more verbose informations. In particular, tcpspray6 will print a dot
+Display more verbose informations. In particular, tcpspray will print a dot
 each time a block is sent. If the Echo protocol is used (option -e), dots
 will be erased as data is received back.
 
@@ -95,7 +96,7 @@ tcptraceroute(8) toward the IPv6 resp. IPv4 remote host might help detecting
 such a situation.
 
 .SH SECURITY
-tcpspray6 does not require any privilege to run.
+tcpspray does not require any privilege to run.
 
 .SH "SEE ALSO"
 tcp(7), inetd(8), tcptraceroute6(8), tcptraceroute(8)
