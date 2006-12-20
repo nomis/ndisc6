@@ -29,9 +29,11 @@ myexec_SCRIPTS = tracert6
 bin_PROGRAMS = tcpspray6 addrinfo
 bin_SCRIPTS = dnssort nameinfo
 noinst_HEADERS = gettime.h inet6rth.h
+dist_noinst_SCRIPTS = gen-alias
 EXTRA_DIST = dnssort.in
-
 MOSTLYCLEANFILES = $(myexec_SCRIPTS) $(bin_SCRIPTS)
+
+gen_alias = ${SHELL} $(srcdir)/gen-alias
 
 # ndisc6
 ndisc6_SOURCES = ndisc.c
@@ -46,34 +48,18 @@ rdisc6_LDADD = $(LIBRT)
 rltraceroute6_SOURCES = traceroute.c traceroute.h \
 			trace-tcp.c trace-udp.c trace-icmp.c
 rltraceroute6_LDADD = $(LIBRT)
-
-# tcptraceroute6
 tcptraceroute6_SOURCES = tcptraceroute.c
 
-#tcptraceroute6: Makefile.in $(top_builddir)/config.status
-#	rm -f $@.tmp $@
-#	echo '#! /bin/sh' > $@.tmp
-#	echo 'exec "$$(dirname $$0)/rltraceroute6" -S "$$@"' >> $@.tmp
-#	chmod +x $@.tmp
-#	mv -f $@.tmp $@
-
-tracert6: Makefile.in $(top_builddir)/config.status
-	rm -f $@.tmp $@
-	echo '#! /bin/sh' > $@.tmp
-	echo 'exec "$$(dirname $$0)/rltraceroute6" -I "$$@"' >> $@.tmp
-	chmod +x $@.tmp
-	mv -f $@.tmp $@
+tracert6: Makefile.am gen-alias
+	$(gen_alias) tracert6 rltraceroute6 -I
 
 # tcpspray6
 tcpspray6_SOURCES = tcpspray.c
 tcpspray6_LDADD = $(LIBRT)
 
-nameinfo: Makefile.in $(top_builddir)/config.status
-	rm -f $@.tmp $@
-	echo '#! /bin/sh' > $@.tmp
-	echo 'exec "$$(dirname $$0)/addrinfo" -r "$$@"' >> $@.tmp
-	chmod +x $@.tmp
-	mv -f $@.tmp $@
+# addrinfo
+nameinfo: Makefile.am gen-alias
+	$(gen_alias) nameinfo addrinfo -r
 
 subst_script = sed \
 	-e 's,[@]PERL[@],$(PERL),g' \
