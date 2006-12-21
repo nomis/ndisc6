@@ -88,8 +88,9 @@ myexecdir = $(bindir)
 
 install-exec-hook:
 	@for f in $(mysuidexec_PROGRAMS); do \
-		echo chmod u+s "$(DESTDIR)$(mysuidexecdir)/$$f" ; \
-		chmod u+s "$(DESTDIR)$(mysuidexecdir)/$$f" || exit $$? ; \
+		i="`echo "$$f" | sed -e '$(program)'`" ; \
+		echo chmod u+s "$(DESTDIR)$(mysuidexecdir)/$$i" ; \
+		chmod u+s "$(DESTDIR)$(mysuidexecdir)/$$i" || exit $$? ; \
 	done
 endif
 
