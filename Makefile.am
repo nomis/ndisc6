@@ -28,15 +28,18 @@ EXTRA_DIST = $(man1_MANS) $(man8_MANS)
 DISTCLEANFILES = stamp-svn
 
 install-data-hook:
+	inst=`echo rltraceroute6 | sed '$(transform)'`; \
 	for a in tcptraceroute6 tracert6; do \
-		ln -sf "$(man8dir)/rltraceroute6.8" \
+		ln -sf "$(man8dir)/$${inst}.8" \
 			"$(DESTDIR)$(man8dir)/$$a.8" ; \
 	done
+	inst=`echo tcpspray | sed '$(transform)'`; \
 	for a in 4 6; do \
-		ln -sf "$(man1dir)/tcpspray.1" \
+		ln -sf "$(man1dir)/$${inst}.1" \
 			"$(DESTDIR)$(man1dir)/tcpspray$$a.1" ; \
 	done
-	ln -sf "$(man1dir)/addrinfo.1" \
+	inst=`echo addrinfo | sed '$(transform)'`; \
+	ln -sf "$(man1dir)/$${inst}.1" \
 		"$(DESTDIR)$(man1dir)/nameinfo.1"
 
 uninstall-hook:
