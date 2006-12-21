@@ -162,9 +162,11 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 		        (unsigned long)blen);
 	}
 
+	pid_t child = -1;
 	if (echo)
 	{
-		switch (fork ())
+		child = fork ();
+		switch (child)
 		{
 			case 0:
 				for (unsigned i = 0; i < n; i++)
@@ -225,7 +227,7 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 	shutdown (fd, SHUT_WR);
 	close (fd);
 
-	if (echo)
+	if (child != -1)
 	{
 		int status;
 		while (wait (&status) == -1);
@@ -250,8 +252,11 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 
 abort:
 	close (fd);
-	if (echo)
+	if (child != -1)
+	{
+		kill (child, SIGTERM);
 		while (wait (NULL) == -1);
+	}
 	return -1;
 }
 
