@@ -27,6 +27,7 @@ if [ -z "$PARAMS" ]; then
 	exit 1
 fi
 
+BACKEND="`echo "${BACKEND}" | sed "${transform}"`"
 OUTPUT="`tempfile`"
 
 cat > "$OUTPUT" << EOF

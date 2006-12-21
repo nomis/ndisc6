@@ -33,7 +33,7 @@ dist_noinst_SCRIPTS = gen-alias
 EXTRA_DIST = dnssort.in
 MOSTLYCLEANFILES = $(myexec_SCRIPTS) $(bin_SCRIPTS)
 
-gen_alias = ${SHELL} $(srcdir)/gen-alias
+gen_alias = transform="$(transform)" ${SHELL} $(srcdir)/gen-alias
 
 # ndisc6
 ndisc6_SOURCES = ndisc.c
