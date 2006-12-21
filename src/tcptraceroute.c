@@ -138,7 +138,7 @@ int main (int argc, char *argv[])
 
 	int val, optc = 0;
 
-	optv[optc++] = MYEXECDIR"/rltraceroute6";
+	optv[optc++] = MYEXECDIR"/"RLTRACEROUTE6;
 	optv[optc++] = "-S";
 
 	while ((val = getopt_long (argc, argv, optstr, opts, NULL)) != EOF)
