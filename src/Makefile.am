@@ -27,7 +27,7 @@ mysuidexec_PROGRAMS = ndisc6 rdisc6 rltraceroute6
 myexec_PROGRAMS = tcptraceroute6
 myexec_SCRIPTS = tracert6
 bin_PROGRAMS = tcpspray addrinfo
-bin_SCRIPTS = tcpspray4 tcpspray6 dnssort nameinfo
+bin_SCRIPTS = tcpspray6 dnssort nameinfo
 noinst_HEADERS = gettime.h inet6rth.h
 dist_noinst_SCRIPTS = gen-alias
 EXTRA_DIST = dnssort.in
@@ -58,9 +58,6 @@ tracert6: Makefile.am gen-alias
 # tcpspray
 tcpspray_SOURCES = tcpspray.c
 tcpspray_LDADD = $(LIBRT)
-
-tcpspray4: Makefile.am gen-alias
-	$(gen_alias) tcpspray4 tcpspray -4
 
 tcpspray6: Makefile.am gen-alias
 	$(gen_alias) tcpspray6 tcpspray -6

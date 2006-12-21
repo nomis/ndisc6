@@ -34,21 +34,17 @@ install-data-hook:
 			"$(DESTDIR)$(man8dir)/$$a.8" ; \
 	done
 	inst=`echo tcpspray | sed '$(transform)'`; \
-	for a in 4 6; do \
-		ln -sf "$(man1dir)/$${inst}.1" \
-			"$(DESTDIR)$(man1dir)/tcpspray$$a.1" ; \
-	done
+	ln -sf "$(man1dir)/$${inst}.1" \
+		"$(DESTDIR)$(man1dir)/tcpspray6.1"
 	inst=`echo addrinfo | sed '$(transform)'`; \
 	ln -sf "$(man1dir)/$${inst}.1" \
 		"$(DESTDIR)$(man1dir)/nameinfo.1"
 
 uninstall-hook:
 	for a in tcptraceroute6 tracert6; do \
-		rm -f "$(DESTDIR)$(man8dir)/$$a.8" ; \
+		unlink "$(DESTDIR)$(man8dir)/$$a.8" ; \
 	done
-	for a in 4 6; do \
-		rm -f "$(DESTDIR)$(man1dir)/tcpspray$$a.1" ; \
-	done
+	unlink "$(DESTDIR)$(man1dir)/tcpspray6.1"
 	unlink "$(DESTDIR)$(man1dir)/nameinfo.1"
 
 distclean-local:
