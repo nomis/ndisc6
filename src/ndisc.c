@@ -356,6 +356,12 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 			fputs (_("undefined"), stdout);
 		printf (_(" (      0x%02x)\n"), v);
 
+		v = ra->nd_ra_flags_reserved;
+		printf (_("Stateful address conf.    :          %3s\n"),
+		        gettext ((v & ND_RA_FLAG_MANAGED) ? N_ ("Yes") : N_("No")));
+		printf (_("Stateful other conf.      :          %3s\n"),
+		        gettext ((v & ND_RA_FLAG_OTHER) ? N_ ("Yes") : N_("No")));
+
 		/* Router lifetime */
 		fputs (_("Router lifetime           : "), stdout);
 		v = ntohs (ra->nd_ra_router_lifetime);
