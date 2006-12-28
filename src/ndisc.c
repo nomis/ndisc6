@@ -360,7 +360,7 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 		fputs (_("Router lifetime           : "), stdout);
 		v = ntohs (ra->nd_ra_router_lifetime);
 		printf (_("%12u (0x%08x) %s\n"), v, v,
-		        ngettext ("millisecond", "milliseconds", v));
+		        ngettext ("second", "seconds", v));
 
 		/* ND Reachable time */
 		fputs (_("Reachable time            : "), stdout);
