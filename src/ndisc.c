@@ -275,6 +275,17 @@ buildsol (solicit_packet *rs)
 }
 
 
+static void
+print32time (uint32_t v)
+{
+	if (v == 0xffffffff)
+		fputs (_("    infinite (0xffffffff)\n"), stdout);
+	else
+		printf (_("%12u (0x%08x) %s\n"),
+		        v, v, ngettext ("second", "seconds", v));
+}
+
+
 static int
 parseprefix (const struct nd_opt_prefix_info *pi, size_t optlen, int verbose)
 {
@@ -294,24 +305,10 @@ parseprefix (const struct nd_opt_prefix_info *pi, size_t optlen, int verbose)
 
 	if (verbose)
 	{
-		/* INET6_ADDRSTRLEN > 13 */
-		unsigned v;
-
 		fputs (_("  Valid time              : "), stdout);
-		v = ntohl (pi->nd_opt_pi_valid_time);
-		if (v == 0xffffffff)
-			fputs (_("    infinite (0xffffffff)\n"), stdout);
-		else
-			printf (_("%12u (0x%08x) %s\n"),
-			        v, v, ngettext ("second", "seconds", v));
-
+		print32time (ntohl (pi->nd_opt_pi_valid_time));
 		fputs (_("  Pref. time              : "), stdout);
-		v = ntohl (pi->nd_opt_pi_preferred_time);
-		if (v == 0xffffffff)
-			fputs (_("    infinite (0xffffffff)\n"), stdout);
-		else
-			printf (_("%12u (0x%08x) %s\n"),
-			        v, v, ngettext ("second", "seconds", v));
+		print32time (ntohl (pi->nd_opt_pi_preferred_time));
 	}
 	return 0;
 }
@@ -326,6 +323,36 @@ parsemtu (const struct nd_opt_mtu *m)
 	printf ("       %5u %s (%s)\n", mtu,
 	        ngettext ("byte", "bytes", mtu),
 			gettext((mtu >= 1280) ? N_("valid") : N_("invalid")));
+}
+
+
+static const char *
+pref_i2n (unsigned val)
+{
+	static const char *values[] =
+		{ N_("medium"), N_("high"), N_("low"), N_("medium") };
+	return gettext (values[(val >> 3) & 3]);
+}
+
+
+static int
+parseroute (const uint8_t *opt)
+{
+	uint8_t optlen = opt[1], plen = opt[2];
+	if ((optlen > 3) || (plen > 128) || (optlen < ((plen + 127) >> 6)))
+		return -1;
+
+	char str[INET6_ADDRSTRLEN];
+	struct in6_addr dst = in6addr_any;
+	memcpy (dst.s6_addr, opt + 8, (optlen - 1) << 3);
+	if (inet_ntop (AF_INET6, &dst, str, sizeof (str)) == NULL)
+		return -1;
+
+	printf (_(" Route                    : %s/%u\n"), str, (unsigned)plen);
+	printf (_("  Route preference        :       %6s\n"), pref_i2n (opt[3]));
+	fputs (_("  Route lifetime          : "), stdout);
+	print32time (ntohl (((uint32_t *)opt)[1]));
+	return 0;
 }
 
 
@@ -361,6 +388,7 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 		        gettext ((v & ND_RA_FLAG_MANAGED) ? N_ ("Yes") : N_("No")));
 		printf (_("Stateful other conf.      :          %3s\n"),
 		        gettext ((v & ND_RA_FLAG_OTHER) ? N_ ("Yes") : N_("No")));
+		printf (_("Router preference         :       %6s\n"), pref_i2n (v));
 
 		/* Router lifetime */
 		fputs (_("Router lifetime           : "), stdout);
@@ -427,6 +455,11 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 			case ND_OPT_MTU:
 				if (verbose)
 					parsemtu ((const struct nd_opt_mtu *)ptr);
+				break;
+
+			case 24: // RFC4191
+				if (verbose)
+					parseroute (ptr);
 				break;
 		}
 
