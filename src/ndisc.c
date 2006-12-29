@@ -330,7 +330,7 @@ static const char *
 pref_i2n (unsigned val)
 {
 	static const char *values[] =
-		{ N_("medium"), N_("high"), N_("low"), N_("medium") };
+		{ N_("medium"), N_("high"), N_("medium (invalid)"), N_("low") };
 	return gettext (values[(val >> 3) & 3]);
 }
 
