@@ -1007,8 +1007,11 @@ traceroute (const char *dsthost, const char *dstport,
 				int res = probe (protofd, icmpfd, &dst, &deadline,
 				                 &results, &hlim, &attempt);
 
-				if (hlim == -1)
+				if (hlim == -1) /* timeout! */
+				{
+					progress += pending;
 					break;
+				}
 
 				if ((hlim > max_ttl) || (hlim < min_ttl))
 					continue;
@@ -1023,7 +1026,7 @@ traceroute (const char *dsthost, const char *dstport,
 				assert (t >= tab);
 				assert (t < tab + (sizeof (tab) / sizeof (tab[0])));
 
-				if (t->result == TRACE_TIMEOUT)
+				if (t->result == TRACE_TIMEOUT /* no result yet */)
 				{
 					struct timespec buf = t->sent;
 					memcpy (t, &results, sizeof (*t));
