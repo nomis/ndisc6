@@ -20,7 +20,7 @@ dnl *  http://www.gnu.org/copyleft/gpl.html                               *
 dnl ***********************************************************************
 
 AC_COPYRIGHT([Copyright (C) 2005-2006 Remi Denis-Courmont])
-AC_INIT(ndisc6, 0.9.0, rdenis@simphalempin.com)
+AC_INIT(ndisc6, 0.9.1, rdenis@simphalempin.com)
 AC_PREREQ(2.59c)
 INVOCATION="`echo "$0 $ac_configure_args" | sed -e 's/\\\/\\\\\\\/g'`"
 
