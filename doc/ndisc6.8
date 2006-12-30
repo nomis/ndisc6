@@ -57,7 +57,8 @@ That is mostly useful when calling the program from a shell script.
 .TP
 .BR "\-r attempts" " or " "\-\-retry attempts"
 Send ICMPv6 Neighbor Discovery that many times until a reply is
-received, or abort. By default, ndisc6 will try 3 times before aborting.
+received, or abort. By default, ndisc6 will try 3 times before aborting
+(MAX_MULTICAST_SOLICIT and MAX_UNICAST_SOLICIT from RFC2461).
 
 .TP
 .BR "\-V" " or " "\-\-version"
@@ -70,7 +71,8 @@ Display verbose information. That is the default.
 .TP
 .BR "\-w wait_ms" " or " "\-\-wait wait_ms"
 .RI "Wait " "wait_ms" " milliseconds for a response before retrying."
-By default, ndisc6 waits 1 second between each attempts.
+By default, ndisc6 waits 1 second between each attempts
+(RETRANS_TIMER from RFC2461).
 
 .SH DIAGNOSTICS
 

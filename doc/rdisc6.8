@@ -59,7 +59,8 @@ That is mostly useful when calling the program from a shell script.
 .TP
 .BR "\-r attempts" " or " "\-\-retry attempts"
 Send ICMPv6 Router Discovery that many times until a reply is
-received, or abort. By default, rdisc6 will try 3 times before aborting.
+received, or abort. By default, rdisc6 will try 3 times before aborting
+(MAX_RTR_SOLICITATIONS from RFC2461).
 
 .TP
 .BR "\-V" " or " "\-\-version"
@@ -72,7 +73,8 @@ Display verbose information. That is the default.
 .TP
 .BR "\-w wait_ms" " or " "\-\-wait wait_ms"
 .RI "Wait " "wait_ms" " milliseconds for a response before retrying."
-By default, rdisc6 waits 1 second between each attempts.
+By default, rdisc6 waits 4 second between each attempts
+(RTR_SOLICITATION_INTERVAL from RFC2461).
 
 .SH SECURITY
 .RI "rdisc6 must be " "setuid" " " "root" " to allow use by non "

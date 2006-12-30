@@ -66,6 +66,7 @@
 # define ND_TYPE_ADVERT ND_NEIGHBOR_ADVERT
 # define TYPE_NAME "Neighbor"
 # define NDISC_DEFAULT (NDISC_VERBOSE1 | NDISC_SINGLE)
+# define PROBE_DELAY 1000
 # ifdef __linux__
 #  include <sys/ioctl.h>
 # endif
@@ -74,6 +75,7 @@
 # define ND_TYPE_ADVERT ND_ROUTER_ADVERT
 # define TYPE_NAME "Router"
 # define NDISC_DEFAULT NDISC_VERBOSE1
+# define PROBE_DELAY 4000
 #endif
 
 
@@ -783,7 +785,7 @@ main (int argc, char *argv[])
 	setlocale (LC_CTYPE, "");
 
 	int val;
-	unsigned retry = 3, flags = NDISC_DEFAULT, wait_ms = 1000;
+	unsigned retry = 3, flags = NDISC_DEFAULT, wait_ms = PROBE_DELAY;
 	const char *hostname, *ifname;
 
 	while ((val = getopt_long (argc, argv, "1hmnqr:Vvw:", opts, NULL)) != EOF)
