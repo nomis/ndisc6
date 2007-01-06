@@ -196,8 +196,8 @@ buildsol (solicit_packet *ns, struct sockaddr_in6 *tgt, const char *ifname)
 	memcpy (&ns->hdr.nd_ns_target, &tgt->sin6_addr, 16);
 
 	/* determines actual multicast destination address */
-	memcpy (&tgt->sin6_addr.s6_addr, "\xff\x02\x00\x00\x00\x00\x00\x00"
-	                                 "\x00\x00\x00\x01\xff", 13);
+	memcpy (tgt->sin6_addr.s6_addr, "\xff\x02\x00\x00\x00\x00\x00\x00"
+	                                "\x00\x00\x00\x01\xff", 13);
 
 	/* gets our own interface's link-layer address (MAC) */
 	if (getmacaddress (ifname, ns->hw_addr))
