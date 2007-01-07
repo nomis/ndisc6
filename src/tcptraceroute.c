@@ -26,6 +26,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 
 #include <unistd.h>
@@ -124,12 +125,23 @@ static const struct option opts[] =
 
 
 static const char optstr[] = "AdEFf:g:hi:l:m:Nnp:q:rSs:t:Vw:xz:";
+static const char bin_name[] = RLTRACEROUTE6;
 
 int main (int argc, char *argv[])
 {
+	/* Determine path to wrapped binary */
+	char arg0[strlen (argv[0]) + sizeof (bin_name)];
+	strcpy (arg0, argv[0]);
+	char *ptr = strrchr (arg0, '/');
+	if (ptr != NULL)
+		ptr++;
+	else
+		ptr = arg0;
+	strcpy (ptr, bin_name);
+	
 	/* Prepare big enough buffers */
 	unsigned len = 0;
-	for (int i = 0; i < argc; i++)
+	for (int i = 1; i < argc; i++)
 		len += strlen (argv[i]);
 
 	char optbuf[3 * len + argc], *buf = optbuf;
@@ -138,7 +150,7 @@ int main (int argc, char *argv[])
 
 	int val, optc = 0;
 
-	optv[optc++] = MYEXECDIR"/"RLTRACEROUTE6;
+	optv[optc++] = arg0;
 	optv[optc++] = "-S";
 
 	while ((val = getopt_long (argc, argv, optstr, opts, NULL)) != EOF)
@@ -215,7 +227,7 @@ int main (int argc, char *argv[])
 
 	optv[optc] = NULL;
 
-	execv (optv[0], optv);
+	execvp (optv[0], optv);
 	perror (optv[0]);
-	return 2;
+	exit (2);
 }
