@@ -1,5 +1,5 @@
 RELEASE NOTES for NDisc6
-version 0.9.0
+version 0.9.1
 =========================
 $Id$
 
@@ -11,6 +11,13 @@ Thanks for your help.
   You can find major changes since version 0.1.5 below. For more general
 informations on this program, see README. For syntax details, read the
 provided manual pages.
+
+============================================================================
+STABLE RELEASE 0.9.1 : Minor bug fixes
+
+# traceroute6: fix progress report in case of timeouts.
+# addrinfo becomes addr2name because of conflict with Sofia-SIP.
+# nameinfo becomes name2addr.
 
 ============================================================================
 TEST RELEASE 0.9.0 : Major features enhancement, major bug fixes
