@@ -362,7 +362,7 @@ icmp_recv (int fd, tracetest_t *res, int *attempt, int *hlim,
 	if (len < 0)
 		return 0;
 
-	/* interesting CMPv6 error */
+	/* interesting ICMPv6 error */
 	switch (pkt.hdr.icmp6_type)
 	{
 		case ICMP6_DST_UNREACH:
