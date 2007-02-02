@@ -332,7 +332,7 @@ static const char optstr[] = "46b:d:ef:hn:Vv";
 
 int main (int argc, char *argv[])
 {
-	setlocale (LC_CTYPE, "");
+	setlocale (LC_ALL, "");
 
 	unsigned long block_count = 100;
 	size_t block_length = 1024;

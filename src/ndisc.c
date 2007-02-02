@@ -782,7 +782,7 @@ main (int argc, char *argv[])
 	if (setuid (getuid ()) || ((fd >= 0) && (fd <= 2)))
 		return 1;
 
-	setlocale (LC_CTYPE, "");
+	setlocale (LC_ALL, "");
 
 	int val;
 	unsigned retry = 3, flags = NDISC_DEFAULT, wait_ms = PROBE_DELAY;

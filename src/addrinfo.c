@@ -175,7 +175,7 @@ static const char sopts[] = "46hmnrV";
 
 int main (int argc, char *argv[])
 {
-	setlocale (LC_CTYPE, "");
+	setlocale (LC_ALL, "");
 
 	int val, family = AF_UNSPEC, aflags = AI_IDN, nflags = NI_NUMERICHOST;
 	bool single = true;

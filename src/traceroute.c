@@ -1201,7 +1201,7 @@ main (int argc, char *argv[])
 	if (prepare_sockets () || setuid (getuid ()))
 		return 1;
 
-	setlocale (LC_CTYPE, "");
+	setlocale (LC_ALL, "");
 
 	const char *dsthost, *srchost = NULL, *dstport = "33434", *srcport = NULL;
 	size_t plen = 60;

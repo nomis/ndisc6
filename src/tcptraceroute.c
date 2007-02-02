@@ -33,6 +33,7 @@
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
 #endif
+#include <locale.h>
 
 static int
 quick_usage (const char *path)
@@ -129,6 +130,8 @@ static const char bin_name[] = RLTRACEROUTE6;
 
 int main (int argc, char *argv[])
 {
+	setlocale (LC_ALL, "");
+
 	/* Determine path to wrapped binary */
 	char arg0[strlen (argv[0]) + sizeof (bin_name)];
 	strcpy (arg0, argv[0]);
