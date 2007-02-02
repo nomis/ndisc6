@@ -302,8 +302,8 @@ static int
 version (void)
 {
 	printf (_(
-"tcpspray6: TCP/IP bandwidth tester %s ($Rev$)\n"
-" built %s on %s\n"), VERSION, __DATE__, PACKAGE_BUILD_HOSTNAME);
+"tcpspray6: TCP/IP bandwidth tester %s (%s)\n"), VERSION, "$Rev$");
+	printf (_(" built %s on %s\n"), __DATE__, PACKAGE_BUILD_HOSTNAME);
 	printf (_("Configured with: %s\n"), PACKAGE_CONFIGURE_INVOCATION);
 	puts (_("Written by Remi Denis-Courmont\n"));
 

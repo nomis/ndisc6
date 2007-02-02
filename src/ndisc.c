@@ -64,18 +64,14 @@
 #endif
 
 #ifndef RDISC
-# define NAME "ndisc"
 # define ND_TYPE_ADVERT ND_NEIGHBOR_ADVERT
-# define TYPE_NAME "Neighbor"
 # define NDISC_DEFAULT (NDISC_VERBOSE1 | NDISC_SINGLE)
 # define PROBE_DELAY 1000
 # ifdef __linux__
 #  include <sys/ioctl.h>
 # endif
 #else
-# define NAME "rdisc"
 # define ND_TYPE_ADVERT ND_ROUTER_ADVERT
-# define TYPE_NAME "Router"
 # define NDISC_DEFAULT NDISC_VERBOSE1
 # define PROBE_DELAY 4000
 #endif
@@ -743,9 +739,11 @@ _("Usage: %s [options] [IPv6 address] <interface>\n"
 static int
 version (void)
 {
+	/* FIXME: not gettext compliant !!! */
 	printf (_(
-NAME"6: IPv6 "TYPE_NAME" Discovery userland tool %s ($Rev$)\n"
-" built %s on %s\n"), VERSION, __DATE__, PACKAGE_BUILD_HOSTNAME);
+"ndisc6: IPv6 Neighbor/Router Discovery userland tool %s (%s)\n"), VERSION, "$Rev$");
+	printf (_(" built %s on %s\n"), __DATE__, PACKAGE_BUILD_HOSTNAME);
+
 	printf (_("Configured with: %s\n"), PACKAGE_CONFIGURE_INVOCATION);
 	puts (_("Written by Remi Denis-Courmont\n"));
 

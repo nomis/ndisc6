@@ -1129,9 +1129,8 @@ static int
 version (void)
 {
 	printf (_(
-"traceroute6: TCP & UDP IPv6 traceroute tool %s (%s)\n"
-" built %s on %s\n"), VERSION, "$Rev$",
-	        __DATE__, PACKAGE_BUILD_HOSTNAME);
+"traceroute6: TCP & UDP IPv6 traceroute tool %s (%s)\n"), VERSION, "$Rev$");
+	printf (_(" built %s on %s\n"), __DATE__, PACKAGE_BUILD_HOSTNAME);
 	printf (_("Configured with: %s\n"), PACKAGE_CONFIGURE_INVOCATION);
 	puts (_("Written by Remi Denis-Courmont\n"));
 
