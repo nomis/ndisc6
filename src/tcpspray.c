@@ -158,8 +158,9 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 
 	if (verbose)
 	{
-		printf (_("Sending %lu bytes with blocksize %lu bytes\n"), n * blen,
-		        (unsigned long)blen);
+		printf (_("Sending %lu %s with blocksize %lu %s\n"),
+		        n * blen, ngettext ("byte", "bytes", n * blen),
+		        (unsigned long)blen, ngettext ("byte", "bytes", n * blen));
 	}
 
 	pid_t child = -1;
@@ -174,7 +175,7 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 					ssize_t val = recv (fd, block, blen, MSG_WAITALL);
 					if (val != (ssize_t)blen)
 					{
-						fprintf (stderr, _("Cannot receive data: %s\n"),
+						fprintf (stderr, _("Receive error: %s\n"),
 								 (val == -1) ? strerror (errno)
 							: _("Connection closed by peer"));
 						exit (1);

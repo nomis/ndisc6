@@ -376,8 +376,8 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 		unsigned v;
 
 		/* Hop limit */
-		fputs (_("\n"
-		         "Hop limit                 :    "), stdout);
+		puts ("");
+		fputs (_("Hop limit                 :    "), stdout);
 		v = ra->nd_ra_curhoplimit;
 		if (v != 0)
 			printf (_("      %3u"), v);

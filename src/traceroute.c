@@ -423,7 +423,7 @@ proto_recv (int fd, tracetest_t *res, int *attempt, int *hlim,
 
 			default:
 				/* These are very bad errors (-> bugs) */
-				perror (_("Receive error"));
+				fprintf (_("Receive error: %s\n"), sterror (errno));
 				return 0;
 		}
 	}
@@ -964,7 +964,8 @@ traceroute (const char *dsthost, const char *dstport,
 			if (isatty (1))
 			{
 				unsigned total = retries * (max_ttl - min_ttl + 1);
-				printf (_(" %3u%% completed...\r"), 100 * progress / total);
+				printf (_(" %3u%% completed..."), 100 * progress / total);
+				fputc ('\r', stdout);
 			}
 
 			if (delay && (step > 1))
@@ -986,7 +987,8 @@ traceroute (const char *dsthost, const char *dstport,
 				if (type->send_probe (protofd, hlim, attempt, packet_len,
 				                      dst.sin6_port))
 				{
-					perror (_("Cannot send packet"));
+					fprintf (_("Cannot send data: %s\n"),
+					         strerror (errno));
 					return -1;
 				}
 
@@ -1036,8 +1038,9 @@ traceroute (const char *dsthost, const char *dstport,
 					if (isatty (1))
 					{
 						unsigned total = retries * (max_ttl - min_ttl + 1);
-						printf (_(" %3u%% completed...\r"),
+						printf (_(" %3u%% completed..."),
 						        100 * ++progress / total);
+						fputc ('\r', stdout);
 					}
 				}
 
@@ -1049,7 +1052,11 @@ traceroute (const char *dsthost, const char *dstport,
 			}
 
 			if (isatty (1))
-				fputs (_("                  \r"), stdout);
+			{
+				// white spaces to erase "xxx% completed..."
+				fputs (_("                  "), stdout);
+				fputc ('\r', stdout);
+			}
 
 			if (step >= retries)
 			{
