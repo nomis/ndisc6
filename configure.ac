@@ -51,8 +51,8 @@ LIBRT=""
 AC_CHECK_LIB([rt], clock_gettime, [LIBRT="-lrt"])
 AC_SUBST(LIBRT)
 
-dnl AM_GNU_GETTEXT_VERSION([0.12.1])
-dnl AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION([0.12.1])
+AM_GNU_GETTEXT([external])
 
 dnl AC_DEFINE_UNQUOTED(PACKAGE_BUILD, "$build",
 dnl                    [Define to the canonical build-system name])
@@ -110,5 +110,5 @@ AH_BOTTOM([
 
 # END
 AS_MESSAGE(writing results...)
-AC_CONFIG_FILES([Makefile m4/Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile m4/Makefile po/Makefile.in src/Makefile])
 AC_OUTPUT
