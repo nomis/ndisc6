@@ -1,4 +1,4 @@
-# English localization for ndisc6.
+# French localization for ndisc6.
 # Copyright © 2007 Rémi Denis-Courmont
 # This file is distributed under the same license as the ndisc6 package.
 # Rémi Denis-Courmont, 2007.
@@ -10,15 +10,15 @@ msgstr ""
 "POT-Creation-Date: 2007-02-02 21:58+0200\n"
 "PO-Revision-Date: 2007-02-02 21:15+0200\n"
 "Last-Translator: Rémi Denis-Courmont\n"
-"Language-Team: English <en@li.org>\n"
+"Language-Team: French <fr@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=2; plural=n>1;\n"
 
 #: src/addrinfo.c:117
 msgid "Input error"
-msgstr ""
+msgstr "Erreur d’entrée"
 
 #: src/addrinfo.c:128
 #, c-format
@@ -39,7 +39,7 @@ msgstr ""
 #: src/tcptraceroute.c:43 src/traceroute.c:1086
 #, c-format
 msgid "Try \"%s -h\" for more information.\n"
-msgstr "Try “%s -h” for more information.\n"
+msgstr "Essayez « %s -h » pour plus de détails.\n"
 
 #: src/addrinfo.c:151
 #, c-format
@@ -50,18 +50,18 @@ msgstr ""
 #: src/tcptraceroute.c:89 src/traceroute.c:1133
 #, c-format
 msgid " built %s on %s\n"
-msgstr ""
+msgstr " compilé le %s sur %s\n"
 
 #: src/addrinfo.c:153 src/ndisc.c:747 src/tcpspray.c:308
 #: src/tcptraceroute.c:90 src/traceroute.c:1134
 #, c-format
 msgid "Configured with: %s\n"
-msgstr ""
+msgstr "Configuré avec : %s\n"
 
 #: src/addrinfo.c:154 src/ndisc.c:748 src/tcpspray.c:309
 #: src/tcptraceroute.c:91 src/traceroute.c:1135
 msgid "Written by Remi Denis-Courmont\n"
-msgstr "Written by Rémi Denis-Courmont\n"
+msgstr "Écrit par Rémi Denis-Courmont\n"
 
 #: src/addrinfo.c:156 src/ndisc.c:750 src/tcpspray.c:311
 #: src/tcptraceroute.c:93 src/traceroute.c:1137
@@ -73,14 +73,14 @@ msgid ""
 "FITNESS FOR A PARTICULAR PURPOSE.\n"
 msgstr ""
 "Copyright © %u-%u Rémi Denis-Courmont\n"
-"This is free software; see the source for copying conditions.\n"
-"There is NO warranty; not even for MERCHANTABILITY or\n"
-"FITNESS FOR A PARTICULAR PURPOSE.\n"
+"Ce logiciel est libre; voir les sources pour les conditions de\n"
+"reproduction. Il n’y a AUCUNE garantie; pas même pour la\n"
+"COMMERCIALISATION ou l’ADÉQUATION POUR UNE UTILISATION PARTICULIÈRE.\n"
 
 #: src/ndisc.c:104 src/traceroute.c:869
 #, c-format
 msgid "%s: %s\n"
-msgstr ""
+msgstr "%s : %s\n"
 
 #: src/ndisc.c:255
 msgid "Target link-layer address: "
@@ -98,8 +98,8 @@ msgstr ""
 #: src/ndisc.c:285 src/ndisc.c:397 src/tcpspray.c:121
 msgid "second"
 msgid_plural "seconds"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "seconde"
+msgstr[1] "secondes"
 
 #: src/ndisc.c:303
 msgid " Prefix                   : "
@@ -121,32 +121,32 @@ msgstr ""
 #: src/tcpspray.c:165 src/tcpspray.c:166
 msgid "byte"
 msgid_plural "bytes"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "octet"
+msgstr[1] "octets"
 
 #: src/ndisc.c:325
 msgid "valid"
-msgstr ""
+msgstr "valide"
 
 #: src/ndisc.c:325
 msgid "invalid"
-msgstr ""
+msgstr "invalide"
 
 #: src/ndisc.c:333
 msgid "medium"
-msgstr ""
+msgstr "moyen"
 
 #: src/ndisc.c:333
 msgid "high"
-msgstr ""
+msgstr "élevé"
 
 #: src/ndisc.c:333
 msgid "medium (invalid)"
-msgstr ""
+msgstr "moyen (incorrect)"
 
 #: src/ndisc.c:333
 msgid "low"
-msgstr ""
+msgstr "faible"
 
 #: src/ndisc.c:351
 #, c-format
@@ -173,7 +173,7 @@ msgstr ""
 
 #: src/ndisc.c:383
 msgid "undefined"
-msgstr ""
+msgstr "non défini"
 
 #: src/ndisc.c:384
 #, c-format
@@ -187,11 +187,11 @@ msgstr ""
 
 #: src/ndisc.c:388 src/ndisc.c:390
 msgid "Yes"
-msgstr ""
+msgstr "Oui"
 
 #: src/ndisc.c:388 src/ndisc.c:390
 msgid "No"
-msgstr ""
+msgstr "Non"
 
 #: src/ndisc.c:389
 #, c-format
@@ -214,8 +214,8 @@ msgstr ""
 #: src/ndisc.c:404 src/ndisc.c:413
 msgid "millisecond"
 msgid_plural "milliseconds"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "milliseconde"
+msgstr[1] "millisecondes"
 
 #: src/ndisc.c:406 src/ndisc.c:415
 msgid " unspecified (0x00000000)\n"
@@ -232,11 +232,11 @@ msgstr ""
 #: src/ndisc.c:585
 #, c-format
 msgid " from %s\n"
-msgstr ""
+msgstr " de %s\n"
 
 #: src/ndisc.c:611 src/traceroute.c:844 src/traceroute.c:852
 msgid "Raw IPv6 socket"
-msgstr ""
+msgstr "Socket IPv6 brute"
 
 #: src/ndisc.c:642
 #, c-format
@@ -249,11 +249,11 @@ msgstr ""
 
 #: src/ndisc.c:678
 msgid "Timed out."
-msgstr ""
+msgstr "Expiré."
 
 #: src/ndisc.c:687
 msgid "No response."
-msgstr ""
+msgstr "Pas de réponse."
 
 #: src/ndisc.c:709
 #, c-format
@@ -287,11 +287,11 @@ msgstr ""
 
 #: src/ndisc.c:729
 msgid "link-layer address"
-msgstr ""
+msgstr "adresse de la couche lien"
 
 #: src/ndisc.c:731
 msgid "advertised prefixes"
-msgstr ""
+msgstr "préfixes annoncés"
 
 #: src/ndisc.c:744
 #, c-format
@@ -301,17 +301,17 @@ msgstr ""
 #: src/tcpspray.c:75 src/tcpspray.c:96
 #, c-format
 msgid "%s port %s: %s\n"
-msgstr ""
+msgstr "%s port %s : %s\n"
 
 #: src/tcpspray.c:119
 #, c-format
 msgid "%s %lu %s in %f %s"
-msgstr ""
+msgstr "%s %lu %s en %f %s"
 
 #: src/tcpspray.c:123
 #, c-format
 msgid " (%0.3f kbytes/s)"
-msgstr ""
+msgstr " (%0.3f ko/s)"
 
 #: src/tcpspray.c:154
 #, c-format
@@ -326,29 +326,29 @@ msgstr ""
 #: src/tcpspray.c:181 src/traceroute.c:428
 #, c-format
 msgid "Receive error: %s\n"
-msgstr ""
+msgstr "Erreur de réception : %s\n"
 
 #: src/tcpspray.c:183 src/tcpspray.c:219
 msgid "Connection closed by peer"
-msgstr ""
+msgstr "Connexion terminée par le correspondant"
 
 #: src/tcpspray.c:217 src/traceroute.c:992
 #, c-format
 msgid "Cannot send data: %s\n"
-msgstr ""
+msgstr "Impossible d'envoyer les données : %s\n"
 
 #: src/tcpspray.c:241
 #, c-format
 msgid "Child process returned an error"
-msgstr ""
+msgstr "Le processus a renvoyé une erreur"
 
 #: src/tcpspray.c:248
 msgid "Received"
-msgstr ""
+msgstr "Reçu"
 
 #: src/tcpspray.c:252
 msgid "Transmitted"
-msgstr ""
+msgstr "Transmis"
 
 #: src/tcpspray.c:280
 #, c-format
@@ -418,67 +418,67 @@ msgstr ""
 #: src/traceroute.c:551
 #, c-format
 msgid " %u.%03u ms "
-msgstr ""
+msgstr " %u.%03u ms "
 
 #: src/traceroute.c:592
 msgid "[closed] "
-msgstr ""
+msgstr "[fermé] "
 
 #: src/traceroute.c:596
 msgid "[open] "
-msgstr ""
+msgstr "[ouvert] "
 
 #: src/traceroute.c:608
 #, c-format
 msgid "(%d) "
-msgstr ""
+msgstr "(%d) "
 
 #: src/traceroute.c:650
 #, c-format
 msgid "%s%s%s%s: %s\n"
-msgstr ""
+msgstr "%s%s%s%s : %s\n"
 
 #: src/traceroute.c:651
 msgid "port "
-msgstr ""
+msgstr "port "
 
 #: src/traceroute.c:706
 msgid "traceroute to"
-msgstr ""
+msgstr "traceroute vers"
 
 #: src/traceroute.c:712
 #, c-format
 msgid "from %s, "
-msgstr ""
+msgstr "de %s, "
 
 #: src/traceroute.c:717
 #, c-format
 msgid "port %u, "
-msgstr ""
+msgstr "port %u, "
 
 #: src/traceroute.c:718
 #, c-format
 msgid "from port %u, "
-msgstr ""
+msgstr "du port %u, "
 
 #: src/traceroute.c:933
 #, c-format
 msgid "%u hops max, "
-msgstr ""
+msgstr "%u sauts max, "
 
 #: src/traceroute.c:942
 #, c-format
 msgid "%lu byte packets\n"
-msgstr ""
+msgstr "%lu octet/paquet\n"
 
 #: src/traceroute.c:969 src/traceroute.c:1043
 #, c-format
 msgid " %3u%% completed..."
-msgstr ""
+msgstr " %3u%% complété..."
 
 #: src/traceroute.c:1059
 msgid "                  "
-msgstr ""
+msgstr "                 "
 
 #: src/traceroute.c:1095
 #, c-format
@@ -522,9 +522,9 @@ msgstr ""
 #: src/traceroute.c:1152
 #, c-format
 msgid "%s: invalid hop limit\n"
-msgstr ""
+msgstr "%s : limite de sauts (hop limit) non valide\n"
 
 #: src/traceroute.c:1166
 #, c-format
 msgid "%s: invalid packet length\n"
-msgstr ""
+msgstr "%s : longueur de paquet non valide\n"

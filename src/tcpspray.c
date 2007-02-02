@@ -116,8 +116,9 @@ print_duration (const char *msg,
 	                - ((double)start->tv_sec)
 	                - ((double)start->tv_nsec) / 1000000000;
 
-	printf (_("%s %lu bytes in %f seconds"), gettext (msg),
-	        bytes, duration);
+	printf (_("%s %lu %s in %f %s"), gettext (msg),
+	        bytes, ngettext ("byte", "bytes", bytes),
+	        duration, ngettext ("second", "seconds", duration));
 	if (duration > 0)
 		printf (_(" (%0.3f kbytes/s)"), bytes / (duration * 1024));
 }
