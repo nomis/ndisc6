@@ -23,6 +23,8 @@
 # include <config.h>
 #endif
 
+#include <gettext.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h> /* div() */
@@ -1209,6 +1211,8 @@ main (int argc, char *argv[])
 		return 1;
 
 	setlocale (LC_ALL, "");
+	bindtextdomain (PACKAGE, LOCALEDIR);
+	textdomain (PACKAGE);
 
 	const char *dsthost, *srchost = NULL, *dstport = "33434", *srcport = NULL;
 	size_t plen = 60;

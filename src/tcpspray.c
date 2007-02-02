@@ -24,6 +24,8 @@
 # include <config.h>
 #endif
 
+#include <gettext.h>
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -334,6 +336,8 @@ static const char optstr[] = "46b:d:ef:hn:Vv";
 int main (int argc, char *argv[])
 {
 	setlocale (LC_ALL, "");
+	bindtextdomain (PACKAGE, LOCALEDIR);
+	textdomain (PACKAGE);
 
 	unsigned long block_count = 100;
 	size_t block_length = 1024;

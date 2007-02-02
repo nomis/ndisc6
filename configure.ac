@@ -102,9 +102,6 @@ AH_BOTTOM([
 
 #define _( str )		gettext (str)
 #define N_( str )		gettext_noop (str)
-#define gettext( str )		(str)
-#define gettext_noop( str )	(str)
-#define ngettext( a, b, c ) (((c) == 1) ? (a) : (b))
 ])
 
 

@@ -23,6 +23,7 @@ SUBDIRS = po src
 DIST_SUBDIRS = m4 $(SUBDIRS)
 man1_MANS = doc/addr2name.1 doc/dnssort.1 doc/tcpspray.1
 man8_MANS = doc/ndisc6.8 doc/rdisc6.8 doc/rltraceroute6.8
+noinst_HEADERS = include/gettext.h
 
 EXTRA_DIST = $(man1_MANS) $(man8_MANS)
 DISTCLEANFILES = stamp-svn

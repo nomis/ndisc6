@@ -23,6 +23,8 @@
 # include <config.h>
 #endif
 
+#include <gettext.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h> /* div() */
@@ -783,6 +785,8 @@ main (int argc, char *argv[])
 		return 1;
 
 	setlocale (LC_ALL, "");
+	bindtextdomain (PACKAGE, LOCALEDIR);
+	textdomain (PACKAGE);
 
 	int val;
 	unsigned retry = 3, flags = NDISC_DEFAULT, wait_ms = PROBE_DELAY;

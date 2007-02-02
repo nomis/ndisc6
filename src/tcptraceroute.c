@@ -23,6 +23,8 @@
 # include <config.h>
 #endif
 
+#include <gettext.h>
+
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -131,6 +133,8 @@ static const char bin_name[] = RLTRACEROUTE6;
 int main (int argc, char *argv[])
 {
 	setlocale (LC_ALL, "");
+	bindtextdomain (PACKAGE, LOCALEDIR);
+	textdomain (PACKAGE);
 
 	/* Determine path to wrapped binary */
 	char arg0[strlen (argv[0]) + sizeof (bin_name)];

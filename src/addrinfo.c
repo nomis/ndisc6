@@ -23,6 +23,8 @@
 # include <config.h>
 #endif
 
+#include <gettext.h>
+
 #include <stdio.h>
 #include <string.h> /* strchr() */
 #include <stdbool.h>
@@ -147,8 +149,8 @@ static int quick_usage (const char *path)
 static int version (void)
 {
         printf (_(
-"addrinfo %s ($Rev$)\n"
-" built %s on %s\n"), VERSION, __DATE__, PACKAGE_BUILD_HOSTNAME);
+"addrinfo %s (%s)\n"
+" built %s on %s\n"), VERSION, "$Rev$", __DATE__, PACKAGE_BUILD_HOSTNAME);
         printf (_("Configured with: %s\n"), PACKAGE_CONFIGURE_INVOCATION);
         puts (_("Written by Remi Denis-Courmont\n"));
 
@@ -176,6 +178,8 @@ static const char sopts[] = "46hmnrV";
 int main (int argc, char *argv[])
 {
 	setlocale (LC_ALL, "");
+	bindtextdomain (PACKAGE, LOCALEDIR);
+	textdomain (PACKAGE);
 
 	int val, family = AF_UNSPEC, aflags = AI_IDN, nflags = NI_NUMERICHOST;
 	bool single = true;

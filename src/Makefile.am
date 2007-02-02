@@ -21,7 +21,8 @@ bindir = @bindir@
 sbindir = @sbindir@
 mysuidexecdir = $(myexecdir)
 
-AM_CPPFLAGS = -I$(top_srcdir)
+AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
+	-DLOCALEDIR=\"$(localedir)\"
 
 mysuidexec_PROGRAMS = ndisc6 rdisc6 rltraceroute6
 myexec_PROGRAMS = tcptraceroute6
@@ -41,7 +42,7 @@ ndisc6_LDADD = $(LIBRT)
 
 # rdisc6
 rdisc6_SOURCES = ndisc.c
-rdisc6_CFLAGS = -DRDISC
+rdisc6_CPPFLAGS = -DRDISC $(AM_CPPFLAGS)
 rdisc6_LDADD = $(LIBRT)
 
 # traceroute6
@@ -49,7 +50,7 @@ rltraceroute6_SOURCES = traceroute.c traceroute.h \
 			trace-tcp.c trace-udp.c trace-icmp.c
 rltraceroute6_LDADD = $(LIBRT)
 tcptraceroute6_SOURCES = tcptraceroute.c
-tcptraceroute6_CPPFLAGS = \
+tcptraceroute6_CPPFLAGS = $(AM_CPPFLAGS) \
 	-DRLTRACEROUTE6=\"`echo rltraceroute6 | sed '$(transform)'`\"
 
 tracert6: Makefile.am gen-alias
