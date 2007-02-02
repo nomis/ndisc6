@@ -423,7 +423,7 @@ proto_recv (int fd, tracetest_t *res, int *attempt, int *hlim,
 
 			default:
 				/* These are very bad errors (-> bugs) */
-				fprintf (_("Receive error: %s\n"), sterror (errno));
+				fprintf (stderr, _("Receive error: %s\n"), strerror (errno));
 				return 0;
 		}
 	}
@@ -987,7 +987,7 @@ traceroute (const char *dsthost, const char *dstport,
 				if (type->send_probe (protofd, hlim, attempt, packet_len,
 				                      dst.sin6_port))
 				{
-					fprintf (_("Cannot send data: %s\n"),
+					fprintf (stderr, _("Cannot send data: %s\n"),
 					         strerror (errno));
 					return -1;
 				}
