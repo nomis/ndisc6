@@ -665,7 +665,7 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
 	memset (&hints, 0, sizeof (hints));
 	hints.ai_family = AF_INET6;
 	hints.ai_socktype = type->gai_socktype;
-	hints.ai_flags = AI_IDN;
+	hints.ai_flags = AI_CANONNAME | AI_IDN;
 
 	if ((srchost != NULL) || (srcport != NULL))
 	{
@@ -703,8 +703,12 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
 	}
 
 	char buf[INET6_ADDRSTRLEN];
-	fputs (_("traceroute to"), stdout);
-	printname (res->ai_addr, res->ai_addrlen);
+	if (inet_ntop (AF_INET6,
+	               &((const struct sockaddr_in6 *)res->ai_addr)->sin6_addr,
+	               buf, sizeof (buf)) == NULL)
+		strcpy (buf, "??");
+
+	printf (_("traceroute to %s (%s) "), res->ai_canonname, buf);
 
 	if ((getsockname (fd, (struct sockaddr *)dst,
 	                  &(socklen_t){ sizeof (*dst) }) == 0)
@@ -713,10 +717,8 @@ connect_proto (int fd, struct sockaddr_in6 *dst,
 
 	memcpy (dst, res->ai_addr, res->ai_addrlen);
 	if (has_port (type->protocol))
-	{
-		printf (_("port %u, "), ntohs (dst->sin6_port));
-		printf (_("from port %u, "), ntohs (sport));
-	}
+		printf (_("port %u, from port %u, "), ntohs (dst->sin6_port),
+		        ntohs (sport));
 
 	freeaddrinfo (res);
 	return 0;
