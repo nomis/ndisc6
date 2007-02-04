@@ -199,6 +199,41 @@ Specify a milliseconds delay to wait between each probe
 with identical hop limit.
 This can be useful to work-around ICMPv6 rate limitation on some hosts.
 
+.SH DIAGNOSTICS
+If a response is received, the round-trip time is printed.
+In addition, specific symbols denote certain errors:
+
+.TP
+.BR "*" "   No response"
+No valid response received before the timeout delay (see -w option).
+
+.TP
+.BR "!N" "  No route to destination"
+There is no entry for the destination network in the routing table.
+
+.TP
+.BR "!A" "  Communication with destination administratively prohibited"
+A firewall explicitly rejected the traffic.
+
+.TP
+.BR "!S"  "  Beyond scope of source address"
+The address scope of the source address is too small to reach the
+destination address. At the time of writing, this can only happen when
+using a link-local source address to reach a global scope destination.
+(Note: some IPv4 traceroute implementations use !S for source route
+error which is completely different)
+
+.TP
+.BR "!H" "  Address unreachable"
+The host address is not reachable for some other reasons,
+particularly a link-layer failure (e.g. Neighbor discovery failure).
+
+.TP
+.BR "!P" "  Unrecognized Next Header type encountered"
+The destination does not implement the layer-4 protocol used.
+You should retry with ICMPv6 Echo Requests (-I command line option)
+which MUST be supported by any IPv6 node.
+
 .SH SECURITY
 .RI "rltraceroute6 should be " "setuid" " " "root" " to allow use by non "
 privileged users. It will drop its root privileges before any attempt
