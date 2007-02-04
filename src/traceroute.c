@@ -315,6 +315,7 @@ out:
 #define TRACE_OPEN        3
 #define TRACE_NOROUTE 0x100 // !N network unreachable
 #define TRACE_ADMIN   0x101 // !A administratively prohibited
+#define TRACE_BSCOPE  0X102 // !S beyond scope of source address
 #define TRACE_NOHOST  0x103 // !H address unreachable
 //#define TRACE_TOOBIG  0x100 // !F-%u packet too big
 //#define TRACE_NOSUP   0x400 // header field error
@@ -372,11 +373,17 @@ icmp_recv (int fd, tracetest_t *res, int *attempt, int *hlim,
 			{
 				case ICMP6_DST_UNREACH_NOROUTE:
 				case ICMP6_DST_UNREACH_ADMIN:
+				case ICMP6_DST_UNREACH_BEYONDSCOPE:
 				case ICMP6_DST_UNREACH_ADDR:
 					res->result = 0x100 | pkt.hdr.icmp6_code;
 					break;
 				case ICMP6_DST_UNREACH_NOPORT:
 					res->result = TRACE_OK;
+					break;
+				case 5: // ingress/egress policy failure
+				case 6: // reject route
+					res->result = TRACE_ADMIN;
+					break;
 			}
 			break;
 
@@ -605,7 +612,7 @@ display (const tracetest_t *tab, unsigned min_ttl, unsigned max_ttl,
 			}
 
 			if (test->rhlim != -1)
-				printf (_("(%d) "), test->rhlim);
+				printf ("(%d) ", test->rhlim);
 
 			const char *msg2;
 			switch (test->result)
@@ -616,6 +623,10 @@ display (const tracetest_t *tab, unsigned min_ttl, unsigned max_ttl,
 
 				case TRACE_ADMIN:
 					msg2 = "!A ";
+					break;
+
+				case TRACE_BSCOPE:
+					msg2 = "!S ";
 					break;
 
 				case TRACE_NOHOST:
@@ -631,7 +642,7 @@ display (const tracetest_t *tab, unsigned min_ttl, unsigned max_ttl,
 			}
 
 			if (msg2 != NULL)
-				fputs (gettext (msg2), stdout);
+				fputs (msg2, stdout);
 		}
 
 		fputc ('\n', stdout);
