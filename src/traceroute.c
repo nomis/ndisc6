@@ -353,6 +353,35 @@ icmp_recv (int fd, tracetest_t *res, int *attempt, int *hlim,
 
 	len -= sizeof (pkt.hdr) + sizeof (pkt.inhdr);
 
+#if 0
+	/* "Extended" ICMP detection */
+	const uint8_t *ext = NULL;
+	size_t extlen = 0;
+	switch (pkt.hdr.icmp6_type)
+	{
+		case ICMP6_DST_UNREACH:
+		case ICMP6_TIME_EXCEEDED:
+			if (pkt.hdr.icmp6_data8[0] != 0)
+			{
+				short origlen = pkt.hdr.icmp6_data8[0] << 6;
+				if (origlen > len)
+					return 0; // malformatted extended ICMP
+
+				assert (origlen >= 40);
+				ext = pkt.buf - 40 + origlen;
+				extlen = len - origlen;
+				len = origlen;
+
+				if ((extlen < 1) || ((ext[0] >> 4) != 2))
+					break; // no ext / unknown version
+				if (extlen < 4)
+					return 0; // malformatted v2 extension
+
+				/* FIXME: compute checksum */
+			}
+	}
+#endif
+
 	const void *buf = skip_exthdrs (&pkt.inhdr, (size_t *)&len);
 
 	if (memcmp (&pkt.inhdr.ip6_dst, &dst->sin6_addr, 16))
@@ -366,6 +395,7 @@ icmp_recv (int fd, tracetest_t *res, int *attempt, int *hlim,
 		return 0;
 
 	/* interesting ICMPv6 error */
+	bool final = true;
 	switch (pkt.hdr.icmp6_type)
 	{
 		case ICMP6_DST_UNREACH:
@@ -399,11 +429,38 @@ icmp_recv (int fd, tracetest_t *res, int *attempt, int *hlim,
 			if (pkt.hdr.icmp6_code == ICMP6_TIME_EXCEED_TRANSIT)
 			{
 				res->result = TRACE_OK;
-				return 1; // intermediary reponse
+				final = false; // intermediary reponse
+				break;
 			}
 		default: // should not happen (ICMPv6 filter)
 			return 0;
 	}
+
+#if 0
+	/* "Extended" ICMP handling */
+	if (extlen > 0)
+	{
+		ext += 4;
+		extlen -= 4;
+		while (extlen >= 4)
+		{
+			uint16_t objlen = (ext[0] << 8) | ext[1];
+			if ((objlen & 3) || (objlen < 4) // malformatted object
+			 || (objlen > extlen)) // incomplete object
+				break;
+
+			switch (ext[2])
+			{
+			}
+
+			ext += objlen;
+			extlen -= objlen;
+		}
+	}
+#endif
+
+	if (!final)
+		return 1; // intermediary response
 
 	// final response received
 	return memcmp (&res->addr.sin6_addr, &dst->sin6_addr, 16) ? 2 : 3;
