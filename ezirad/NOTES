@@ -1,0 +1,124 @@
+This document lists all the options from the classical radvd, explains how
+ezirad determines a value for each of them, and the rationale.
+
+Copyright © Rémi Denis-Courmont.
+Distributed under the same license terms as the ezirad package.
+
+Last update: 28 December 2006
+
+Interface options
+==================
+
+IgnoreIfMissing (Off)		N/A (or in a way, always On)
+	ezirad automatically picks interface as they appear and disappear.
+
+AdvSendAvert (Off)		always On
+	There might be some corner cases where ezirad should not answer on an
+	interface, though it would seldom cause harm to do so. Still, I wonder
+	why radvd has this option (and on top of that Off by default!). You
+	would not configure the interface if you did not send advertisements
+	on it.
+
+UnicastOnly (Off)		fail-safe Off with regards to unsolicited RAs
+				always On with regards to solicited RAs
+	ezirad always replies send solicited RAs as unicast, which is legal
+	(though not the specification default), and works fine even for
+	multicast-enabled links. It even avoids broadcasting RAs to host that
+	did not request them.
+	ezirad should try to send unsoliticated RAs (multicast) on
+	IFF_MULTICAST links and ignore errors.
+	NOT IMPLEMENTED YET
+
+MaxRtrAdvInterval (10 minutes)
+MinRtrAdvInterval (200)
+MinDelayBetweenRAs (3)
+	NOT IMPLEMENTED YET
+
+AdvManagedFlag (Off)		always Off
+	ezirad is all about not managing the network, so there is probably no
+	DHCPv6 server available on hosts. If there is one, you should use
+	radvd instead.
+
+AdvOtherConfigFlag (Off)	always Off
+	Same as AdvManagedFlag. However, we may want to implement DHCPv6 in
+	ezirad too, if only to provide Recursive DNS Server configuration.
+	This is a huge TODO however.
+
+AdvLinkMTU (0 = Off)		always Off
+	ezirad can guess the interface MTU. Support for AdvLinkMTU is present,
+	though commented out. It is typically useless to tell other hosts to
+	use the MTU which we obtained from lower layer, as they know about it
+	too already. AdvLinkMTU is only useful if hosts need to use a lower
+	MTU for some unusual reasons (MSS clamping used to be one with broken
+	tunnels, but it has mostly disappeared as IPv6 stacks improved).
+	Worst yet, the MTU, as seen from the host running ezirad might be
+	different from the MTU as seen on other nodes. A typical scenario
+	involves an Gigabit Ethernet ezirad router (MTU=9000+) with some Fast
+	Ethernet (MTU=1500) nodes on the network segment.
+
+AdvReachableTime (unspecified)	always unspeficied
+AdvRetransTimer (unspecified)	always unspecified
+	The most sane default is that provided by the underlying link-layer.
+	No need to customize this.
+
+AdvCurHopLimit (64)		local kernel configuration (or 128)
+
+AdvDefaultLifetime (30 minutes)	always 30 minutes
+	AdvDefaultLifetime has to be non-zero otherwise the router will be
+	very useless. It also has to be multiple times MaxRtrAdvInterval so
+	that a host has little risk of loosing its autoconfiguration even if
+	it lost a 1 or 2 subsequent unsoliticed RAs.
+	That being said, it should be no bigger that radvd's own default, so
+	that an explicitly configured router will not get a lower priority on
+	the same network segment.
+
+AdvDefaultPreference (Medium)	always Low
+
+AdvSourceLLAddress (On)		always On (unless link has no address)
+
+AdvHomeAgentFlag (Off)		always Off until Mobile IPv6 implemented
+AdvHomeAgentInfo (Off)		always Off
+	ezirad should determine this automatically, but this is
+	NOT IMPLEMENTED YET.
+
+HomeAgentLifetime (30 minutes)	N/A until AdvHomeAgentFlag is implemented
+HomeAgentPreference (0)		always 0? always something <0 ? N/A currently
+
+AdvMobRtrSupportFlag (Off)	always Off until Mobile Router implemented
+
+AdvIntervalOpt (Off)		NOT IMPLEMENTED (should be always Off?)
+
+
+Prefix options
+===============
+
+AdvOnLink (On)			always On
+	Let alone an uncommon link layer type, this should always work fine.
+	Afterall, we trust our own addresses table.
+
+AdvAutonomous (On)		On if and only if prefix length is 64 bits
+	ezirad currently assumes there is no DHCPv6 server, so hosts should
+	use autonomous address configuration.
+
+AdvRouterAddr (Off)		pending Mobile IPv6 support NOT IMPLEMENTED
+
+AdvValidLifetime (30 days)	always 30 days - should be smaller
+AdvPreferredLifetime (7 days)	always 7 days - should be smaller
+
+Base6to4Interface (not used)	N/A
+
+
+Route options
+==============
+
+Route option is not currently implemented at all.
+
+AdvRouteLifetime (30 minutes)	same as AdvDefaultLifetime
+AdvRoutePreference (Medium)	same as AdvDefaultPreference
+
+
+Recursive DNS Server options
+=============================
+
+RDNSS is purposedly not implemented because it was not standard at the time of
+writing this document. Relevant options will be reviewed in due time.
