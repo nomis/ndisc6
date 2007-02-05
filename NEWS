@@ -16,8 +16,10 @@ provided manual pages.
 STABLE RELEASE 0.9.1 : Minor bug fixes
 
 # traceroute6: fix progress report in case of timeouts.
+# traceroute6 supports UDP-Lite (with -L provisional option)
 # addrinfo becomes addr2name because of conflict with Sofia-SIP.
 # nameinfo becomes name2addr.
+# gettext support (English and partial French localization included).
 
 ============================================================================
 TEST RELEASE 0.9.0 : Major features enhancement, major bug fixes

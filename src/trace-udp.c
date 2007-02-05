@@ -54,6 +54,10 @@ send_udp_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 	(void)n;
 	packet.uh.uh_sport = sport;
 	packet.uh.uh_dport = htons (ntohs (port) + ttl);
+	/* For UDP-Lite we have full checksum coverage, if only because the
+	 * IPV6_CHECKSUM setsockopt cannot only supports full coverage, so
+	 * we can set coverage to the length of the packet, even though zero
+	 * would be more idiosyncrasic. */
 	packet.uh.uh_ulen = htons (plen);
 	/*if (plen > sizeof (struct udphdr))
 		packet.payload[0] = (uint8_t)ttl;*/
@@ -85,4 +89,7 @@ parse_udp_error (const void *data, size_t len, int *ttl, unsigned *n,
 
 const tracetype udp_type =
 	{ SOCK_DGRAM, IPPROTO_UDP, 6,
+	  send_udp_probe, NULL, parse_udp_error };
+const tracetype udplite_type =
+	{ SOCK_DGRAM, IPPROTO_UDPLITE, 6,
 	  send_udp_probe, NULL, parse_udp_error };

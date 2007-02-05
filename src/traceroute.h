@@ -51,6 +51,10 @@ ssize_t send_payload (int fd, const void *payload, size_t length, int hlim);
 extern bool ecn;
 extern uint16_t sport;
 
-extern const tracetype udp_type, echo_type, syn_type, ack_type;
+extern const tracetype udp_type, udplite_type, echo_type, syn_type, ack_type;
+
+#ifndef IPPROTO_UDPLITE
+# define IPPROTO_UDPLITE 136
+#endif
 
 #endif

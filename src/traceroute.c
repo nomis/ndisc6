@@ -856,6 +856,7 @@ static struct
 	{ IPPROTO_ICMPV6, -1, EPERM },
 	{ IPPROTO_ICMPV6, -1, EPERM },
 	{ IPPROTO_UDP,    -1, EPERM },
+	{ IPPROTO_UDPLITE,-1, EPERM },
 	{ IPPROTO_TCP,    -1, EPERM }
 };
 
@@ -877,6 +878,7 @@ static int prepare_sockets (void)
 
 static int get_socket (int protocol)
 {
+	errno = EPROTONOSUPPORT;
 	for (unsigned i = 0; i < sizeof (protofd) / sizeof (protofd[0]); i++)
 		if (protofd[i].protocol == protocol)
 		{
@@ -1271,7 +1273,7 @@ static const struct option opts[] =
 };
 
 
-static const char optstr[] = "AdEFf:g:hIi:lm:Nnp:q:rSs:t:UVw:xz:" "P:";
+static const char optstr[] = "AdEFf:g:hIi:Llm:Nnp:q:rSs:t:UVw:xz:" "P:";
 
 int
 main (int argc, char *argv[])
@@ -1333,6 +1335,13 @@ main (int argc, char *argv[])
 			case 'i':
 				strncpy (ifname, optarg, IFNAMSIZ - 1);
 				ifname[IFNAMSIZ - 1] = '\0';
+				break;
+
+			/* We should really have a generic option and
+			 * use getprotobyname() instead. Semantics of -L
+			 * will likely change in future versions!! */
+			case 'L':
+				type = &udplite_type;
 				break;
 
 			case 'l':
