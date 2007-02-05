@@ -20,7 +20,7 @@ rltraceroute6 \- IPv6 traceroute tool
 tcptraceroute6 \- TCP/IPv6 traceroute tool
 
 .SH SYNOPSIS
-.BR "traceroute6" " [" "-AdEIlnrSU" "] [" "-f min_hop" "] [" "-g hop" "] ["
+.BR "traceroute6" " [" "-AdEILlnrSU" "] [" "-f min_hop" "] [" "-g hop" "] ["
 .BR "-i iface" "] [" "-m max_hop" "] [" "-p port" "] [" "-q attempts" "] ["
 .BR "-s source" "] [" "-t tclass" "] [" "-w wait" "] [" "-z delay_ms" "] <"
 .BR "hostname/address" "> [" "packet length" "]"
@@ -108,6 +108,11 @@ That's the default for tracert6.
 .B "\-i"
 Only send packets through the specified interface.
 See also BUGS.
+
+.TP
+.B "\-I" " (rltraceroute6 only)"
+Send UDP-Lite (protocol 136) packets (with full checksum coverage)
+as probe packets instead of normal UDP (protocol 17).
 
 .TP
 .BR "\-l" " (rltraceroute6 only)"
