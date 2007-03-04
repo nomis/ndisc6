@@ -28,12 +28,11 @@ if [ -z "$PARAMS" ]; then
 fi
 
 BACKEND="`echo "${BACKEND}" | sed "${transform}"`"
-OUTPUT="`tempfile`"
 
-cat > "$OUTPUT" << EOF
+rm -f "${FRONTEND}"
+cat > "$FRONTEND" << EOF
 #! /bin/sh
 exec "\$(dirname \$0)/${BACKEND}" ${PARAMS} "\$@"
 EOF
-chmod +rx "$OUTPUT"
-mv -f "$OUTPUT" "$FRONTEND"
+chmod +rx "$FRONTEND"
 
