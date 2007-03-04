@@ -13,6 +13,11 @@ informations on this program, see README. For syntax details, read the
 provided manual pages.
 
 ============================================================================
+STABLE RELEASE 0.9.2 : Minor portability fixes
+
+# traceroute6: fix compilation on glibc 2.3
+
+============================================================================
 STABLE RELEASE 0.9.1 : Minor bug fixes
 
 # traceroute6: fix progress report in case of timeouts.
