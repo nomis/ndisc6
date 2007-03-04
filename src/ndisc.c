@@ -436,7 +436,7 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 			case ND_OPT_SOURCE_LINKADDR:
 				if (verbose)
 				{
-					fputs (" Source link-layer address: ", stdout);
+					fputs (_(" Source link-layer address: "), stdout);
 					printmacaddress (ptr + 2, optlen - 2);
 				}
 				break;
