@@ -1164,8 +1164,8 @@ static int
 usage (const char *path)
 {
 	printf (_(
-"Usage: %s [options] <IPv6 hostname/address> [packet length]\n"
-"Print IPv6 network route to a host\n"), path);
+"Usage: %s [options] <IPv6 hostname/address> [%s]\n"
+"Print IPv6 network route to a host\n"), path, _("packet length"));
 
 	puts (_("\n"
 "  -A  send TCP ACK probes\n"

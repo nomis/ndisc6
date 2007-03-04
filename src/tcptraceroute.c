@@ -49,8 +49,8 @@ static int
 usage (const char *path)
 {
 	printf (_(
-"Usage: %s [options] <IPv6 hostname/address> [port number]\n"
-"Print IPv6 network route to a host\n"), path);
+"Usage: %s [options] <IPv6 hostname/address> [%s]\n"
+"Print IPv6 network route to a host\n"), path, _("port number"));
 
 	puts (_("\n"
 "  -A  send TCP ACK probes\n"
@@ -77,23 +77,6 @@ usage (const char *path)
 "  -z  specify a time to wait (in ms) between each probes (default: 0)\n"
 	));
 
-	return 0;
-}
-
-
-static int
-version (void)
-{
-	printf (_("tcptraceroute6: TCP/IPv6 traceroute tool %s (%s)\n"),
-	        VERSION, "$Rev");
-	printf (_(" built %s on %s\n"), __DATE__, PACKAGE_BUILD_HOSTNAME);
-	printf (_("Configured with: %s\n"), PACKAGE_CONFIGURE_INVOCATION);
-	puts (_("Written by Remi Denis-Courmont\n"));
-
-	printf (_("Copyright (C) %u-%u Remi Denis-Courmont\n"
-"This is free software; see the source for copying conditions.\n"
-"There is NO warranty; not even for MERCHANTABILITY or\n"
-"FITNESS FOR A PARTICULAR PURPOSE.\n"), 2005, 2006);
 	return 0;
 }
 
@@ -173,7 +156,9 @@ int main (int argc, char *argv[])
 				return usage (argv[0]);
 
 			case 'V':
-				return version ();
+				optc = 1;
+				optv[optc++] = "-V";
+				goto run;
 
 			case '?':
 				return quick_usage (argv[0]);
@@ -229,9 +214,9 @@ int main (int argc, char *argv[])
 	if (psize != NULL)
 		optv[optc++] = psize;
 
+run:
 	assert (optbuf + sizeof (optbuf) >= buf);
 	assert ((sizeof (optv) / sizeof (optv[0])) > (unsigned)optc);
-
 	optv[optc] = NULL;
 
 	execvp (optv[0], optv);
