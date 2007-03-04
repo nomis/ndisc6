@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: miredo-devel_no_bulk_mail@remlab.net\n"
-"POT-Creation-Date: 2007-02-02 21:58+0200\n"
+"POT-Creation-Date: 2007-03-04 12:00+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -37,7 +37,7 @@ msgid ""
 msgstr ""
 
 #: src/addrinfo.c:144 src/ndisc.c:699 src/tcpspray.c:271
-#: src/tcptraceroute.c:43 src/traceroute.c:1086
+#: src/tcptraceroute.c:43 src/traceroute.c:1158
 #, c-format
 msgid "Try \"%s -h\" for more information.\n"
 msgstr ""
@@ -47,25 +47,21 @@ msgstr ""
 msgid "addrinfo %s (%s)\n"
 msgstr ""
 
-#: src/addrinfo.c:152 src/ndisc.c:745 src/tcpspray.c:307
-#: src/tcptraceroute.c:89 src/traceroute.c:1133
+#: src/addrinfo.c:152 src/ndisc.c:745 src/tcpspray.c:307 src/traceroute.c:1205
 #, c-format
 msgid " built %s on %s\n"
 msgstr ""
 
-#: src/addrinfo.c:153 src/ndisc.c:747 src/tcpspray.c:308
-#: src/tcptraceroute.c:90 src/traceroute.c:1134
+#: src/addrinfo.c:153 src/ndisc.c:747 src/tcpspray.c:308 src/traceroute.c:1206
 #, c-format
 msgid "Configured with: %s\n"
 msgstr ""
 
-#: src/addrinfo.c:154 src/ndisc.c:748 src/tcpspray.c:309
-#: src/tcptraceroute.c:91 src/traceroute.c:1135
+#: src/addrinfo.c:154 src/ndisc.c:748 src/tcpspray.c:309 src/traceroute.c:1207
 msgid "Written by Remi Denis-Courmont\n"
 msgstr ""
 
-#: src/addrinfo.c:156 src/ndisc.c:750 src/tcpspray.c:311
-#: src/tcptraceroute.c:93 src/traceroute.c:1137
+#: src/addrinfo.c:156 src/ndisc.c:750 src/tcpspray.c:311 src/traceroute.c:1209
 #, c-format
 msgid ""
 "Copyright (C) %u-%u Remi Denis-Courmont\n"
@@ -74,7 +70,7 @@ msgid ""
 "FITNESS FOR A PARTICULAR PURPOSE.\n"
 msgstr ""
 
-#: src/ndisc.c:104 src/traceroute.c:869
+#: src/ndisc.c:104 src/traceroute.c:941
 #, c-format
 msgid "%s: %s\n"
 msgstr ""
@@ -222,6 +218,10 @@ msgstr ""
 msgid "Retransmit time           : "
 msgstr ""
 
+#: src/ndisc.c:439
+msgid " Source link-layer address: "
+msgstr ""
+
 #: src/ndisc.c:568
 msgid "Receiving ICMPv6 packet"
 msgstr ""
@@ -231,7 +231,7 @@ msgstr ""
 msgid " from %s\n"
 msgstr ""
 
-#: src/ndisc.c:611 src/traceroute.c:844 src/traceroute.c:852
+#: src/ndisc.c:611 src/traceroute.c:916 src/traceroute.c:924
 msgid "Raw IPv6 socket"
 msgstr ""
 
@@ -320,7 +320,7 @@ msgstr ""
 msgid "Sending %lu %s with blocksize %lu %s\n"
 msgstr ""
 
-#: src/tcpspray.c:181 src/traceroute.c:428
+#: src/tcpspray.c:181 src/traceroute.c:492
 #, c-format
 msgid "Receive error: %s\n"
 msgstr ""
@@ -329,7 +329,7 @@ msgstr ""
 msgid "Connection closed by peer"
 msgstr ""
 
-#: src/tcpspray.c:217 src/traceroute.c:992
+#: src/tcpspray.c:217 src/traceroute.c:1064
 #, c-format
 msgid "Cannot send data: %s\n"
 msgstr ""
@@ -375,11 +375,15 @@ msgstr ""
 msgid "tcpspray6: TCP/IP bandwidth tester %s (%s)\n"
 msgstr ""
 
-#: src/tcptraceroute.c:52
+#: src/tcptraceroute.c:52 src/traceroute.c:1167
 #, c-format
 msgid ""
-"Usage: %s [options] <IPv6 hostname/address> [port number]\n"
+"Usage: %s [options] <IPv6 hostname/address> [%s]\n"
 "Print IPv6 network route to a host\n"
+msgstr ""
+
+#: src/tcptraceroute.c:53
+msgid "port number"
 msgstr ""
 
 #: src/tcptraceroute.c:55
@@ -407,84 +411,67 @@ msgid ""
 "  -z  specify a time to wait (in ms) between each probes (default: 0)\n"
 msgstr ""
 
-#: src/tcptraceroute.c:87
-#, c-format
-msgid "tcptraceroute6: TCP/IPv6 traceroute tool %s (%s)\n"
-msgstr ""
-
-#: src/traceroute.c:551
+#: src/traceroute.c:615
 #, c-format
 msgid " %u.%03u ms "
 msgstr ""
 
-#: src/traceroute.c:592
+#: src/traceroute.c:656
 msgid "[closed] "
 msgstr ""
 
-#: src/traceroute.c:596
+#: src/traceroute.c:660
 msgid "[open] "
-msgstr ""
-
-#: src/traceroute.c:608
-#, c-format
-msgid "(%d) "
-msgstr ""
-
-#: src/traceroute.c:650
-#, c-format
-msgid "%s%s%s%s: %s\n"
-msgstr ""
-
-#: src/traceroute.c:651
-msgid "port "
-msgstr ""
-
-#: src/traceroute.c:706
-msgid "traceroute to"
-msgstr ""
-
-#: src/traceroute.c:712
-#, c-format
-msgid "from %s, "
-msgstr ""
-
-#: src/traceroute.c:717
-#, c-format
-msgid "port %u, "
 msgstr ""
 
 #: src/traceroute.c:718
 #, c-format
-msgid "from port %u, "
+msgid "%s%s%s%s: %s\n"
 msgstr ""
 
-#: src/traceroute.c:933
+#: src/traceroute.c:719
+msgid "port "
+msgstr ""
+
+#: src/traceroute.c:779
+#, c-format
+msgid "traceroute to %s (%s) "
+msgstr ""
+
+#: src/traceroute.c:784
+#, c-format
+msgid "from %s, "
+msgstr ""
+
+#: src/traceroute.c:788
+#, c-format
+msgid "port %u, from port %u, "
+msgstr ""
+
+#: src/traceroute.c:1005
 #, c-format
 msgid "%u hops max, "
 msgstr ""
 
-#: src/traceroute.c:942
+#: src/traceroute.c:1014
 #, c-format
 msgid "%lu byte packets\n"
 msgstr ""
 
-#: src/traceroute.c:969 src/traceroute.c:1043
+#: src/traceroute.c:1041 src/traceroute.c:1115
 #, c-format
 msgid " %3u%% completed..."
 msgstr ""
 
-#: src/traceroute.c:1059
+#: src/traceroute.c:1131
 msgid "                  "
 msgstr ""
 
-#: src/traceroute.c:1095
-#, c-format
-msgid ""
-"Usage: %s [options] <IPv6 hostname/address> [packet length]\n"
-"Print IPv6 network route to a host\n"
+#: src/traceroute.c:1168
+msgid "packet length"
 msgstr ""
 
-#: src/traceroute.c:1098
+#: src/traceroute.c:1170
 msgid ""
 "\n"
 "  -A  send TCP ACK probes\n"
@@ -511,17 +498,17 @@ msgid ""
 "  -z  specify a time to wait (in ms) between each probes (default: 0)\n"
 msgstr ""
 
-#: src/traceroute.c:1132
+#: src/traceroute.c:1204
 #, c-format
 msgid "traceroute6: TCP & UDP IPv6 traceroute tool %s (%s)\n"
 msgstr ""
 
-#: src/traceroute.c:1152
+#: src/traceroute.c:1224
 #, c-format
 msgid "%s: invalid hop limit\n"
 msgstr ""
 
-#: src/traceroute.c:1166
+#: src/traceroute.c:1238
 #, c-format
 msgid "%s: invalid packet length\n"
 msgstr ""
