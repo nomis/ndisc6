@@ -38,6 +38,7 @@ RDC_BUILD_HOSTNAME
 # Checks for programs.
 AS_MESSAGE([checking required programs...])
 AC_PROG_CC_C99
+AM_PROG_CC_C_O
 AC_USE_SYSTEM_EXTENSIONS
 AM_INIT_AUTOMAKE([check-news dist-bzip2 no-dist-gzip no-exeext std-options])
 
