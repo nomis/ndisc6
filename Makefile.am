@@ -48,6 +48,11 @@ uninstall-hook:
 	unlink "$(DESTDIR)$(man1dir)/tcpspray6.1"
 	unlink "$(DESTDIR)$(man1dir)/name2addr.1"
 
+distcheck-hook:
+	cd "$(srcdir)" && \
+	cat $(man1_MANS) $(man8_MANS) | grep -ve '\.\\"' | \
+		iconv -f ASCII >/dev/null
+
 distclean-local:
 	test "$(top_srcdir)" = "$(top_builddir)" || rm -f ChangeLog
 
