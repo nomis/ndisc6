@@ -3,24 +3,23 @@ dnl based on earlier configure.ac from tcpreen by the same author
 
 dnl Process this file with GNU Autoconf to produce a configure script
 
-dnl ***********************************************************************
-dnl *  Copyright © 2002-2006 Rémi Denis-Courmont.                         *
-dnl *  This program is free software; you can redistribute and/or modify  *
-dnl *  it under the terms of the GNU General Public License as published  *
-dnl *  by the Free Software Foundation; version 2 of the license.         *
-dnl *                                                                     *
-dnl *  This program is distributed in the hope that it will be useful,    *
-dnl *  but WITHOUT ANY WARRANTY; without even the implied warranty of     *
-dnl *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.               *
-dnl *  See the GNU General Public License for more details.               *
-dnl *                                                                     *
-dnl *  You should have received a copy of the GNU General Public License  *
-dnl *  along with this program; if not, you can get it from:              *
-dnl *  http://www.gnu.org/copyleft/gpl.html                               *
-dnl ***********************************************************************
+dnl *************************************************************************
+dnl *  Copyright © 2002-2007 Rémi Denis-Courmont.                           *
+dnl *  This program is free software: you can redistribute and/or modify    *
+dnl *  it under the terms of the GNU General Public License as published by *
+dnl *  the Free Software Foundation, version 3 of the license.              *
+dnl *                                                                       *
+dnl *  This program is distributed in the hope that it will be useful,      *
+dnl *  but WITHOUT ANY WARRANTY; without even the implied warranty of       *
+dnl *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
+dnl *  GNU General Public License for more details.                         *
+dnl *                                                                       *
+dnl *  You should have received a copy of the GNU General Public License    *
+dnl *  along with this program. If not, see <http://www.gnu.org/licenses/>. *
+dnl *************************************************************************
 
-AC_COPYRIGHT([Copyright (C) 2005-2006 Remi Denis-Courmont])
-AC_INIT(ndisc6, 0.9.2, rdenis@simphalempin.com)
+AC_COPYRIGHT([Copyright (C) 2005-2007 Remi Denis-Courmont])
+AC_INIT(ndisc6, 0.9.3, rdenis@simphalempin.com)
 AC_PREREQ(2.59c)
 INVOCATION="`echo "$0 $ac_configure_args" | sed -e 's/\\\/\\\\\\\/g'`"
 
