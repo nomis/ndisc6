@@ -119,7 +119,7 @@ getipv6byname (const char *name, const char *ifname, int numeric,
 }
 
 
-inline int
+static inline int
 setmcasthoplimit (int fd, int value)
 {
 	return setsockopt (fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
