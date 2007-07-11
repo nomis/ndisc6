@@ -278,6 +278,8 @@ buildsol (solicit_packet *rs)
 static void
 print32time (uint32_t v)
 {
+	v = ntohl (v);
+
 	if (v == 0xffffffff)
 		fputs (_("    infinite (0xffffffff)\n"), stdout);
 	else
@@ -306,9 +308,9 @@ parseprefix (const struct nd_opt_prefix_info *pi, size_t optlen, bool verbose)
 	if (verbose)
 	{
 		fputs (_("  Valid time              : "), stdout);
-		print32time (ntohl (pi->nd_opt_pi_valid_time));
+		print32time (pi->nd_opt_pi_valid_time);
 		fputs (_("  Pref. time              : "), stdout);
-		print32time (ntohl (pi->nd_opt_pi_preferred_time));
+		print32time (pi->nd_opt_pi_preferred_time);
 	}
 	return 0;
 }
@@ -351,7 +353,33 @@ parseroute (const uint8_t *opt)
 	printf (_(" Route                    : %s/%u\n"), str, (unsigned)plen);
 	printf (_("  Route preference        :       %6s\n"), pref_i2n (opt[3]));
 	fputs (_("  Route lifetime          : "), stdout);
-	print32time (ntohl (((uint32_t *)opt)[1]));
+	print32time (((const uint32_t *)opt)[1]);
+	return 0;
+}
+
+
+static int
+parserdnss (const uint8_t *opt)
+{
+	uint8_t optlen = opt[1];
+	if (((optlen & 1) == 0) || (optlen < 3))
+		return -1;
+
+	optlen /= 2;
+	for (unsigned i = 0; i < optlen; i++)
+	{
+		char str[INET6_ADDRSTRLEN];
+
+		if (inet_ntop (AF_INET6, opt + (16 * i + 8), str,
+		               sizeof (str)) == NULL)
+			return -1;
+
+		printf (_(" Recursive DNS server     : %s\n"), str);
+	}
+
+	fputs (ngettext ("  DNS server lifetime     : ",
+	                 "  DNS servers lifetime    : ", optlen), stdout);
+	print32time (((const uint32_t *)opt)[1]);
 	return 0;
 }
 
@@ -458,11 +486,9 @@ parseadv (const uint8_t *buf, size_t len, bool verbose)
 				parseroute (ptr);
 				break;
 
-#if 0
 			case 25: // RFC Ed queued draft-jeong-dnsop-ipv6-dns-discovery-12
-				if ((optlen & 8) == 0)
-					break; // Length must be 8*(n+1)
-#endif
+				parserdnss (ptr);
+				break;
 		}
 		/* skips unrecognized option */
 
