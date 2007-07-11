@@ -30,6 +30,7 @@
 #include <inttypes.h>
 #include <limits.h> /* UINT_MAX */
 #include <locale.h>
+#include <stdbool.h>
 
 #include <errno.h> /* EMFILE */
 #include <sys/types.h>
@@ -208,7 +209,7 @@ buildsol (solicit_packet *ns, struct sockaddr_in6 *tgt, const char *ifname)
 
 static int
 parseadv (const uint8_t *buf, size_t len, const struct sockaddr_in6 *tgt,
-         int verbose)
+          bool verbose)
 {
 	const struct nd_neighbor_advert *na =
 		(const struct nd_neighbor_advert *)buf;
@@ -286,7 +287,7 @@ print32time (uint32_t v)
 
 
 static int
-parseprefix (const struct nd_opt_prefix_info *pi, size_t optlen, int verbose)
+parseprefix (const struct nd_opt_prefix_info *pi, size_t optlen, bool verbose)
 {
 	char str[INET6_ADDRSTRLEN];
 
@@ -356,7 +357,7 @@ parseroute (const uint8_t *opt)
 
 
 static int
-parseadv (const uint8_t *buf, size_t len, int verbose)
+parseadv (const uint8_t *buf, size_t len, bool verbose)
 {
 	const struct nd_router_advert *ra =
 		(const struct nd_router_advert *)buf;
@@ -429,15 +430,13 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 
 		len -= optlen;
 
-		/* skips unrecognized option */
-		switch (ptr[0])
+		/* only prefix are shown if not verbose */
+		switch (ptr[0] * (verbose ? 1
+		                          : (ptr[0] == ND_OPT_PREFIX_INFORMATION)))
 		{
 			case ND_OPT_SOURCE_LINKADDR:
-				if (verbose)
-				{
-					fputs (_(" Source link-layer address: "), stdout);
-					printmacaddress (ptr + 2, optlen - 2);
-				}
+				fputs (_(" Source link-layer address: "), stdout);
+				printmacaddress (ptr + 2, optlen - 2);
 				break;
 
 			case ND_OPT_TARGET_LINKADDR:
@@ -452,15 +451,20 @@ parseadv (const uint8_t *buf, size_t len, int verbose)
 				break; /* ignore */
 
 			case ND_OPT_MTU:
-				if (verbose)
-					parsemtu ((const struct nd_opt_mtu *)ptr);
+				parsemtu ((const struct nd_opt_mtu *)ptr);
 				break;
 
 			case 24: // RFC4191
-				if (verbose)
-					parseroute (ptr);
+				parseroute (ptr);
 				break;
+
+#if 0
+			case 25: // RFC Ed queued draft-jeong-dnsop-ipv6-dns-discovery-12
+				if ((optlen & 8) == 0)
+					break; // Length must be 8*(n+1)
+#endif
 		}
+		/* skips unrecognized option */
 
 		ptr += optlen;
 	}
@@ -573,7 +577,7 @@ recvadv (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
 		 && (addr.sin6_scope_id != tgt->sin6_scope_id))
 			continue;
 
-		if (parseadv (buf, val, tgt, flags & NDISC_VERBOSE) == 0)
+		if (parseadv (buf, val, tgt, (flags & NDISC_VERBOSE) != 0) == 0)
 		{
 			if (flags & NDISC_VERBOSE)
 			{
