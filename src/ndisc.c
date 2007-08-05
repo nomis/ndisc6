@@ -264,8 +264,11 @@ parseadv (const uint8_t *buf, size_t len, const struct sockaddr_in6 *tgt,
 typedef struct nd_router_solicit solicit_packet;
 
 static ssize_t
-buildsol (solicit_packet *rs)
+buildsol (solicit_packet *rs, struct sockaddr_in6 *tgt, const char *ifname)
 {
+	(void)tgt;
+	(void)ifname;
+
 	/* builds ICMPv6 Router Solicitation packet */
 	rs->nd_rs_type = ND_ROUTER_SOLICIT;
 	rs->nd_rs_code = 0;
@@ -385,12 +388,15 @@ parserdnss (const uint8_t *opt)
 
 
 static int
-parseadv (const uint8_t *buf, size_t len, bool verbose)
+parseadv (const uint8_t *buf, size_t len, const struct sockaddr_in6 *tgt,
+          bool verbose)
 {
 	const struct nd_router_advert *ra =
 		(const struct nd_router_advert *)buf;
 	const uint8_t *ptr;
-	
+
+	(void)tgt;
+
 	/* checks if the packet is a Router Advertisement */
 	if ((len < sizeof (struct nd_router_advert))
 	 || (ra->nd_ra_type != ND_ROUTER_ADVERT)
@@ -497,9 +503,6 @@ parseadv (const uint8_t *buf, size_t len, bool verbose)
 
 	return 0;
 }
-
-# define buildsol( a, b, c ) buildsol (a)
-# define parseadv( a, b, c, d ) parseadv (a, b, d)
 #endif
 
 
