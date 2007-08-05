@@ -63,19 +63,6 @@
 # define AI_IDN 0
 #endif
 
-#ifndef RDISC
-# define ND_TYPE_ADVERT ND_NEIGHBOR_ADVERT
-# define NDISC_DEFAULT (NDISC_VERBOSE1 | NDISC_SINGLE)
-# define PROBE_DELAY 1000
-# ifdef __linux__
-#  include <sys/ioctl.h>
-# endif
-#else
-# define ND_TYPE_ADVERT ND_ROUTER_ADVERT
-# define NDISC_DEFAULT NDISC_VERBOSE1
-# define PROBE_DELAY 4000
-#endif
-
 
 enum ndisc_flags
 {
@@ -144,6 +131,10 @@ printmacaddress (const uint8_t *ptr, size_t len)
 
 
 #ifndef RDISC
+# ifdef __linux__
+#  include <sys/ioctl.h>
+# endif
+
 static int
 getmacaddress (const char *ifname, uint8_t *addr)
 {
@@ -176,12 +167,22 @@ getmacaddress (const char *ifname, uint8_t *addr)
 # endif
 }
 
+
+static const uint8_t nd_type_advert = ND_NEIGHBOR_ADVERT;
+static const unsigned nd_delay_ms = 1000;
+static const unsigned ndisc_default = NDISC_VERBOSE1 | NDISC_SINGLE;
+static const char ndisc_usage[] = N_(
+	"Usage: %s [options] <IPv6 address> <interface>\n"
+	"Looks up an on-link IPv6 node link-layer address (Neighbor Discovery)\n");
+static const char ndisc_dataname[] = N_("link-layer address");
+
 typedef struct
 {
 	struct nd_neighbor_solicit hdr;
 	struct nd_opt_hdr opt;
 	uint8_t hw_addr[6];
 } solicit_packet;
+
 
 static ssize_t
 buildsol (solicit_packet *ns, struct sockaddr_in6 *tgt, const char *ifname)
@@ -261,6 +262,14 @@ parseadv (const uint8_t *buf, size_t len, const struct sockaddr_in6 *tgt,
 	return -1;
 }
 #else
+static const uint8_t nd_type_advert = ND_ROUTER_ADVERT;
+static const unsigned nd_delay_ms = 4000;
+static const unsigned ndisc_default = NDISC_VERBOSE1;
+static const char ndisc_usage[] = N_(
+	"Usage: %s [options] [IPv6 address] <interface>\n"
+	"Solicits on-link IPv6 routers (Router Discovery)\n");
+static const char ndisc_dataname[] = N_("advertised prefixes");
+
 typedef struct nd_router_solicit solicit_packet;
 
 static ssize_t
@@ -651,7 +660,7 @@ ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
 		struct icmp6_filter f;
 
 		ICMP6_FILTER_SETBLOCKALL (&f);
-		ICMP6_FILTER_SETPASS (ND_TYPE_ADVERT, &f);
+		ICMP6_FILTER_SETPASS (nd_type_advert, &f);
 		setsockopt (fd, IPPROTO_ICMPV6, ICMP6_FILTER, &f, sizeof (f));
 	}
 
@@ -736,15 +745,7 @@ quick_usage (const char *path)
 static int
 usage (const char *path)
 {
-	printf (
-#ifndef RDISC
-_("Usage: %s [options] <IPv6 address> <interface>\n"
-"Looks up an on-link IPv6 node link-layer address (Neighbor Discovery)\n")
-#else
-_("Usage: %s [options] [IPv6 address] <interface>\n"
-"Solicits on-link IPv6 routers (Router Discovery)\n")
-#endif
-		, path);
+	printf (gettext (ndisc_usage), path);
 
 	printf (_("\n"
 "  -1, --single   display first response and exit\n"
@@ -756,13 +757,7 @@ _("Usage: %s [options] [IPv6 address] <interface>\n"
 "  -V, --version  display program version and exit\n"
 "  -v, --verbose  verbose display (this is the default)\n"
 "  -w, --wait     how long to wait for a response [ms] (default: 1000)\n"
-	           "\n"),
-#ifndef RDISC
-	           _("link-layer address")
-#else
-	           _("advertised prefixes")
-#endif
-		);
+	           "\n"), gettext (ndisc_dataname));
 
 	return 0;
 }
@@ -771,7 +766,6 @@ _("Usage: %s [options] [IPv6 address] <interface>\n"
 static int
 version (void)
 {
-	/* FIXME: not gettext compliant !!! */
 	printf (_(
 "ndisc6: IPv6 Neighbor/Router Discovery userland tool %s (%s)\n"), VERSION, "$Rev$");
 	printf (_(" built %s on %s\n"), __DATE__, PACKAGE_BUILD_HOSTNAME);
@@ -785,7 +779,6 @@ version (void)
 "FITNESS FOR A PARTICULAR PURPOSE.\n"), 2004, 2006);
 	return 0;
 }
-
 
 
 static const struct option opts[] = 
@@ -819,7 +812,7 @@ main (int argc, char *argv[])
 	textdomain (PACKAGE);
 
 	int val;
-	unsigned retry = 3, flags = NDISC_DEFAULT, wait_ms = PROBE_DELAY;
+	unsigned retry = 3, flags = ndisc_default, wait_ms = nd_delay_ms;
 	const char *hostname, *ifname;
 
 	while ((val = getopt_long (argc, argv, "1hmnqr:Vvw:", opts, NULL)) != EOF)
