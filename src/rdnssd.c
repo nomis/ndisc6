@@ -1,10 +1,10 @@
 /*
- * ndisc.c - ICMPv6 neighbour discovery command line tool
- * $Id: ndisc.c 483 2007-08-08 15:09:36Z remi $
+ * rdnssd.c - daemon for DNS configuration from ICMPv6 RA
+ * $Id$
  */
 
 /*************************************************************************
- *  Copyright © 2004-2006 Rémi Denis-Courmont.                           *
+ *  Copyright © 2007 Rémi Denis-Courmont.                                *
  *  This program is free software: you can redistribute and/or modify    *
  *  it under the terms of the GNU General Public License as published by *
  *  the Free Software Foundation, versions 2 or 3 of the license.        *
