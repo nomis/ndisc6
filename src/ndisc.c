@@ -4,7 +4,7 @@
  */
 
 /*************************************************************************
- *  Copyright © 2004-2006 Rémi Denis-Courmont.                           *
+ *  Copyright © 2004-2007 Rémi Denis-Courmont.                           *
  *  This program is free software: you can redistribute and/or modify    *
  *  it under the terms of the GNU General Public License as published by *
  *  the Free Software Foundation, versions 2 or 3 of the license.        *
@@ -501,7 +501,7 @@ parseadv (const uint8_t *buf, size_t len, const struct sockaddr_in6 *tgt,
 				parseroute (ptr);
 				break;
 
-			case 25: // RFC Ed queued draft-jeong-dnsop-ipv6-dns-discovery-12
+			case 25: // RFC5006
 				parserdnss (ptr);
 				break;
 		}
