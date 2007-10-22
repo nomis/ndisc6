@@ -18,7 +18,7 @@
 # *************************************************************************
 
 if test ! -f doc/rdisc6.8 ; then
-	echo "You must run this script from your miredo SVN directory."
+	echo "You must run this script from your ndisc6 SVN directory."
 	exit 1
 fi
 
