@@ -440,7 +440,7 @@ int main (void)
 {
 	int val;
 
-	openlog ("rrdnsd", LOG_PERROR | LOG_PID, LOG_DAEMON);
+	openlog ("rdnssd", LOG_PERROR | LOG_PID, LOG_DAEMON);
 	val = rdnssd ();
 	closelog ();
 	return val != 0;
