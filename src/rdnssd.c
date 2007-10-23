@@ -167,7 +167,7 @@ error:
 void trim_expired()
 {
 	while (servers.count > 0
-	       && servers.list[servers.count - 1].expiry < now)
+	       && servers.list[servers.count - 1].expiry <= now)
 		servers.count--;
 }
 
