@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <poll.h>
 #include <errno.h>
+#include <resolv.h>
 
 
 /* Belongs in <netinet/icmp6.h> */
@@ -80,7 +81,8 @@ typedef struct
 	time_t          expiry;
 } rdnss_t;
 
-#define MAX_RDNSS 3
+#define MAX_RDNSS MAXNS
+#define MIN_RESOLV_RDNSS MAXNS - 1
 
 static struct
 {
@@ -94,6 +96,7 @@ void write_resolv()
 	char *tail_dnsv4 = dnsv4, *tail_other = other;
 	unsigned int room_dnsv4 = RESOLV_FILE_BUF, room_other = RESOLV_FILE_BUF;
 	char line[RESOLV_LINE_BUF];
+	size_t count_dnsv4 = 0;
 	FILE *resolv = fopen("/etc/resolv.conf", "r");
 
 	while (fgets(line, RESOLV_LINE_BUF, resolv)) {
@@ -113,6 +116,7 @@ void write_resolv()
 					tail_dnsv4 += line_len;
 					room_dnsv4 -= line_len;
 				}
+				count_dnsv4++;
 			}
 		}
 
@@ -131,11 +135,17 @@ void write_resolv()
 	*tail_dnsv4 = 0;
 
 	if (resolv = fopen("/etc/.resolv.conf.tmp", "w")) {
-		struct rdnss *rdnss;
+		size_t limit = servers.count;
+
+		if (servers.count > MIN_RESOLV_RDNSS) {
+			size_t room = MAXNS - count_dnsv4;
+			if (servers.count > room)
+				limit = (room > MIN_RESOLV_RDNSS) ? room : MIN_RESOLV_RDNSS;
+		}
 
 		fputs(other, resolv);
 
-		for (int i = 0; i < servers.count; i++) {
+		for (size_t i = 0; i < limit; i++) {
 			char buf[INET6_ADDRSTRLEN];
 			inet_ntop(AF_INET6, &servers.list[i].addr, buf, INET6_ADDRSTRLEN);
 			fputs("nameserver ", resolv);
