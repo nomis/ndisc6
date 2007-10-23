@@ -176,9 +176,9 @@ int rdnss_older (const void *a, const void *b)
 	time_t ta = ((const rdnss_t *)a)->expiry;
 	time_t tb = ((const rdnss_t *)b)->expiry;
 
-	if (ta > tb)
-		return 1;
 	if (ta < tb)
+		return 1;
+	if (ta > tb)
 		return -1;
 	return 0;
 }
