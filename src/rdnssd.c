@@ -4,7 +4,7 @@
  */
 
 /*************************************************************************
- *  Copyright © 2007 Rémi Denis-Courmont.                                *
+ *  Copyright © 2007 Rémi Denis-Courmont, Pierre Ynard.                  *
  *  This program is free software: you can redistribute and/or modify    *
  *  it under the terms of the GNU General Public License as published by *
  *  the Free Software Foundation, versions 2 or 3 of the license.        *
