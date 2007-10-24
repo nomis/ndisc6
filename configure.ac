@@ -7,7 +7,7 @@ dnl *************************************************************************
 dnl *  Copyright © 2002-2007 Rémi Denis-Courmont.                           *
 dnl *  This program is free software: you can redistribute and/or modify    *
 dnl *  it under the terms of the GNU General Public License as published by *
-dnl *  the Free Software Foundation, version 3 of the license.              *
+dnl *  the Free Software Foundation, version 2 or 3 of the license.         *
 dnl *                                                                       *
 dnl *  This program is distributed in the hope that it will be useful,      *
 dnl *  but WITHOUT ANY WARRANTY; without even the implied warranty of       *
