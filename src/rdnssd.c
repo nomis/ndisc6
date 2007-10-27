@@ -25,6 +25,7 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -35,7 +36,6 @@
 #include <netinet/icmp6.h>
 #include <linux/rtnetlink.h>
 #include <arpa/inet.h>
-#include <stdio.h>
 #include <poll.h>
 #include <errno.h>
 #include <resolv.h>
@@ -70,6 +70,7 @@ struct nduseroptmsg
 
 #define RTNLGRP_ND_USEROPT 20
 
+/* Internal defines */
 
 static time_t now;
 
@@ -88,16 +89,33 @@ static struct
 	rdnss_t list[MAX_RDNSS];
 } servers = { .count = 0 };
 
+#define MYCONFDIR SYSCONFDIR "/rdnssd"
+
+/* The code */
+
 void merge_hook()
 {
-	int status;
+	static const char hookpath[] = MYCONFDIR "/merge.hook";
+	pid_t pid = fork ();
 
-	if (fork() == 0) {
-		execv("/etc/rdnssd/merge.hook", NULL);
-		exit(1);
+	switch (pid)
+	{
+		case 0:
+			execl (hookpath, hookpath, (char *)NULL);
+			syslog (LOG_ERR, "cannot run %s: %m", hookpath);
+			exit(1);
+
+		case -1:
+			syslog (LOG_ERR, "cannot run %s: %m", hookpath);
+			break;
+
+		default:
+		{
+			int status;
+			waitpid (pid, &status, 0);
+		}
 	}
 
-	wait(&status);
 
 }
 
@@ -106,7 +124,7 @@ void write_resolv()
 	FILE *resolv = fopen("/var/run/rdnssd/resolv.conf", "w");
 
 	if (! resolv) {
-		syslog(LOG_ERR, "cannot write resolv.conf: %s", strerror(errno));
+		syslog(LOG_ERR, "cannot write resolv.conf: %m");
 		return;
 	}
 
