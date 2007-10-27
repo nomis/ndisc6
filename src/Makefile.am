@@ -10,7 +10,8 @@ mysuidexecdir = $(myexecdir)
 
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 	-DLOCALEDIR=\"$(localedir)\" \
-	-DSYSCONFDIR=\"$(sysconfdir)\"
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DLOCALSTATEDIR=\"$(localstatedir)\"
 
 mysuidexec_PROGRAMS = ndisc6 rdisc6 rltraceroute6
 myexec_PROGRAMS = tcptraceroute6

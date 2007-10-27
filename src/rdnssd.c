@@ -121,7 +121,7 @@ void merge_hook()
 
 void write_resolv()
 {
-	FILE *resolv = fopen("/var/run/rdnssd/resolv.conf", "w");
+	FILE *resolv = fopen(LOCALSTATEDIR"/run/rdnssd/resolv.conf", "w");
 
 	if (! resolv) {
 		syslog(LOG_ERR, "cannot write resolv.conf: %m");
