@@ -39,6 +39,8 @@
 #include <poll.h>
 #include <errno.h>
 #include <resolv.h>
+#include <sys/inotify.h>
+#include <sys/wait.h>
 
 
 /* Belongs in <netinet/icmp6.h> */
@@ -68,9 +70,6 @@ struct nduseroptmsg
 
 #define RTNLGRP_ND_USEROPT 20
 
-#define RESOLV_LINE_BUF 256
-#define RESOLV_FILE_BUF 1024
-
 
 static time_t now;
 
@@ -82,7 +81,6 @@ typedef struct
 } rdnss_t;
 
 #define MAX_RDNSS MAXNS
-#define MIN_RESOLV_RDNSS MAXNS - 1
 
 static struct
 {
@@ -90,77 +88,37 @@ static struct
 	rdnss_t list[MAX_RDNSS];
 } servers = { .count = 0 };
 
+void merge_hook()
+{
+	int status;
+
+	if (fork() == 0) {
+		execv("/etc/rdnssd/merge.hook", NULL);
+		exit(1);
+	}
+
+	wait(&status);
+
+}
+
 void write_resolv()
 {
-	char dnsv4[RESOLV_FILE_BUF], other[RESOLV_FILE_BUF];
-	char *tail_dnsv4 = dnsv4, *tail_other = other;
-	unsigned int room_dnsv4 = RESOLV_FILE_BUF, room_other = RESOLV_FILE_BUF;
-	char line[RESOLV_LINE_BUF];
-	size_t count_dnsv4 = 0;
-	FILE *resolv = fopen("/etc/resolv.conf", "r");
+	FILE *resolv = fopen("/var/run/rdnssd/resolv.conf", "w");
 
-	while (fgets(line, RESOLV_LINE_BUF, resolv)) {
-		char s_addr[RESOLV_LINE_BUF];
-		size_t line_len = strlen(line);
-		int other = 1;
+	if (! resolv) {
+		syslog(LOG_ERR, "cannot write resolv.conf: %s", strerror(errno));
+		return;
+	}
 
-		if (sscanf(line, "nameserver %s", s_addr) > 0) {
-			struct in6_addr addr6;
-			struct in_addr addr4;
-			if (inet_pton(AF_INET6, s_addr, &addr6) > 0) {
-				other = 0;
-			} else if (inet_pton(AF_INET, s_addr, &addr4) > 0) {
-				other = 0;
-				if (line_len <= room_dnsv4) {
-					memcpy(tail_dnsv4, line, line_len);
-					tail_dnsv4 += line_len;
-					room_dnsv4 -= line_len;
-				}
-				count_dnsv4++;
-			}
-		}
-
-		if (other) {
-			if (line_len <= room_other) {
-				memcpy(tail_other, line, line_len);
-				tail_other += line_len;
-				room_other -= line_len;
-			}
-		}
+	for (size_t i = 0; i < servers.count; i++) {
+		char buf[INET6_ADDRSTRLEN];
+		inet_ntop(AF_INET6, &servers.list[i].addr, buf, INET6_ADDRSTRLEN);
+		fputs("nameserver ", resolv);
+		fputs(buf, resolv);
+		fputs("\n", resolv);
 	}
 
 	fclose(resolv);
-
-	*tail_other = 0;
-	*tail_dnsv4 = 0;
-
-	if (resolv = fopen("/etc/.resolv.conf.tmp", "w")) {
-		size_t limit = servers.count;
-
-		if (servers.count > MIN_RESOLV_RDNSS) {
-			size_t room = MAXNS - count_dnsv4;
-			if (servers.count > room)
-				limit = (room > MIN_RESOLV_RDNSS) ? room : MIN_RESOLV_RDNSS;
-		}
-
-		fputs(other, resolv);
-
-		for (size_t i = 0; i < limit; i++) {
-			char buf[INET6_ADDRSTRLEN];
-			inet_ntop(AF_INET6, &servers.list[i].addr, buf, INET6_ADDRSTRLEN);
-			fputs("nameserver ", resolv);
-			fputs(buf, resolv);
-			fputs("\n", resolv);
-		}
-
-		fputs(dnsv4, resolv);
-		fclose(resolv);
-		if (rename("/etc/.resolv.conf.tmp", "/etc/resolv.conf") < 0)
-			goto error;
-	} else {
-error:
-		syslog(LOG_ERR, "cannot write resolv.conf: %s", strerror(errno));
-	}
 
 }
 
@@ -353,8 +311,6 @@ static int icmp_socket()
 		return -1;
 	}
 
-	fcntl (fd, F_SETFD, FD_CLOEXEC);
-
 	/* set ICMPv6 filter */
 	{
 		struct icmp6_filter f;
@@ -398,18 +354,28 @@ static int nl_socket()
 
 static int rdnssd (void)
 {
-	struct pollfd pfd;
+	struct pollfd pfd[2];
 	int flags;
 
-	pfd.fd = setup_socket();
-	pfd.events = POLLIN;
+	pfd[0].fd = setup_socket();
+	if (pfd[0].fd < 0)
+		return pfd[0].fd;
+	fcntl(pfd[0].fd, F_SETFD, FD_CLOEXEC);
 
-	if (pfd.fd < 0)
-		return pfd.fd;
+	pfd[0].events = POLLIN;
+
+	pfd[1].fd = inotify_init();
+	if (pfd[1].fd < 0)
+		return pfd[1].fd;
+	fcntl(pfd[1].fd, F_SETFD, FD_CLOEXEC);
+
+	pfd[1].events = POLLIN;
 
 	/* be defensive - we want to block on poll(), not recv() */
-	flags = fcntl(pfd.fd, F_GETFL);
-	fcntl(pfd.fd, F_SETFL, flags | O_NONBLOCK);
+	flags = fcntl(pfd[0].fd, F_GETFL);
+	fcntl(pfd[0].fd, F_SETFL, flags | O_NONBLOCK);
+	flags = fcntl(pfd[1].fd, F_GETFL);
+	fcntl(pfd[1].fd, F_SETFL, flags | O_NONBLOCK);
 
 	for (;;)
 	{
@@ -422,16 +388,23 @@ static int rdnssd (void)
 
 		trim_expired();
 		write_resolv();
+		merge_hook();
 
 		if (servers.count)
 			timeout = 1000 * (servers.list[servers.count - 1].expiry - now);
 		else
 			timeout = -1;
 
-		poll(&pfd, 1, timeout);
+		inotify_add_watch(pfd[1].fd, "/etc/resolv.conf", IN_MODIFY);
 
-		if (pfd.revents & POLLIN)
-			recv_msg(&pfd);
+		poll(pfd, 2, timeout);
+
+		if (pfd[0].revents & POLLIN)
+			recv_msg(&pfd[0]);
+		if (pfd[1].revents & POLLIN) {
+			struct inotify_event ie;
+			read(pfd[1].fd, &ie, sizeof(ie));
+		}
 	}
 }
 
