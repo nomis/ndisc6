@@ -301,12 +301,12 @@ static int recv_nl (int fd)
 {
 	unsigned int buf_size = NLMSG_SPACE(65536 - sizeof(struct icmp6_hdr));
 	uint8_t buf[buf_size];
-	int msg_size;
+	size_t msg_size;
 	struct nduseroptmsg *ndmsg;
 
 	memset(buf, 0, buf_size);
 	msg_size = recv(fd, buf, buf_size, 0);
-	if (msg_size < 0)
+	if (msg_size == (size_t)(-1))
 		return -1;
 
 	if (msg_size < NLMSG_SPACE(sizeof(struct nduseroptmsg)))
