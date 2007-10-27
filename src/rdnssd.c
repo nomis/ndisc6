@@ -226,7 +226,9 @@ static int parse_nd_opts(struct nd_opt_hdr *opt, unsigned int opts_len)
 
 }
 
-static int recv_icmp(struct pollfd *pfd)
+#if 0
+/* TODO: use this as fallback if netlink is not available */
+static int recv_icmp (int fd)
 {
 		struct nd_router_advert icmp6;
 		uint8_t buf[65536 - sizeof (icmp6)], cbuf[CMSG_SPACE (sizeof (int))];
@@ -246,7 +248,7 @@ static int recv_icmp(struct pollfd *pfd)
 			.msg_controllen = sizeof (cbuf)
 		};
 
-		ssize_t len = recvmsg (pfd->fd, &msg, 0);
+		ssize_t len = recvmsg (fd, &msg, 0);
 
 		/* Sanity checks */
 		if ((len < (ssize_t)sizeof (icmp6)) /* error or too small packet */
@@ -271,37 +273,6 @@ static int recv_icmp(struct pollfd *pfd)
 
 }
 
-static int recv_nl(struct pollfd *pfd)
-{
-	unsigned int buf_size = NLMSG_SPACE(65536 - sizeof(struct icmp6_hdr));
-	uint8_t buf[buf_size];
-	int msg_size;
-	struct nduseroptmsg *ndmsg;
-
-	memset(buf, 0, buf_size);
-	msg_size = recv(pfd->fd, buf, buf_size, 0);
-	if (msg_size < 0)
-		return -1;
-
-	if (msg_size < NLMSG_SPACE(sizeof(struct nduseroptmsg)))
-		return -1;
-
-	ndmsg = (struct nduseroptmsg *) NLMSG_DATA((struct nlmsghdr *) buf);
-
-	if (ndmsg->nduseropt_family != AF_INET6
-		|| ndmsg->nduseropt_icmp_type != ND_ROUTER_ADVERT
-		|| ndmsg->nduseropt_icmp_code != 0)
-		return 0;
-
-	if (msg_size < NLMSG_SPACE(sizeof(struct nduseroptmsg) + ndmsg->nduseropt_opts_len))
-		return -1;
-
-	return parse_nd_opts((struct nd_opt_hdr *) (ndmsg + 1), ndmsg->nduseropt_opts_len);
-
-}
-
-#define recv_msg recv_nl
-
 static int icmp_socket()
 {
 	int fd = socket (AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
@@ -325,6 +296,38 @@ static int icmp_socket()
 
 	return fd;
 }
+#endif
+
+static int recv_nl (int fd)
+{
+	unsigned int buf_size = NLMSG_SPACE(65536 - sizeof(struct icmp6_hdr));
+	uint8_t buf[buf_size];
+	int msg_size;
+	struct nduseroptmsg *ndmsg;
+
+	memset(buf, 0, buf_size);
+	msg_size = recv(fd, buf, buf_size, 0);
+	if (msg_size < 0)
+		return -1;
+
+	if (msg_size < NLMSG_SPACE(sizeof(struct nduseroptmsg)))
+		return -1;
+
+	ndmsg = (struct nduseroptmsg *) NLMSG_DATA((struct nlmsghdr *) buf);
+
+	if (ndmsg->nduseropt_family != AF_INET6
+		|| ndmsg->nduseropt_icmp_type != ND_ROUTER_ADVERT
+		|| ndmsg->nduseropt_icmp_code != 0)
+		return 0;
+
+	if (msg_size < NLMSG_SPACE(sizeof(struct nduseroptmsg) + ndmsg->nduseropt_opts_len))
+		return -1;
+
+	return parse_nd_opts((struct nd_opt_hdr *) (ndmsg + 1), ndmsg->nduseropt_opts_len);
+
+}
+
+#define recv_msg recv_nl
 
 static int nl_socket()
 {
@@ -352,33 +355,39 @@ static int nl_socket()
 
 #define setup_socket nl_socket
 
-static int rdnssd (void)
+static void prepare_fd (int fd)
 {
-	struct pollfd pfd[2];
-	int flags;
-
-	pfd[0].fd = setup_socket();
-	if (pfd[0].fd < 0)
-		return pfd[0].fd;
-	fcntl(pfd[0].fd, F_SETFD, FD_CLOEXEC);
-
-	pfd[0].events = POLLIN;
-
-	pfd[1].fd = inotify_init();
-	if (pfd[1].fd < 0)
-		return pfd[1].fd;
-	fcntl(pfd[1].fd, F_SETFD, FD_CLOEXEC);
-
-	pfd[1].events = POLLIN;
+	fcntl (fd, F_SETFD, FD_CLOEXEC);
 
 	/* be defensive - we want to block on poll(), not recv() */
-	flags = fcntl(pfd[0].fd, F_GETFL);
-	fcntl(pfd[0].fd, F_SETFL, flags | O_NONBLOCK);
-	flags = fcntl(pfd[1].fd, F_GETFL);
-	fcntl(pfd[1].fd, F_SETFL, flags | O_NONBLOCK);
+	fcntl (fd, F_SETFL, fcntl (fd, F_GETFL) | O_NONBLOCK);
+}
+
+
+static int rdnssd (void)
+{
+	int sock, inofd;
+
+	sock = setup_socket();
+	if (sock == -1)
+		return -1;
+	prepare_fd (sock);
+
+	inofd = inotify_init();
+	if (inofd == -1)
+	{
+		close (sock);
+		return -1;
+	}
+	prepare_fd (inofd);
 
 	for (;;)
 	{
+		struct pollfd pfd[2] =
+		{
+			{ .fd = sock,  .events = POLLIN, .revents = 0 },
+			{ .fd = inofd, .events = POLLIN, .revents = 0 },
+		};
 		int timeout;
 		{
 			struct timespec ts;
@@ -397,13 +406,14 @@ static int rdnssd (void)
 
 		inotify_add_watch(pfd[1].fd, "/etc/resolv.conf", IN_MODIFY);
 
-		poll(pfd, 2, timeout);
+		if (poll (pfd, sizeof (pfd) / sizeof (pfd[0]), timeout) <= 0)
+			continue;
 
 		if (pfd[0].revents & POLLIN)
-			recv_msg(&pfd[0]);
+			recv_msg(sock);
 		if (pfd[1].revents & POLLIN) {
 			struct inotify_event ie;
-			read(pfd[1].fd, &ie, sizeof(ie));
+			read(inofd, &ie, sizeof(ie));
 		}
 	}
 }
