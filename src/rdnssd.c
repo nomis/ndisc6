@@ -185,18 +185,17 @@ static void rdnss_update (const struct in6_addr *addr, time_t expiry)
 #endif
 }
 
-static int parse_nd_opts(struct nd_opt_hdr *opt, unsigned int opts_len)
+static int parse_nd_opts (const struct nd_opt_hdr *opt, size_t opts_len)
 {
-
 	for (; opts_len >= sizeof(struct nd_opt_hdr);
 	     opts_len -= opt->nd_opt_len << 3,
-	     opt = (struct nd_opt_hdr *)
-		   ((uint8_t *) opt) + (opt->nd_opt_len << 3)) {
+	     opt = (const struct nd_opt_hdr *)
+		   ((const uint8_t *) opt) + (opt->nd_opt_len << 3)) {
 		struct nd_opt_rdnss *rdnss_opt;
-		ssize_t nd_opt_len = opt->nd_opt_len;
+		size_t nd_opt_len = opt->nd_opt_len;
 		uint32_t lifetime;
 
-		if (nd_opt_len == 0 || opts_len < nd_opt_len << 3)
+		if (nd_opt_len == 0 || opts_len < (nd_opt_len << 3))
 			return -1;
 
 		if (opt->nd_opt_type != ND_OPT_RDNSS)
