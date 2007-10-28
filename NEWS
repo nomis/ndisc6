@@ -16,6 +16,7 @@ provided manual pages.
 ??? RELEASE 0.9.4 : Major feature enhancements
 
 # RDNSS client daemon for Linux.
+# Fix name2addr and addr2name inversion.
 
 ============================================================================
 STABLE RELEASE 0.9.3 : Minor feature enhancements

@@ -16,8 +16,8 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 mysuidexec_PROGRAMS = ndisc6 rdisc6 rltraceroute6
 myexec_PROGRAMS = tcptraceroute6
 myexec_SCRIPTS = tracert6
-bin_PROGRAMS = tcpspray addr2name
-bin_SCRIPTS = tcpspray6 dnssort name2addr
+bin_PROGRAMS = tcpspray name2addr
+bin_SCRIPTS = tcpspray6 dnssort addr2name
 sbin_PROGRAMS = rdnssd
 noinst_HEADERS = gettime.h inet6rth.h
 dist_noinst_SCRIPTS = gen-alias
@@ -58,9 +58,9 @@ tcpspray6: Makefile.am gen-alias
 	$(gen_alias) tcpspray6 tcpspray -6
 
 # addr2name
-addr2name_SOURCES = addrinfo.c
-name2addr: Makefile.am gen-alias
-	$(gen_alias) name2addr addr2name -r
+name2addr_SOURCES = addrinfo.c
+addr2name: Makefile.am gen-alias
+	$(gen_alias) addr2name name2addr -r
 
 subst_script = sed \
 	-e 's,[@]PERL[@],$(PERL),g' \
