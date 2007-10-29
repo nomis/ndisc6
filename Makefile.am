@@ -6,7 +6,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = po src
+SUBDIRS = po src rdnssd
 DIST_SUBDIRS = m4 $(SUBDIRS)
 man1_MANS = doc/addr2name.1 doc/dnssort.1 doc/tcpspray.1
 man8_MANS = doc/ndisc6.8 doc/rdisc6.8 doc/rltraceroute6.8

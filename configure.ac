@@ -107,5 +107,10 @@ AH_BOTTOM([
 
 # END
 AS_MESSAGE(writing results...)
-AC_CONFIG_FILES([Makefile m4/Makefile po/Makefile.in src/Makefile])
+AC_CONFIG_FILES([Makefile
+	m4/Makefile
+	po/Makefile.in
+	src/Makefile
+	rdnssd/Makefile
+])
 AC_OUTPUT

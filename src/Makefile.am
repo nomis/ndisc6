@@ -18,7 +18,6 @@ myexec_PROGRAMS = tcptraceroute6
 myexec_SCRIPTS = tracert6
 bin_PROGRAMS = tcpspray name2addr
 bin_SCRIPTS = tcpspray6 dnssort addr2name
-sbin_PROGRAMS = rdnssd
 noinst_HEADERS = gettime.h inet6rth.h
 dist_noinst_SCRIPTS = gen-alias
 EXTRA_DIST = dnssort.in
@@ -34,10 +33,6 @@ ndisc6_LDADD = $(LIBRT)
 rdisc6_SOURCES = ndisc.c
 rdisc6_CPPFLAGS = -DRDISC $(AM_CPPFLAGS)
 rdisc6_LDADD = $(LIBRT)
-
-# rdnssd
-rdnssd_SOURCES = rdnssd.c
-rdnssd_LDADD = $(LIBRT)
 
 # traceroute6
 rltraceroute6_SOURCES = traceroute.c traceroute.h \
