@@ -380,6 +380,20 @@ static void prepare_fd (int fd)
 	fcntl (fd, F_SETFL, fcntl (fd, F_GETFL) | O_NONBLOCK);
 }
 
+static int read_inofd(int inofd)
+{
+	struct inotify_event ie;
+	int rval;
+
+	rval = read(inofd, &ie, sizeof(ie));
+	if (rval > 0) {
+		if (ie.mask & IN_IGNORED) {
+			inotify_add_watch(inofd, "/etc/resolv.conf", IN_MODIFY);
+		}
+	}
+
+	return rval;
+}
 
 static int rdnssd (void)
 {
@@ -397,6 +411,7 @@ static int rdnssd (void)
 		return -1;
 	}
 	prepare_fd (inofd);
+	inotify_add_watch(inofd, "/etc/resolv.conf", IN_MODIFY);
 
 	for (;;)
 	{
@@ -415,23 +430,20 @@ static int rdnssd (void)
 		trim_expired();
 		write_resolv();
 		merge_hook();
+		while (read_inofd(inofd) > 0) {}
 
 		if (servers.count)
 			timeout = 1000 * (servers.list[servers.count - 1].expiry - now);
 		else
 			timeout = -1;
 
-		inotify_add_watch(pfd[1].fd, "/etc/resolv.conf", IN_MODIFY);
-
 		if (poll (pfd, sizeof (pfd) / sizeof (pfd[0]), timeout) <= 0)
 			continue;
 
 		if (pfd[0].revents & POLLIN)
 			recv_msg(sock);
-		if (pfd[1].revents & POLLIN) {
-			struct inotify_event ie;
-			read(inofd, &ie, sizeof(ie));
-		}
+		if (pfd[1].revents & POLLIN)
+			read_inofd(inofd);
 	}
 }
 
