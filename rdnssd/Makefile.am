@@ -13,7 +13,8 @@ confdir = $(sysconfdir)/$(PACKAGE)
 subst_script = sed \
 	-e 's,[@]PERL[@],$(PERL),g' \
 	-e 's,[@]PACKAGE[@],$(PACKAGE),g' \
-	-e 's,[@]VERSION[@],$(VERSION),g'
+	-e 's,[@]VERSION[@],$(VERSION),g' \
+	-e 's,[@]LOCALSTATEDIR[@],$(localstatedir),g'
 
 EXTRA_DIST = merge-hook.in
 sbin_PROGRAMS = rdnssd
