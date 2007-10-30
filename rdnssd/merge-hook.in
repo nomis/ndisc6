@@ -2,7 +2,7 @@
 #
 # resolv.conf merge hook for rdnssd
 # 
-# $Id:  $
+# $Id$
 
 # *************************************************************************
 # *  Copyright © 2007 Pierre Ynard.                                       *
