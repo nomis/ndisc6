@@ -90,6 +90,7 @@ static struct
 } servers = { .count = 0 };
 
 #define MYCONFDIR SYSCONFDIR "/rdnssd"
+#define MYRUNDIR LOCALSTATEDIR "/run/rdnssd"
 
 /* The code */
 
@@ -121,7 +122,7 @@ void merge_hook()
 
 void write_resolv()
 {
-	FILE *resolv = fopen(LOCALSTATEDIR"/run/rdnssd/resolv.conf", "w");
+	FILE *resolv = fopen(MYRUNDIR "/resolv.conf", "w");
 
 	if (! resolv) {
 		syslog(LOG_ERR, "cannot write resolv.conf: %m");
@@ -395,9 +396,57 @@ static int read_inofd(int inofd)
 	return rval;
 }
 
+static int write_pid()
+{
+	int fd;
+	char pid[16];
+
+	fd = open(MYRUNDIR "/rdnssd.pid", O_CREAT|O_EXCL|O_WRONLY);
+	if (fd == -1) {
+		syslog(LOG_CRIT, "cannot write PID file: %m");
+		return -1;
+	}
+	snprintf(pid, sizeof(pid), "%d\n", getpid());
+	write(fd, pid, strlen(pid));
+	close(fd);
+	return 0;
+}
+
+void prepare_exit()
+{
+	servers.count = 0;
+	write_resolv();
+	merge_hook();
+	unlink(MYRUNDIR "/rdnssd.pid");
+	closelog();
+}
+
+void term_handler(int signum)
+{
+	prepare_exit();
+	exit(0);
+}
+
 static int rdnssd (void)
 {
-	int sock, inofd;
+	int rval, sock, inofd;
+
+	rval = daemon(0, 0);
+	if (rval == -1) {
+		syslog(LOG_CRIT, "cannot daemonize: %m");
+		return -1;
+	}
+
+	{
+		struct sigaction act;
+		memset(&act, 0, sizeof(struct sigaction));
+		act.sa_handler = &term_handler;
+		sigaction(SIGTERM, &act, NULL);
+	}
+
+	rval = write_pid();
+	if (rval == -1)
+		return -1;
 
 	sock = setup_socket();
 	if (sock == -1)
@@ -447,13 +496,12 @@ static int rdnssd (void)
 	}
 }
 
-
 int main (void)
 {
 	int val;
 
 	openlog ("rdnssd", LOG_PERROR | LOG_PID, LOG_DAEMON);
 	val = rdnssd ();
-	closelog ();
+	prepare_exit();
 	return val != 0;
 }
