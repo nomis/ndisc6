@@ -96,7 +96,8 @@ static struct
 
 void write_resolv()
 {
-	FILE *resolv = fopen(MYRUNDIR "/resolv.conf", "w");
+	FILE *resolv = fopen(MYRUNDIR "/resolv.conf.tmp", "w");
+	int rval;
 
 	if (! resolv) {
 		syslog(LOG_ERR, "cannot write resolv.conf: %m");
@@ -110,6 +111,11 @@ void write_resolv()
 	}
 
 	fclose(resolv);
+
+	rval = rename(MYRUNDIR "/resolv.conf.tmp", MYRUNDIR "/resolv.conf");
+
+	if (rval == -1)
+		syslog(LOG_ERR, "cannot write resolv.conf: %m");
 
 }
 
@@ -433,7 +439,7 @@ static int run_manager(int inofd, int mywd, int syswd)
 			if (ie.mask & IN_IGNORED)
 				mywd = inotify_add_watch(inofd, MYRUNDIR "/resolv.conf", IN_MODIFY);
 			merge_hook();
-		} else {
+		} else if (ie.wd == syswd) {
 			merge_hook();
 			syswd = inotify_add_watch(inofd, "/etc/resolv.conf", IN_MODIFY | IN_ONESHOT);
 		}
