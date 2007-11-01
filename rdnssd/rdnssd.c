@@ -456,12 +456,6 @@ static int run_manager(int inofd, int mywd, int syswd)
 
 static pid_t worker_pid;
 
-void daemon_finish()
-{
-	unlink(MYRUNDIR "/rdnssd.pid");
-	closelog();
-}
-
 void worker_finish()
 {
 	servers.count = 0;
@@ -475,7 +469,12 @@ void manager_finish()
 	kill(worker_pid, SIGTERM);
 	waitpid(worker_pid, &status, 0);
 	merge_hook();
-	daemon_finish();
+}
+
+void daemon_finish()
+{
+	unlink(MYRUNDIR "/rdnssd.pid");
+	closelog();
 }
 
 void worker_term_handler(int signum)
@@ -487,6 +486,7 @@ void worker_term_handler(int signum)
 void manager_term_handler(int signum)
 {
 	manager_finish();
+	daemon_finish();
 	exit(0);
 }
 
@@ -551,25 +551,13 @@ static int init_manager(int pidfd)
 
 }
 
-static int rdnssd (int managed)
+static int rdnssd (int managed, int pidfd)
 {
-	int pidfd, rval;
-
-	pidfd = open(MYRUNDIR "/rdnssd.pid", O_CREAT|O_EXCL|O_WRONLY);
-	if (pidfd == -1) {
-		syslog(LOG_ERR, "rdnssd already running?");
-		return -1;
-	}
-
-	rval = daemon(0, 0);
-	if (rval == -1) {
-		syslog(LOG_CRIT, "cannot daemonize: %m");
-		return -1;
-	}
+	int rval;
 
 	if (managed) {
 
-		return init_manager(pidfd);
+		rval = init_manager(pidfd);
 
 	} else {
 		{
@@ -583,18 +571,34 @@ static int rdnssd (int managed)
 		rval = worker();
 
 		worker_finish();
-		daemon_finish();
-		return rval;
 	}
+
+	return rval;
 
 }
 
 int main (void)
 {
-	int val;
+	int pidfd, rval;
+
+	pidfd = open(MYRUNDIR "/rdnssd.pid", O_CREAT|O_EXCL|O_WRONLY);
+	if (pidfd == -1) {
+		fprintf(stderr, "rdnssd already running?\n");
+		return 1;
+	}
+
+	rval = daemon(0, 0);
+	if (rval == -1) {
+		fprintf(stderr, "cannot daemonize: %m\n");
+		goto finish;
+	}
 
 	openlog ("rdnssd", LOG_PERROR | LOG_PID, LOG_DAEMON);
-	val = rdnssd (1);
-	closelog ();
-	return val != 0;
+
+	rval = rdnssd (1, pidfd);
+
+finish:
+	daemon_finish();
+
+	return rval != 0;
 }
