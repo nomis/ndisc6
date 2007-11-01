@@ -425,6 +425,8 @@ void merge_hook()
 
 static int run_manager(int inofd, int mywd, int syswd)
 {
+	int merged = 0;
+
 	for (;;)
 	{
 		struct inotify_event ie;
@@ -439,8 +441,13 @@ static int run_manager(int inofd, int mywd, int syswd)
 			if (ie.mask & IN_IGNORED)
 				mywd = inotify_add_watch(inofd, MYRUNDIR "/resolv.conf", IN_MODIFY);
 			merge_hook();
+			merged = 1;
 		} else if (ie.wd == syswd) {
-			merge_hook();
+			if (merged)
+				merged = 0;
+			else
+				merge_hook();
+
 			syswd = inotify_add_watch(inofd, "/etc/resolv.conf", IN_MODIFY | IN_ONESHOT);
 		}
 	}
