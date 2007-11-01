@@ -94,32 +94,6 @@ static struct
 
 /* The code */
 
-void merge_hook()
-{
-	static const char hookpath[] = MYCONFDIR "/merge.hook";
-	pid_t pid = fork ();
-
-	switch (pid)
-	{
-		case 0:
-			execl (hookpath, hookpath, (char *)NULL);
-			syslog (LOG_ERR, "cannot run %s: %m", hookpath);
-			exit(1);
-
-		case -1:
-			syslog (LOG_ERR, "cannot run %s: %m", hookpath);
-			break;
-
-		default:
-		{
-			int status;
-			waitpid (pid, &status, 0);
-		}
-	}
-
-
-}
-
 void write_resolv()
 {
 	FILE *resolv = fopen(MYRUNDIR "/resolv.conf", "w");
@@ -132,9 +106,7 @@ void write_resolv()
 	for (size_t i = 0; i < servers.count; i++) {
 		char buf[INET6_ADDRSTRLEN];
 		inet_ntop(AF_INET6, &servers.list[i].addr, buf, INET6_ADDRSTRLEN);
-		fputs("nameserver ", resolv);
-		fputs(buf, resolv);
-		fputs("\n", resolv);
+		fprintf(resolv, "nameserver %s\n", buf);
 	}
 
 	fclose(resolv);
@@ -376,98 +348,24 @@ static int nl_socket()
 static void prepare_fd (int fd)
 {
 	fcntl (fd, F_SETFD, FD_CLOEXEC);
-
-	/* be defensive - we want to block on poll(), not recv() */
-	fcntl (fd, F_SETFL, fcntl (fd, F_GETFL) | O_NONBLOCK);
 }
 
-static int read_inofd(int inofd)
+static int worker()
 {
-	struct inotify_event ie;
-	int rval;
-
-	rval = read(inofd, &ie, sizeof(ie));
-	if (rval > 0) {
-		if (ie.mask & IN_IGNORED) {
-			inotify_add_watch(inofd, "/etc/resolv.conf", IN_MODIFY);
-		}
-	}
-
-	return rval;
-}
-
-static int write_pid()
-{
-	int fd;
-	char pid[16];
-
-	fd = open(MYRUNDIR "/rdnssd.pid", O_CREAT|O_EXCL|O_WRONLY);
-	if (fd == -1) {
-		syslog(LOG_CRIT, "cannot write PID file: %m");
-		return -1;
-	}
-	snprintf(pid, sizeof(pid), "%d\n", getpid());
-	write(fd, pid, strlen(pid));
-	close(fd);
-	return 0;
-}
-
-void prepare_exit()
-{
-	servers.count = 0;
-	write_resolv();
-	merge_hook();
-	unlink(MYRUNDIR "/rdnssd.pid");
-	closelog();
-}
-
-void term_handler(int signum)
-{
-	prepare_exit();
-	exit(0);
-}
-
-static int rdnssd (void)
-{
-	int rval, sock, inofd;
-
-	rval = daemon(0, 0);
-	if (rval == -1) {
-		syslog(LOG_CRIT, "cannot daemonize: %m");
-		return -1;
-	}
-
-	{
-		struct sigaction act;
-		memset(&act, 0, sizeof(struct sigaction));
-		act.sa_handler = &term_handler;
-		sigaction(SIGTERM, &act, NULL);
-	}
-
-	rval = write_pid();
-	if (rval == -1)
-		return -1;
+	int sock;
 
 	sock = setup_socket();
 	if (sock == -1)
 		return -1;
 	prepare_fd (sock);
-
-	inofd = inotify_init();
-	if (inofd == -1)
-	{
-		close (sock);
-		return -1;
-	}
-	prepare_fd (inofd);
-	inotify_add_watch(inofd, "/etc/resolv.conf", IN_MODIFY);
+	/* be defensive - we want to block on poll(), not recv() */
+	fcntl (sock, F_SETFL, fcntl (sock, F_GETFL) | O_NONBLOCK);
 
 	for (;;)
 	{
-		struct pollfd pfd[2] =
+		struct pollfd pfd[1] =
 		{
 			{ .fd = sock,  .events = POLLIN, .revents = 0 },
-			{ .fd = inofd, .events = POLLIN, .revents = 0 },
 		};
 		int timeout;
 		{
@@ -478,8 +376,6 @@ static int rdnssd (void)
 
 		trim_expired();
 		write_resolv();
-		merge_hook();
-		while (read_inofd(inofd) > 0) {}
 
 		if (servers.count)
 			timeout = 1000 * (servers.list[servers.count - 1].expiry - now);
@@ -491,9 +387,193 @@ static int rdnssd (void)
 
 		if (pfd[0].revents & POLLIN)
 			recv_msg(sock);
-		if (pfd[1].revents & POLLIN)
-			read_inofd(inofd);
 	}
+
+}
+
+void merge_hook()
+{
+	static const char hookpath[] = MYCONFDIR "/merge.hook";
+	pid_t pid = fork ();
+
+	switch (pid)
+	{
+		case 0:
+			execl (hookpath, hookpath, (char *)NULL);
+			syslog (LOG_ERR, "cannot run %s: %m", hookpath);
+			exit(1);
+
+		case -1:
+			syslog (LOG_ERR, "cannot run %s: %m", hookpath);
+			break;
+
+		default:
+		{
+			int status;
+			waitpid (pid, &status, 0);
+		}
+	}
+
+
+}
+
+static int run_manager(int inofd, int mywd, int syswd)
+{
+	for (;;)
+	{
+		struct inotify_event ie;
+		int rval;
+
+		rval = read(inofd, &ie, sizeof(ie));
+
+		if (rval == -1)
+			continue;
+
+		if (ie.wd == mywd) {
+			if (ie.mask & IN_IGNORED)
+				mywd = inotify_add_watch(inofd, MYRUNDIR "/resolv.conf", IN_MODIFY);
+			merge_hook();
+		} else {
+			merge_hook();
+			syswd = inotify_add_watch(inofd, "/etc/resolv.conf", IN_MODIFY | IN_ONESHOT);
+		}
+	}
+
+}
+
+static pid_t worker_pid;
+
+void daemon_finish()
+{
+	unlink(MYRUNDIR "/rdnssd.pid");
+	closelog();
+}
+
+void worker_finish()
+{
+	servers.count = 0;
+	write_resolv();
+	closelog();
+}
+
+void manager_finish()
+{
+	int status;
+	kill(worker_pid, SIGTERM);
+	waitpid(worker_pid, &status, 0);
+	merge_hook();
+	daemon_finish();
+}
+
+void worker_term_handler(int signum)
+{
+	worker_finish();
+	exit(0);
+}
+
+void manager_term_handler(int signum)
+{
+	manager_finish();
+	exit(0);
+}
+
+void unmanaged_term_handler(int signum) {
+	worker_finish();
+	daemon_finish();
+	exit(0);
+}
+
+static void write_pid(int pidfd)
+{
+	char pid[16];
+	snprintf(pid, sizeof(pid), "%d\n", getpid());
+	write(pidfd, pid, strlen(pid));
+	close(pidfd);
+}
+
+static int init_manager(int pidfd)
+{
+	int inofd, mywd, syswd;
+
+	inofd = inotify_init();
+	if (inofd == -1)
+		return -1;
+	prepare_fd(inofd);
+	mywd = inotify_add_watch(inofd, MYRUNDIR "/resolv.conf", IN_MODIFY);
+	syswd = inotify_add_watch(inofd, "/etc/resolv.conf", IN_MODIFY | IN_ONESHOT);
+
+	worker_pid = fork();
+
+	switch (worker_pid)
+	{
+		int rval;
+		case 0:
+			close(pidfd);
+			{
+				struct sigaction act;
+				memset(&act, 0, sizeof(struct sigaction));
+				act.sa_handler = &worker_term_handler;
+				sigaction(SIGTERM, &act, NULL);
+			}
+			rval = worker();
+			worker_finish();
+			exit(rval != 0);
+
+		case -1:
+			syslog (LOG_CRIT, "cannot fork: %m");
+			return -1;
+
+		default:
+			{
+				struct sigaction act;
+				memset(&act, 0, sizeof(struct sigaction));
+				act.sa_handler = &manager_term_handler;
+				sigaction(SIGTERM, &act, NULL);
+			}
+			write_pid(pidfd);
+			rval = run_manager(inofd, mywd, syswd);
+			manager_finish();
+			return rval;
+	}
+
+}
+
+static int rdnssd (int managed)
+{
+	int pidfd, rval;
+
+	pidfd = open(MYRUNDIR "/rdnssd.pid", O_CREAT|O_EXCL|O_WRONLY);
+	if (pidfd == -1) {
+		syslog(LOG_ERR, "rdnssd already running?");
+		return -1;
+	}
+
+	rval = daemon(0, 0);
+	if (rval == -1) {
+		syslog(LOG_CRIT, "cannot daemonize: %m");
+		return -1;
+	}
+
+	if (managed) {
+
+		return init_manager(pidfd);
+
+	} else {
+		{
+			struct sigaction act;
+			memset(&act, 0, sizeof(struct sigaction));
+			act.sa_handler = &unmanaged_term_handler;
+			sigaction(SIGTERM, &act, NULL);
+		}
+		write_pid(pidfd);
+
+		rval = worker();
+
+		worker_finish();
+		daemon_finish();
+		return rval;
+	}
+
 }
 
 int main (void)
@@ -501,7 +581,7 @@ int main (void)
 	int val;
 
 	openlog ("rdnssd", LOG_PERROR | LOG_PID, LOG_DAEMON);
-	val = rdnssd ();
-	prepare_exit();
+	val = rdnssd (1);
+	closelog ();
 	return val != 0;
 }
