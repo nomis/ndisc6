@@ -41,6 +41,7 @@
 #include <resolv.h>
 #include <sys/inotify.h>
 #include <sys/wait.h>
+#include <getopt.h>
 
 
 /* Belongs in <netinet/icmp6.h> */
@@ -92,12 +93,31 @@ static struct
 #define MYCONFDIR SYSCONFDIR "/rdnssd"
 #define MYRUNDIR LOCALSTATEDIR "/run/rdnssd"
 
+static struct
+{
+	int managed;
+	char *hookpath;
+	char *pidfile;
+	char *resolvpath;
+	pid_t worker_pid;
+} conf = {
+	.managed = 0,
+	.hookpath = MYCONFDIR "/merge-hook",
+	.pidfile = MYRUNDIR "/rdnssd.pid",
+	.resolvpath = MYRUNDIR "/resolv.conf",
+};
+
 /* The code */
 
 void write_resolv()
 {
-	FILE *resolv = fopen(MYRUNDIR "/resolv.conf.tmp", "w");
+	FILE *resolv;
 	int rval;
+	char tmpfile[strlen(conf.resolvpath) + sizeof(".tmp")];
+
+	sprintf(tmpfile, "%s.tmp", conf.resolvpath);
+
+	resolv = fopen(tmpfile, "w");
 
 	if (! resolv) {
 		syslog(LOG_ERR, "cannot write resolv.conf: %m");
@@ -112,7 +132,7 @@ void write_resolv()
 
 	fclose(resolv);
 
-	rval = rename(MYRUNDIR "/resolv.conf.tmp", MYRUNDIR "/resolv.conf");
+	rval = rename(tmpfile, conf.resolvpath);
 
 	if (rval == -1)
 		syslog(LOG_ERR, "cannot write resolv.conf: %m");
@@ -399,18 +419,17 @@ static int worker()
 
 void merge_hook()
 {
-	static const char hookpath[] = MYCONFDIR "/merge.hook";
 	pid_t pid = fork ();
 
 	switch (pid)
 	{
 		case 0:
-			execl (hookpath, hookpath, (char *)NULL);
-			syslog (LOG_ERR, "cannot run %s: %m", hookpath);
+			execl (conf.hookpath, conf.hookpath, (char *)NULL);
+			syslog (LOG_ERR, "cannot run %s: %m", conf.hookpath);
 			exit(1);
 
 		case -1:
-			syslog (LOG_ERR, "cannot run %s: %m", hookpath);
+			syslog (LOG_ERR, "cannot run %s: %m", conf.hookpath);
 			break;
 
 		default:
@@ -419,7 +438,6 @@ void merge_hook()
 			waitpid (pid, &status, 0);
 		}
 	}
-
 
 }
 
@@ -439,7 +457,7 @@ static int run_manager(int inofd, int mywd, int syswd)
 
 		if (ie.wd == mywd) {
 			if (ie.mask & IN_IGNORED)
-				mywd = inotify_add_watch(inofd, MYRUNDIR "/resolv.conf", IN_MODIFY);
+				mywd = inotify_add_watch(inofd, conf.resolvpath, IN_MODIFY);
 			merge_hook();
 			merged = 1;
 		} else if (ie.wd == syswd) {
@@ -454,8 +472,6 @@ static int run_manager(int inofd, int mywd, int syswd)
 
 }
 
-static pid_t worker_pid;
-
 void worker_finish()
 {
 	servers.count = 0;
@@ -466,14 +482,14 @@ void worker_finish()
 void manager_finish()
 {
 	int status;
-	kill(worker_pid, SIGTERM);
-	waitpid(worker_pid, &status, 0);
+	kill(conf.worker_pid, SIGTERM);
+	waitpid(conf.worker_pid, &status, 0);
 	merge_hook();
 }
 
 void daemon_finish()
 {
-	unlink(MYRUNDIR "/rdnssd.pid");
+	unlink(conf.pidfile);
 	closelog();
 }
 
@@ -512,12 +528,12 @@ static int init_manager(int pidfd)
 	if (inofd == -1)
 		return -1;
 	prepare_fd(inofd);
-	mywd = inotify_add_watch(inofd, MYRUNDIR "/resolv.conf", IN_MODIFY);
+	mywd = inotify_add_watch(inofd, conf.resolvpath, IN_MODIFY);
 	syswd = inotify_add_watch(inofd, "/etc/resolv.conf", IN_MODIFY | IN_ONESHOT);
 
-	worker_pid = fork();
+	conf.worker_pid = fork();
 
-	switch (worker_pid)
+	switch (conf.worker_pid)
 	{
 		int rval;
 		case 0:
@@ -551,11 +567,11 @@ static int init_manager(int pidfd)
 
 }
 
-static int rdnssd (int managed, int pidfd)
+static int rdnssd (int pidfd)
 {
 	int rval;
 
-	if (managed) {
+	if (! conf.managed) {
 
 		rval = init_manager(pidfd);
 
@@ -577,11 +593,49 @@ static int rdnssd (int managed, int pidfd)
 
 }
 
-int main (void)
+int main (int argc, char *argv[])
 {
-	int pidfd, rval;
+	int c, pidfd, rval;
 
-	pidfd = open(MYRUNDIR "/rdnssd.pid", O_CREAT|O_EXCL|O_WRONLY);
+	struct option opts[] =
+	{
+		{ "hook",			required_argument,	NULL, 'H' },
+		{ "merge-hook",		required_argument,	NULL, 'H' },
+		{ "managed",		no_argument,		NULL, 'm' },
+		{ "pidfile",		required_argument,	NULL, 'p' },
+		{ "resolv-file",	required_argument,	NULL, 'r' },
+		{ "self-managed",	no_argument,		NULL, 's' },
+		{ NULL,				no_argument,		NULL, '\0'}
+	};
+
+	while ((c = getopt_long(argc, argv, "H:mp:r:s", opts, NULL)) != -1) {
+		switch (c)
+		{
+
+			case 'H':
+				conf.hookpath = optarg;
+				break;
+
+			case 'm':
+				conf.managed = 1;
+				break;
+
+			case 'p':
+				conf.pidfile = optarg;
+				break;
+
+			case 'r':
+				conf.resolvpath = optarg;
+				break;
+
+			case 's':
+				conf.managed = 0;
+				break;
+
+		}
+	}
+
+	pidfd = open(conf.pidfile, O_CREAT|O_EXCL|O_WRONLY);
 	if (pidfd == -1) {
 		fprintf(stderr, "rdnssd already running?\n");
 		return 1;
@@ -595,7 +649,7 @@ int main (void)
 
 	openlog ("rdnssd", LOG_PERROR | LOG_PID, LOG_DAEMON);
 
-	rval = rdnssd (1, pidfd);
+	rval = rdnssd (pidfd);
 
 finish:
 	daemon_finish();
