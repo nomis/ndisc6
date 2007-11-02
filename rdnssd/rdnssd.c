@@ -96,9 +96,9 @@ static struct
 static struct
 {
 	int managed;
-	char *hookpath;
-	char *pidfile;
-	char *resolvpath;
+	const char *hookpath;
+	const char *pidfile;
+	const char *resolvpath;
 	pid_t worker_pid;
 } conf = {
 	.managed = 0,
@@ -109,7 +109,7 @@ static struct
 
 /* The code */
 
-void write_resolv()
+static void write_resolv()
 {
 	FILE *resolv;
 	int rval;
@@ -139,14 +139,14 @@ void write_resolv()
 
 }
 
-void trim_expired()
+static void trim_expired()
 {
 	while (servers.count > 0
 	       && servers.list[servers.count - 1].expiry <= now)
 		servers.count--;
 }
 
-int rdnss_older (const void *a, const void *b)
+static int rdnss_older (const void *a, const void *b)
 {
 	time_t ta = ((const rdnss_t *)a)->expiry;
 	time_t tb = ((const rdnss_t *)b)->expiry;
@@ -495,18 +495,25 @@ void daemon_finish()
 
 void worker_term_handler(int signum)
 {
+	(void)signum;
+
 	worker_finish();
 	exit(0);
 }
 
 void manager_term_handler(int signum)
 {
+	(void)signum;
+
 	manager_finish();
 	daemon_finish();
 	exit(0);
 }
 
-void unmanaged_term_handler(int signum) {
+void unmanaged_term_handler(int signum)
+{
+	(void)signum;
+
 	worker_finish();
 	daemon_finish();
 	exit(0);
