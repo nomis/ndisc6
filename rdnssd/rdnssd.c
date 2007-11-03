@@ -122,7 +122,7 @@ static void write_resolv()
 	resolv = fopen(tmpfile, "w");
 
 	if (! resolv) {
-		syslog(LOG_ERR, "cannot write resolv.conf: %m");
+		syslog (LOG_ERR, _("cannot write resolv.conf: %m"));
 		return;
 	}
 
@@ -137,7 +137,7 @@ static void write_resolv()
 	rval = rename(tmpfile, conf.resolvpath);
 
 	if (rval == -1)
-		syslog(LOG_ERR, "cannot write resolv.conf: %m");
+		syslog(LOG_ERR, _("cannot write resolv.conf: %m"));
 
 }
 
@@ -198,7 +198,7 @@ static void rdnss_update (const struct in6_addr *addr, time_t expiry)
 		char buf[INET6_ADDRSTRLEN];
 		inet_ntop (AF_INET6, &servers.list[i].addr, buf,
 		           sizeof (buf));
-		printf ("%u: %48s expires at %u\n", i, buf,
+		syslog (LOG_DEBUG, "%u: %48s expires at %u\n", i, buf,
 		        (unsigned)servers.list[i].expiry);
 	}
 #endif
@@ -296,7 +296,7 @@ static int icmp_socket()
 	int fd = socket (AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
 	if (fd == -1)
 	{
-		syslog (LOG_CRIT, "cannot open ICMPv6 socket");
+		syslog (LOG_CRIT, _("cannot open ICMPv6 socket"));
 		return -1;
 	}
 
@@ -355,7 +355,7 @@ static int nl_socket()
 
 	fd = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
 	if (fd < 0) {
-		syslog(LOG_CRIT, "cannot open netlink socket");
+		syslog(LOG_CRIT, _("cannot open netlink socket"));
 		return fd;
 	}
 
@@ -431,11 +431,11 @@ static void merge_hook (void)
 	{
 		case 0:
 			execl (conf.hookpath, conf.hookpath, (char *)NULL);
-			syslog (LOG_ERR, "cannot run %s: %m", conf.hookpath);
+			syslog (LOG_ERR, _("cannot run %s: %m"), conf.hookpath);
 			exit(1);
 
 		case -1:
-			syslog (LOG_ERR, "cannot run %s: %m", conf.hookpath);
+			syslog (LOG_ERR, _("cannot run %s: %m"), conf.hookpath);
 			break;
 
 		default:
@@ -527,7 +527,7 @@ static int init_manager (void)
 			exit(rval != 0);
 
 		case -1:
-			syslog (LOG_CRIT, "cannot fork: %m");
+			syslog (LOG_CRIT, _("cannot fork: %m"));
 			return -1;
 
 		default:
@@ -733,7 +733,7 @@ int main (int argc, char *argv[])
 	pidfd = open_pidfile (pidpath);
 	if (pidfd == -1)
 	{
-		fprintf (stderr, "Cannot create %s (%s) - already running?\n",
+		fprintf (stderr, _("Cannot create %s (%s) - already running?\n"),
 		         pidpath, strerror (errno));
 		return 1;
 	}
