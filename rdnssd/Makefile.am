@@ -17,8 +17,9 @@ subst_script = sed \
 	-e 's,[@]LOCALSTATEDIR[@],$(localstatedir),g'
 
 EXTRA_DIST = merge-hook.in
+CLEANFILES = $(conf_DATA)
 sbin_PROGRAMS = rdnssd
-conf_SCRIPTS = merge-hook
+conf_DATA = merge-hook
 
 # rdnssd
 rdnssd_SOURCES = rdnssd.c
