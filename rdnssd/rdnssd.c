@@ -26,6 +26,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -97,13 +98,11 @@ static struct
 {
 	int managed;
 	const char *hookpath;
-	const char *pidfile;
 	const char *resolvpath;
 	pid_t worker_pid;
 } conf = {
 	.managed = 0,
 	.hookpath = MYCONFDIR "/merge-hook",
-	.pidfile = MYRUNDIR "/rdnssd.pid",
 	.resolvpath = MYRUNDIR "/resolv.conf",
 };
 
@@ -374,50 +373,54 @@ static int nl_socket()
 static void prepare_fd (int fd)
 {
 	fcntl (fd, F_SETFD, FD_CLOEXEC);
+	fcntl (fd, F_SETFL, fcntl (fd, F_GETFL) | O_NONBLOCK);
 }
 
-static int worker()
-{
-	int sock;
+static volatile int termsig = 0;
 
-	sock = setup_socket();
+static int worker (void)
+{
+	sigset_t emptyset;
+	int sock = setup_socket ();
+
 	if (sock == -1)
 		return -1;
 	prepare_fd (sock);
 	/* be defensive - we want to block on poll(), not recv() */
-	fcntl (sock, F_SETFL, fcntl (sock, F_GETFL) | O_NONBLOCK);
 
-	for (;;)
+	sigemptyset (&emptyset);
+
+	while (termsig == 0)
 	{
-		struct pollfd pfd[1] =
-		{
-			{ .fd = sock,  .events = POLLIN, .revents = 0 },
-		};
-		int timeout;
-		{
-			struct timespec ts;
-			clock_gettime(CLOCK_MONOTONIC, &ts);
-			now = ts.tv_sec;
-		}
+		struct pollfd pfd =
+			{ .fd = sock,  .events = POLLIN, .revents = 0 };
+		struct timespec ts;
+
+		clock_gettime (CLOCK_MONOTONIC, &ts);
+		now = ts.tv_sec;
 
 		trim_expired();
 		write_resolv();
 
 		if (servers.count)
-			timeout = 1000 * (servers.list[servers.count - 1].expiry - now);
-		else
-			timeout = -1;
+			ts.tv_sec = (servers.list[servers.count - 1].expiry - now);
+			ts.tv_nsec = 0;
 
-		if (poll (pfd, sizeof (pfd) / sizeof (pfd[0]), timeout) <= 0)
+		if (ppoll (&pfd, 1, servers.count ? &ts : NULL, &emptyset) <= 0)
 			continue;
 
-		if (pfd[0].revents & POLLIN)
+		if (pfd.revents)
 			recv_msg(sock);
 	}
 
+	close (sock);
+
+	servers.count = 0;
+	write_resolv();
+	return 0;
 }
 
-void merge_hook()
+static void merge_hook (void)
 {
 	pid_t pid = fork ();
 
@@ -443,12 +446,21 @@ void merge_hook()
 
 static int run_manager(int inofd, int mywd, int syswd)
 {
-	int merged = 0;
+	sigset_t emptyset;
+	sigemptyset (&emptyset);
 
-	for (;;)
+	for (int merged = 0; termsig == 0;)
 	{
+		struct pollfd pfd =
+			{ .fd = inofd,  .events = POLLIN, .revents = 0 };
 		struct inotify_event ie;
 		int rval;
+
+		if (ppoll (&pfd, 1, NULL, &emptyset) <= 0)
+			continue;
+
+		if (pfd.revents == 0)
+			continue;
 
 		rval = read(inofd, &ie, sizeof(ie));
 
@@ -470,64 +482,28 @@ static int run_manager(int inofd, int mywd, int syswd)
 		}
 	}
 
-}
-
-void worker_finish()
-{
-	servers.count = 0;
-	write_resolv();
-	closelog();
-}
-
-void manager_finish()
-{
 	int status;
-	kill(conf.worker_pid, SIGTERM);
-	waitpid(conf.worker_pid, &status, 0);
-	merge_hook();
+
+	kill (conf.worker_pid, SIGTERM);
+	while (waitpid (conf.worker_pid, &status, 0) == -1);
+	merge_hook ();
+	return 0;
 }
 
-void daemon_finish()
+
+static void term_handler (int signum)
 {
-	unlink(conf.pidfile);
-	closelog();
+	termsig = signum;
 }
 
-void worker_term_handler(int signum)
-{
-	(void)signum;
 
-	worker_finish();
-	exit(0);
-}
-
-void manager_term_handler(int signum)
+static void ignore_handler (int signum)
 {
 	(void)signum;
-
-	manager_finish();
-	daemon_finish();
-	exit(0);
 }
 
-void unmanaged_term_handler(int signum)
-{
-	(void)signum;
 
-	worker_finish();
-	daemon_finish();
-	exit(0);
-}
-
-static void write_pid(int pidfd)
-{
-	char pid[16];
-	snprintf(pid, sizeof(pid), "%d\n", getpid());
-	write(pidfd, pid, strlen(pid));
-	close(pidfd);
-}
-
-static int init_manager(int pidfd)
+static int init_manager (void)
 {
 	int inofd, mywd, syswd;
 
@@ -544,15 +520,7 @@ static int init_manager(int pidfd)
 	{
 		int rval;
 		case 0:
-			close(pidfd);
-			{
-				struct sigaction act;
-				memset(&act, 0, sizeof(struct sigaction));
-				act.sa_handler = &worker_term_handler;
-				sigaction(SIGTERM, &act, NULL);
-			}
 			rval = worker();
-			worker_finish();
 			exit(rval != 0);
 
 		case -1:
@@ -560,75 +528,135 @@ static int init_manager(int pidfd)
 			return -1;
 
 		default:
-			{
-				struct sigaction act;
-				memset(&act, 0, sizeof(struct sigaction));
-				act.sa_handler = &manager_term_handler;
-				sigaction(SIGTERM, &act, NULL);
-			}
-			write_pid(pidfd);
 			rval = run_manager(inofd, mywd, syswd);
-			manager_finish();
 			return rval;
 	}
 
 }
 
-static int rdnssd (int pidfd)
+
+static int rdnssd (void)
 {
 	int rval;
+	struct sigaction act;
+	sigset_t handled, orig_mask;
 
-	if (! conf.managed) {
+	sigemptyset (&handled);
 
-		rval = init_manager(pidfd);
+	memset (&act, 0, sizeof (struct sigaction));
+	act.sa_handler = term_handler;
 
-	} else {
-		{
-			struct sigaction act;
-			memset(&act, 0, sizeof(struct sigaction));
-			act.sa_handler = &unmanaged_term_handler;
-			sigaction(SIGTERM, &act, NULL);
-		}
-		write_pid(pidfd);
+	act.sa_handler = term_handler;
+	sigaction (SIGTERM, &act, NULL);
+	sigaddset (&handled, SIGTERM);
 
-		rval = worker();
+	act.sa_handler = term_handler;
+	sigaction (SIGINT, &act, NULL);
+	sigaddset (&handled, SIGINT);
 
-		worker_finish();
-	}
+	act.sa_handler = ignore_handler;
+	sigaction (SIGPIPE, &act, NULL);
+	sigaddset (&handled, SIGPIPE);
+
+	/* TODO: HUP handling */
+
+	sigprocmask (SIG_BLOCK, &handled, &orig_mask);
+
+	rval = (!conf.managed) ? init_manager() : worker();
+
+	sigprocmask (SIG_SETMASK, &orig_mask, NULL);
 
 	return rval;
 
 }
 
+
+/** PID file handling */
+#ifndef O_NOFOLLOW
+# define O_NOFOLLOW 0
+#endif
+static int
+open_pidfile (const char *path)
+{
+	int fd;
+
+	fd = open (path, O_WRONLY|O_CREAT|O_NOFOLLOW, 0644);
+	if (fd != -1)
+	{
+		struct stat s;
+
+		errno = 0;
+		if ((fstat (fd, &s) == 0)
+		 && S_ISREG(s.st_mode)
+		 && (lockf (fd, F_TLOCK, 0) == 0)
+		 && (ftruncate (fd, 0) == 0))
+			return fd;
+
+		if (errno == 0) /* !S_ISREG */
+			errno = EACCES;
+
+		(void)close (fd);
+	}
+	return -1;
+}
+
+
+static int
+write_pid (int fd)
+{
+	char buf[20]; // enough for > 2^64
+
+	(void)snprintf (buf, sizeof (buf), "%d", (int)getpid ());
+	buf[sizeof (buf) - 1] = '\0';
+	size_t len = strlen (buf);
+
+	if ((write (fd, buf, len) != (ssize_t)len) || fdatasync (fd))
+		return -1;
+	return 0;
+}
+
+
 int main (int argc, char *argv[])
 {
-	int c, pidfd, rval;
+	const char *pidpath = MYRUNDIR "/rdnssd.pid";
+	int c, pidfd, rval = 1;
+	bool fg = false;
 
 	struct option opts[] =
 	{
+		{ "foreground",		no_argument,		NULL, 'f' },
 		{ "hook",			required_argument,	NULL, 'H' },
 		{ "merge-hook",		required_argument,	NULL, 'H' },
+		{ "help",			no_argument,		NULL, 'h' },
 		{ "managed",		no_argument,		NULL, 'm' },
 		{ "pidfile",		required_argument,	NULL, 'p' },
 		{ "resolv-file",	required_argument,	NULL, 'r' },
 		{ "self-managed",	no_argument,		NULL, 's' },
+		{ "version",		no_argument,		NULL, 'V' },
 		{ NULL,				no_argument,		NULL, '\0'}
 	};
 
-	while ((c = getopt_long(argc, argv, "H:mp:r:s", opts, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "fH:hmp:r:sV", opts, NULL)) != -1) {
 		switch (c)
 		{
+			case 'f':
+				fg = true;
+				break;
 
 			case 'H':
 				conf.hookpath = optarg;
 				break;
+
+			case 'h':
+				/* TODO: help */
+				abort ();
 
 			case 'm':
 				conf.managed = 1;
 				break;
 
 			case 'p':
-				conf.pidfile = optarg;
+				pidpath = optarg;
 				break;
 
 			case 'r':
@@ -639,27 +667,35 @@ int main (int argc, char *argv[])
 				conf.managed = 0;
 				break;
 
+			case 'V':
+				/* TODO: version */
+				abort ();
+
+			case '?':
+				return 2;
 		}
 	}
 
-	pidfd = open(conf.pidfile, O_CREAT|O_EXCL|O_WRONLY);
-	if (pidfd == -1) {
-		fprintf(stderr, "rdnssd already running?\n");
+	pidfd = open_pidfile (pidpath);
+	if (pidfd == -1)
+	{
+		fprintf (stderr, "Cannot create %s (%s) - already running?\n",
+		         pidpath, strerror (errno));
 		return 1;
 	}
 
-	rval = daemon(0, 0);
-	if (rval == -1) {
-		fprintf(stderr, "cannot daemonize: %m\n");
-		goto finish;
+	if (fg || (daemon (0, 0) == 0))
+	{
+		openlog ("rdnssd", (fg ? LOG_PERROR : 0) | LOG_PID, LOG_DAEMON);
+
+		write_pid (pidfd);
+		rval = rdnssd ();
+
+		closelog ();
 	}
 
-	openlog ("rdnssd", LOG_PERROR | LOG_PID, LOG_DAEMON);
-
-	rval = rdnssd (pidfd);
-
-finish:
-	daemon_finish();
+	unlink (pidpath);
+	close (pidfd);
 
 	return rval != 0;
 }
