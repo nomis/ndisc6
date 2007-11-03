@@ -4,7 +4,7 @@
  */
 
 /*************************************************************************
- *  Copyright © 2007 Rémi Denis-Courmont, Pierre Ynard.                  *
+ *  Copyright © 2007 Pierre Ynard, Rémi Denis-Courmont.                  *
  *  This program is free software: you can redistribute and/or modify    *
  *  it under the terms of the GNU General Public License as published by *
  *  the Free Software Foundation, versions 2 or 3 of the license.        *
@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+
+#include "gettext.h"
 
 #include <string.h>
 #include <time.h>
@@ -616,13 +618,60 @@ write_pid (int fd)
 }
 
 
+static int
+quick_usage (const char *path)
+{
+	fprintf (stderr, _("Try \"%s -h | more\" for more information.\n"),
+	         path);
+	return 2;
+}
+
+
+static int
+usage (const char *path)
+{
+	printf (_(
+"Usage: %s TODO\n"
+"Starts the IPv6 Recursive DNS Server Discovery daemon.\n"
+"\n"
+"  -f, --foreground  run in the foreground\n"
+/* -H */
+"  -h, --help        display this help and exit\n"
+/* -m */
+"  -p, --pidfile     override the location of the PID file\n"
+"  -r, --resolv-file set the path to the generated resolv.conf file\n"
+/*"  -u, --user       override the user to set UID to\n"*/
+"  -V, --version    display program version and exit\n"), path);
+	return 0;
+}
+
+
+static int
+version (void)
+{
+	printf (_("rdnssd: IPv6 Recursive DNS Server Discovery daemon %s (%s)\n"),
+	        VERSION, "$Rev$");
+	printf (_(" built %s on %s\n"), __DATE__, PACKAGE_BUILD_HOSTNAME);
+	printf (_("Configured with: %s\n"), PACKAGE_CONFIGURE_INVOCATION);
+	puts (_("Written by Pierre Ynard and Remi Denis-Courmont\n"));
+
+	printf (_("Copyright (C) %u-%u Pierre Ynard, Remi Denis-Courmont\n"),
+	        2007, 2007);
+	puts (_(
+"This is free software; see the source for copying conditions.\n"
+"There is NO warranty; not even for MERCHANTABILITY or\n"
+"FITNESS FOR A PARTICULAR PURPOSE.\n"));
+        return 0;
+}
+
+
 int main (int argc, char *argv[])
 {
 	const char *pidpath = MYRUNDIR "/rdnssd.pid";
 	int c, pidfd, rval = 1;
 	bool fg = false;
 
-	struct option opts[] =
+	static const struct option opts[] =
 	{
 		{ "foreground",		no_argument,		NULL, 'f' },
 		{ "hook",			required_argument,	NULL, 'H' },
@@ -635,8 +684,10 @@ int main (int argc, char *argv[])
 		{ "version",		no_argument,		NULL, 'V' },
 		{ NULL,				no_argument,		NULL, '\0'}
 	};
+	static const char optstring[] = "fH:hmp:r:sV";
 
-	while ((c = getopt_long(argc, argv, "fH:hmp:r:sV", opts, NULL)) != -1) {
+	while ((c = getopt_long (argc, argv, optstring, opts, NULL)) != -1)
+	{
 		switch (c)
 		{
 			case 'f':
@@ -648,8 +699,7 @@ int main (int argc, char *argv[])
 				break;
 
 			case 'h':
-				/* TODO: help */
-				abort ();
+				return usage (argv[0]);
 
 			case 'm':
 				conf.managed = 1;
@@ -668,11 +718,10 @@ int main (int argc, char *argv[])
 				break;
 
 			case 'V':
-				/* TODO: version */
-				abort ();
+				return version ();
 
 			case '?':
-				return 2;
+				return quick_usage (argv[0]);
 		}
 	}
 
