@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <locale.h>
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -621,7 +622,7 @@ write_pid (int fd)
 static int
 quick_usage (const char *path)
 {
-	fprintf (stderr, _("Try \"%s -h | more\" for more information.\n"),
+	fprintf (stderr, _("Try \"%s -h\" for more information.\n"),
 	         path);
 	return 2;
 }
@@ -685,6 +686,10 @@ int main (int argc, char *argv[])
 		{ NULL,				no_argument,		NULL, '\0'}
 	};
 	static const char optstring[] = "fH:hmp:r:sV";
+
+	setlocale (LC_ALL, "");
+	bindtextdomain (PACKAGE, LOCALEDIR);
+	textdomain (PACKAGE);
 
 	while ((c = getopt_long (argc, argv, optstring, opts, NULL)) != -1)
 	{
