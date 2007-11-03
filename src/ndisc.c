@@ -773,10 +773,10 @@ version (void)
 	printf (_("Configured with: %s\n"), PACKAGE_CONFIGURE_INVOCATION);
 	puts (_("Written by Remi Denis-Courmont\n"));
 
-	printf (_("Copyright (C) %u-%u Remi Denis-Courmont\n"
-"This is free software; see the source for copying conditions.\n"
-"There is NO warranty; not even for MERCHANTABILITY or\n"
-"FITNESS FOR A PARTICULAR PURPOSE.\n"), 2004, 2006);
+	printf (_("Copyright (C) %u-%u Remi Denis-Courmont\n"), 2004, 2007);
+	puts (_("This is free software; see the source for copying conditions.\n"
+	        "There is NO warranty; not even for MERCHANTABILITY or\n"
+	        "FITNESS FOR A PARTICULAR PURPOSE.\n"));
 	return 0;
 }
 
