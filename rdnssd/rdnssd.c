@@ -515,6 +515,10 @@ static int init_manager (void)
 		return -1;
 	prepare_fd(inofd);
 	mywd = inotify_add_watch(inofd, conf.resolvpath, IN_MODIFY);
+	if (mywd == -1 && errno == ENOENT) {
+		close(open(conf.resolvpath, O_WRONLY|O_CREAT));
+		mywd = inotify_add_watch(inofd, conf.resolvpath, IN_MODIFY);
+	}
 	syswd = inotify_add_watch(inofd, "/etc/resolv.conf", IN_MODIFY | IN_ONESHOT);
 
 	conf.worker_pid = fork();
