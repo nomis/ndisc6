@@ -94,30 +94,15 @@ static struct
 	rdnss_t list[MAX_RDNSS];
 } servers = { .count = 0 };
 
-#define MYCONFDIR SYSCONFDIR "/rdnssd"
-#define MYRUNDIR LOCALSTATEDIR "/run/rdnssd"
-
-static struct
-{
-	int managed;
-	const char *hookpath;
-	const char *resolvpath;
-	pid_t worker_pid;
-} conf = {
-	.managed = 0,
-	.hookpath = MYCONFDIR "/merge-hook",
-	.resolvpath = MYRUNDIR "/resolv.conf",
-};
-
 /* The code */
 
-static void write_resolv()
+static void write_resolv(const char *resolvpath)
 {
 	FILE *resolv;
 	int rval;
-	char tmpfile[strlen(conf.resolvpath) + sizeof(".tmp")];
+	char tmpfile[strlen(resolvpath) + sizeof(".tmp")];
 
-	sprintf(tmpfile, "%s.tmp", conf.resolvpath);
+	sprintf(tmpfile, "%s.tmp", resolvpath);
 
 	resolv = fopen(tmpfile, "w");
 
@@ -134,7 +119,7 @@ static void write_resolv()
 
 	fclose(resolv);
 
-	rval = rename(tmpfile, conf.resolvpath);
+	rval = rename(tmpfile, resolvpath);
 
 	if (rval == -1)
 		syslog(LOG_ERR, _("cannot write resolv.conf: %m"));
@@ -381,15 +366,39 @@ static void prepare_fd (int fd)
 
 static volatile int termsig = 0;
 
-static int worker (void)
+static void term_handler (int signum)
 {
+	termsig = signum;
+}
+
+static void ignore_handler (int signum)
+{
+	(void)signum;
+}
+
+static int worker (const char *resolvpath)
+{
+	struct sigaction act;
 	sigset_t emptyset;
+	pid_t ppid = getppid ();
 	int sock = setup_socket ();
 
 	if (sock == -1)
 		return -1;
 	prepare_fd (sock);
 	/* be defensive - we want to block on poll(), not recv() */
+
+	memset (&act, 0, sizeof (struct sigaction));
+	act.sa_handler = term_handler;
+
+	act.sa_handler = term_handler;
+	sigaction (SIGTERM, &act, NULL);
+
+	act.sa_handler = term_handler;
+	sigaction (SIGINT, &act, NULL);
+
+	act.sa_handler = ignore_handler;
+	sigaction (SIGPIPE, &act, NULL);
 
 	sigemptyset (&emptyset);
 
@@ -403,7 +412,8 @@ static int worker (void)
 		now = ts.tv_sec;
 
 		trim_expired();
-		write_resolv();
+		write_resolv(resolvpath);
+		kill(ppid, SIGUSR1);
 
 		if (servers.count)
 			ts.tv_sec = (servers.list[servers.count - 1].expiry - now);
@@ -419,23 +429,23 @@ static int worker (void)
 	close (sock);
 
 	servers.count = 0;
-	write_resolv();
+	write_resolv(resolvpath);
 	return 0;
 }
 
-static void merge_hook (void)
+static void merge_hook (const char *hookpath)
 {
 	pid_t pid = fork ();
 
 	switch (pid)
 	{
 		case 0:
-			execl (conf.hookpath, conf.hookpath, (char *)NULL);
-			syslog (LOG_ERR, _("cannot run %s: %m"), conf.hookpath);
+			execl (hookpath, hookpath, (char *)NULL);
+			syslog (LOG_ERR, _("cannot run %s: %m"), hookpath);
 			exit(1);
 
 		case -1:
-			syslog (LOG_ERR, _("cannot run %s: %m"), conf.hookpath);
+			syslog (LOG_ERR, _("cannot run %s: %m"), hookpath);
 			break;
 
 		default:
@@ -447,129 +457,63 @@ static void merge_hook (void)
 
 }
 
-static int run_manager(int inofd, int mywd, int syswd)
+static int rdnssd (const char *resolvpath, const char *hookpath)
 {
-	sigset_t emptyset;
-	sigemptyset (&emptyset);
-
-	for (int merged = 0; termsig == 0;)
-	{
-		struct pollfd pfd =
-			{ .fd = inofd,  .events = POLLIN, .revents = 0 };
-		struct inotify_event ie;
-		int rval;
-
-		if (ppoll (&pfd, 1, NULL, &emptyset) <= 0)
-			continue;
-
-		if (pfd.revents == 0)
-			continue;
-
-		rval = read(inofd, &ie, sizeof(ie));
-
-		if (rval == -1)
-			continue;
-
-		if (ie.wd == mywd) {
-			if (ie.mask & IN_IGNORED)
-				mywd = inotify_add_watch(inofd, conf.resolvpath, IN_MODIFY);
-			merge_hook();
-			merged = 1;
-		} else if (ie.wd == syswd) {
-			if (merged)
-				merged = 0;
-			else
-				merge_hook();
-
-			syswd = inotify_add_watch(inofd, "/etc/resolv.conf", IN_MODIFY | IN_ONESHOT);
-		}
-	}
-
-	int status;
-
-	kill (conf.worker_pid, SIGTERM);
-	while (waitpid (conf.worker_pid, &status, 0) == -1);
-	merge_hook ();
-	return 0;
-}
-
-
-static void term_handler (int signum)
-{
-	termsig = signum;
-}
-
-
-static void ignore_handler (int signum)
-{
-	(void)signum;
-}
-
-
-static int init_manager (void)
-{
-	int inofd, mywd, syswd;
-
-	inofd = inotify_init();
-	if (inofd == -1)
-		return -1;
-	prepare_fd(inofd);
-	mywd = inotify_add_watch(inofd, conf.resolvpath, IN_MODIFY);
-	if (mywd == -1 && errno == ENOENT) {
-		close(open(conf.resolvpath, O_WRONLY|O_CREAT));
-		mywd = inotify_add_watch(inofd, conf.resolvpath, IN_MODIFY);
-	}
-	syswd = inotify_add_watch(inofd, "/etc/resolv.conf", IN_MODIFY | IN_ONESHOT);
-
-	conf.worker_pid = fork();
-
-	switch (conf.worker_pid)
-	{
-		int rval;
-		case 0:
-			rval = worker();
-			exit(rval != 0);
-
-		case -1:
-			syslog (LOG_CRIT, _("cannot fork: %m"));
-			return -1;
-
-		default:
-			rval = run_manager(inofd, mywd, syswd);
-			return rval;
-	}
-
-}
-
-
-static int rdnssd (void)
-{
-	int rval;
+	int rval = 0;
 	struct sigaction act;
-	sigset_t handled, orig_mask;
+	sigset_t term_set, handled, orig_mask;
+	pid_t worker_pid;
 
 	sigemptyset (&handled);
 
-	memset (&act, 0, sizeof (struct sigaction));
-	act.sa_handler = term_handler;
-
-	act.sa_handler = term_handler;
-	sigaction (SIGTERM, &act, NULL);
 	sigaddset (&handled, SIGTERM);
-
-	act.sa_handler = term_handler;
-	sigaction (SIGINT, &act, NULL);
 	sigaddset (&handled, SIGINT);
 
-	act.sa_handler = ignore_handler;
-	sigaction (SIGPIPE, &act, NULL);
+	term_set = handled;
+
 	sigaddset (&handled, SIGPIPE);
+	sigaddset (&handled, SIGUSR1);
 
 	/* TODO: HUP handling */
 
 	sigprocmask (SIG_BLOCK, &handled, &orig_mask);
 
-	rval = (!conf.managed) ? init_manager() : worker();
+	worker_pid = fork();
+
+	switch (worker_pid)
+	{
+		case 0:
+			rval = worker(resolvpath);
+			exit(rval != 0);
+
+		case -1:
+			syslog (LOG_CRIT, _("cannot fork: %m"));
+			rval = -1;
+			break;
+
+		default:
+			for (;;)
+			{
+				siginfo_t info;
+
+				sigwaitinfo(&handled, &info);
+
+				if (sigismember(&term_set, info.si_signo))
+					break;
+
+				if (hookpath)
+					merge_hook(hookpath);
+			}
+
+			int status;
+
+			kill (worker_pid, SIGTERM);
+			while (waitpid (worker_pid, &status, 0) == -1);
+
+			if (hookpath)
+				merge_hook (hookpath);
+
+	}
 
 	sigprocmask (SIG_SETMASK, &orig_mask, NULL);
 
@@ -642,7 +586,6 @@ usage (const char *path)
 "  -f, --foreground  run in the foreground\n"
 /* -H */
 "  -h, --help        display this help and exit\n"
-/* -m */
 "  -p, --pidfile     override the location of the PID file\n"
 "  -r, --resolv-file set the path to the generated resolv.conf file\n"
 /*"  -u, --user       override the user to set UID to\n"*/
@@ -672,7 +615,9 @@ version (void)
 
 int main (int argc, char *argv[])
 {
-	const char *pidpath = MYRUNDIR "/rdnssd.pid";
+	const char *hookpath = NULL;
+	const char *pidpath = LOCALSTATEDIR "/run/rdnssd.pid";
+	const char *resolvpath = LOCALSTATEDIR "/run/rdnssd/resolv.conf";
 	int c, pidfd, rval = 1;
 	bool fg = false;
 
@@ -682,14 +627,12 @@ int main (int argc, char *argv[])
 		{ "hook",			required_argument,	NULL, 'H' },
 		{ "merge-hook",		required_argument,	NULL, 'H' },
 		{ "help",			no_argument,		NULL, 'h' },
-		{ "managed",		no_argument,		NULL, 'm' },
 		{ "pidfile",		required_argument,	NULL, 'p' },
 		{ "resolv-file",	required_argument,	NULL, 'r' },
-		{ "self-managed",	no_argument,		NULL, 's' },
 		{ "version",		no_argument,		NULL, 'V' },
 		{ NULL,				no_argument,		NULL, '\0'}
 	};
-	static const char optstring[] = "fH:hmp:r:sV";
+	static const char optstring[] = "fH:hp:r:V";
 
 	setlocale (LC_ALL, "");
 	bindtextdomain (PACKAGE, LOCALEDIR);
@@ -704,26 +647,18 @@ int main (int argc, char *argv[])
 				break;
 
 			case 'H':
-				conf.hookpath = optarg;
+				hookpath = optarg;
 				break;
 
 			case 'h':
 				return usage (argv[0]);
-
-			case 'm':
-				conf.managed = 1;
-				break;
 
 			case 'p':
 				pidpath = optarg;
 				break;
 
 			case 'r':
-				conf.resolvpath = optarg;
-				break;
-
-			case 's':
-				conf.managed = 0;
+				resolvpath = optarg;
 				break;
 
 			case 'V':
@@ -747,7 +682,7 @@ int main (int argc, char *argv[])
 		openlog ("rdnssd", (fg ? LOG_PERROR : 0) | LOG_PID, LOG_DAEMON);
 
 		write_pid (pidfd);
-		rval = rdnssd ();
+		rval = rdnssd (resolvpath, hookpath);
 
 		closelog ();
 	}
