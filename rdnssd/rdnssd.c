@@ -459,7 +459,7 @@ static void merge_hook (const char *hookpath)
 static int rdnssd (const char *resolvpath, const char *hookpath)
 {
 	int rval = 0;
-	sigset_t term_set, handled, orig_mask;
+	sigset_t term_set, handled;
 	pid_t worker_pid;
 
 	sigemptyset (&handled);
@@ -474,7 +474,7 @@ static int rdnssd (const char *resolvpath, const char *hookpath)
 
 	/* TODO: HUP handling */
 
-	sigprocmask (SIG_BLOCK, &handled, &orig_mask);
+	sigprocmask (SIG_BLOCK, &handled, NULL);
 
 	worker_pid = fork();
 
@@ -492,11 +492,13 @@ static int rdnssd (const char *resolvpath, const char *hookpath)
 		default:
 			for (;;)
 			{
-				siginfo_t info;
+				int signum;
 
-				sigwaitinfo(&handled, &info);
+				while (sigwait (&handled, &signum) == -1)
 
-				if (sigismember(&term_set, info.si_signo))
+				if (signum == SIGPIPE)
+					continue;
+				if (sigismember (&term_set, signum))
 					break;
 
 				if (hookpath)
@@ -513,8 +515,6 @@ static int rdnssd (const char *resolvpath, const char *hookpath)
 
 	}
 
-	sigprocmask (SIG_SETMASK, &orig_mask, NULL);
-
 	return rval;
 
 }
@@ -525,9 +525,15 @@ static int rdnssd (const char *resolvpath, const char *hookpath)
 # define O_NOFOLLOW 0
 #endif
 static int
-open_pidfile (const char *path)
+create_pidfile (const char *path)
 {
+	char buf[20]; // enough for > 2^64
+	size_t len;
 	int fd;
+
+	(void)snprintf (buf, sizeof (buf), "%d", (int)getpid ());
+	buf[sizeof (buf) - 1] = '\0';
+	len = strlen (buf);
 
 	fd = open (path, O_WRONLY|O_CREAT|O_NOFOLLOW, 0644);
 	if (fd != -1)
@@ -538,7 +544,9 @@ open_pidfile (const char *path)
 		if ((fstat (fd, &s) == 0)
 		 && S_ISREG(s.st_mode)
 		 && (lockf (fd, F_TLOCK, 0) == 0)
-		 && (ftruncate (fd, 0) == 0))
+		 && (ftruncate (fd, 0) == 0)
+		 && (write (fd, buf, len) == (ssize_t)len)
+		 && (fdatasync (fd) == 0))
 			return fd;
 
 		if (errno == 0) /* !S_ISREG */
@@ -547,21 +555,6 @@ open_pidfile (const char *path)
 		(void)close (fd);
 	}
 	return -1;
-}
-
-
-static int
-write_pid (int fd)
-{
-	char buf[20]; // enough for > 2^64
-
-	(void)snprintf (buf, sizeof (buf), "%d", (int)getpid ());
-	buf[sizeof (buf) - 1] = '\0';
-	size_t len = strlen (buf);
-
-	if ((write (fd, buf, len) != (ssize_t)len) || fdatasync (fd))
-		return -1;
-	return 0;
 }
 
 
@@ -616,7 +609,7 @@ int main (int argc, char *argv[])
 	const char *hookpath = NULL;
 	const char *pidpath = LOCALSTATEDIR "/run/rdnssd.pid";
 	const char *resolvpath = LOCALSTATEDIR "/run/rdnssd/resolv.conf";
-	int c, pidfd, rval = 1;
+	int pidfd, val, pipefd = -1;
 	bool fg = false;
 
 	static const struct option opts[] =
@@ -636,9 +629,9 @@ int main (int argc, char *argv[])
 	bindtextdomain (PACKAGE, LOCALEDIR);
 	textdomain (PACKAGE);
 
-	while ((c = getopt_long (argc, argv, optstring, opts, NULL)) != -1)
+	while ((val = getopt_long (argc, argv, optstring, opts, NULL)) != -1)
 	{
-		switch (c)
+		switch (val)
 		{
 			case 'f':
 				fg = true;
@@ -667,26 +660,72 @@ int main (int argc, char *argv[])
 		}
 	}
 
-	pidfd = open_pidfile (pidpath);
+	/* Fork, and wait until the process is ready */
+	if (!fg)
+	{
+		int pfd[2];
+		pid_t pid;
+
+		if (pipe (pfd))
+			pfd[0] = pfd[1] = -1;
+		pid = fork ();
+
+		switch (pid)
+		{
+			case -1:
+				perror ("fork");
+				return 1;
+
+			case 0:
+				close (pfd[0]);
+				setsid (); /* cannot fail */
+				pipefd = pfd[1];
+				break;
+
+			default: /* parent process */
+				close (pfd[1]);
+				if (read (pfd[0], &val, sizeof (val)) != sizeof (val))
+					val = 1;
+				close (pfd[0]);
+
+				if (val != 0)
+				{
+					/* failure! */
+					while (waitpid (pid, &val, 0) == -1);
+					return WIFEXITED (val) ? WEXITSTATUS (val) : 1;
+				}
+				return 0;
+		}
+	}
+
+	openlog ("rdnssd", LOG_PERROR | LOG_PID, LOG_DAEMON);
+
+	/* main process */
+	pidfd = create_pidfile (pidpath);
 	if (pidfd == -1)
 	{
-		fprintf (stderr, _("Cannot create %s (%s) - already running?\n"),
-		         pidpath, strerror (errno));
+		syslog (LOG_ERR, _("Cannot create %s (%m) - already running?\n"),
+		        pidpath);
+		closelog ();
 		return 1;
 	}
 
-	if (fg || (daemon (0, 0) == 0))
+	/* working fine: notify parent */
+	if (!fg)
 	{
-		openlog ("rdnssd", (fg ? LOG_PERROR : 0) | LOG_PID, LOG_DAEMON);
-
-		write_pid (pidfd);
-		rval = rdnssd (resolvpath, hookpath);
-
-		closelog ();
+		val = 0;
+		write (pipefd, &val, sizeof (val));
+		close (pipefd);
+		freopen ("/dev/null", "r", stdin);
+		freopen ("/dev/null", "w", stdout);
+		freopen ("/dev/null", "w", stderr);
 	}
 
+	val = rdnssd (resolvpath, hookpath);
+
+	closelog ();
 	unlink (pidpath);
 	close (pidfd);
 
-	return rval != 0;
+	return val != 0;
 }
