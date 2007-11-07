@@ -494,7 +494,7 @@ static int rdnssd (const char *resolvpath, const char *hookpath)
 			{
 				int signum;
 
-				while (sigwait (&handled, &signum) == -1)
+				while (sigwait (&handled, &signum) == -1);
 
 				if (signum == SIGPIPE)
 					continue;
