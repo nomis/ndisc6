@@ -43,7 +43,6 @@
 #include <poll.h>
 #include <errno.h>
 #include <resolv.h>
-#include <sys/inotify.h>
 #include <sys/wait.h>
 #include <getopt.h>
 
@@ -460,7 +459,6 @@ static void merge_hook (const char *hookpath)
 static int rdnssd (const char *resolvpath, const char *hookpath)
 {
 	int rval = 0;
-	struct sigaction act;
 	sigset_t term_set, handled, orig_mask;
 	pid_t worker_pid;
 
