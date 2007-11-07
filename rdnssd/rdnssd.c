@@ -375,9 +375,8 @@ static void ignore_handler (int signum)
 	(void)signum;
 }
 
-static int worker (const char *resolvpath)
+static int worker (int pipe, const char *resolvpath)
 {
-	struct sigaction act;
 	sigset_t emptyset;
 	pid_t ppid = getppid ();
 	int sock = setup_socket ();
@@ -387,18 +386,6 @@ static int worker (const char *resolvpath)
 	prepare_fd (sock);
 	/* be defensive - we want to block on poll(), not recv() */
 
-	memset (&act, 0, sizeof (struct sigaction));
-	act.sa_handler = term_handler;
-
-	act.sa_handler = term_handler;
-	sigaction (SIGTERM, &act, NULL);
-
-	act.sa_handler = term_handler;
-	sigaction (SIGINT, &act, NULL);
-
-	act.sa_handler = ignore_handler;
-	sigaction (SIGPIPE, &act, NULL);
-
 	sigemptyset (&emptyset);
 
 	while (termsig == 0)
@@ -406,13 +393,14 @@ static int worker (const char *resolvpath)
 		struct pollfd pfd =
 			{ .fd = sock,  .events = POLLIN, .revents = 0 };
 		struct timespec ts;
+		char buf = 42;
 
 		clock_gettime (CLOCK_MONOTONIC, &ts);
 		now = ts.tv_sec;
 
 		trim_expired();
 		write_resolv(resolvpath);
-		kill(ppid, SIGUSR1);
+		write(pipe, &buf, sizeof(buf));
 
 		if (servers.count)
 			ts.tv_sec = (servers.list[servers.count - 1].expiry - now);
@@ -456,21 +444,67 @@ static void merge_hook (const char *hookpath)
 
 }
 
+static int manager(pid_t worker_pid, int pipe, const char *hookpath)
+{
+	sigset_t emptyset;
+
+	sigemptyset(&emptyset);
+
+	while (termsig == 0)
+	{
+		struct pollfd pfd = { .fd = pipe,  .events = POLLIN, .revents = 0 };
+		char buf;
+
+		if (ppoll(&pfd, 1, NULL, &emptyset) <= 0)
+			continue;
+
+		read(pipe, &buf, sizeof(buf));
+
+		if (hookpath)
+			merge_hook(hookpath);
+	}
+
+	int status;
+
+	kill (worker_pid, SIGTERM);
+	while (waitpid (worker_pid, &status, 0) == -1);
+
+	if (hookpath)
+		merge_hook (hookpath);
+
+	return 0;
+}
+
 static int rdnssd (const char *resolvpath, const char *hookpath)
 {
 	int rval = 0;
-	sigset_t term_set, handled;
+	struct sigaction act;
+	sigset_t handled;
 	pid_t worker_pid;
+	int pfd[2];
+
+	rval = pipe(pfd);
+	if (rval == -1) {
+		syslog (LOG_CRIT, _("cannot open pipe: %m"));
+		return -1;
+	}
 
 	sigemptyset (&handled);
 
+	memset (&act, 0, sizeof (struct sigaction));
+	act.sa_handler = term_handler;
+
+	act.sa_handler = term_handler;
+	sigaction (SIGTERM, &act, NULL);
 	sigaddset (&handled, SIGTERM);
+
+	act.sa_handler = term_handler;
+	sigaction (SIGINT, &act, NULL);
 	sigaddset (&handled, SIGINT);
 
-	term_set = handled;
-
+	act.sa_handler = ignore_handler;
+	sigaction (SIGPIPE, &act, NULL);
 	sigaddset (&handled, SIGPIPE);
-	sigaddset (&handled, SIGUSR1);
 
 	/* TODO: HUP handling */
 
@@ -481,38 +515,27 @@ static int rdnssd (const char *resolvpath, const char *hookpath)
 	switch (worker_pid)
 	{
 		case 0:
-			rval = worker(resolvpath);
+			close(pfd[0]);
+
+			prepare_fd(pfd[1]);
+			rval = worker(pfd[1], resolvpath);
+			close(pfd[1]);
+
 			exit(rval != 0);
 
 		case -1:
 			syslog (LOG_CRIT, _("cannot fork: %m"));
+			close(pfd[0]);
+			close(pfd[1]);
 			rval = -1;
 			break;
 
 		default:
-			for (;;)
-			{
-				int signum;
+			close(pfd[1]);
 
-				while (sigwait (&handled, &signum) == -1);
-
-				if (signum == SIGPIPE)
-					continue;
-				if (sigismember (&term_set, signum))
-					break;
-
-				if (hookpath)
-					merge_hook(hookpath);
-			}
-
-			int status;
-
-			kill (worker_pid, SIGTERM);
-			while (waitpid (worker_pid, &status, 0) == -1);
-
-			if (hookpath)
-				merge_hook (hookpath);
-
+			prepare_fd(pfd[0]);
+			rval = manager(worker_pid, pfd[0], hookpath);
+			close(pfd[0]);
 	}
 
 	return rval;
