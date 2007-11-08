@@ -108,6 +108,6 @@ static int nl_socket (void)
 	return fd;
 }
 
-rdnss_src_t rndss_netlink = { nl_socket, nl_recv };
+const rdnss_src_t rdnss_netlink = { nl_socket, nl_recv };
 
 #endif /* __linux__ */

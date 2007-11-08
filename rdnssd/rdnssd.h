@@ -27,7 +27,7 @@ typedef struct rdnss_src
 	int (*process) (int fd);
 } rdnss_src_t;
 
-extern rdnss_src_t rdnss_netlink, rdnss_icmp;
+extern const rdnss_src_t rdnss_netlink, rdnss_icmp;
 
 /* Belongs in <netinet/icmp6.h> */
 #define ND_OPT_RDNSS 25

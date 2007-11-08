@@ -102,4 +102,4 @@ static int icmp_socket()
 	return fd;
 }
 
-rdnss_src_t rndss_icmp = { icmp_socket, icmp_recv };
+const rdnss_src_t rdnss_icmp = { icmp_socket, icmp_recv };
