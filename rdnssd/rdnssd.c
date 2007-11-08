@@ -379,7 +379,7 @@ static int worker (int pipe, const char *resolvpath)
 {
 	sigset_t emptyset;
 	pid_t ppid = getppid ();
-	int sock = setup_socket ();
+	int rval = 0, sock = setup_socket ();
 
 	if (sock == -1)
 		return -1;
@@ -409,15 +409,21 @@ static int worker (int pipe, const char *resolvpath)
 		if (ppoll (&pfd, 1, servers.count ? &ts : NULL, &emptyset) <= 0)
 			continue;
 
-		if (pfd.revents)
+		if (pfd.revents & POLLIN)
 			recv_msg(sock);
+		else {
+			syslog(LOG_ERR, _("ppoll returned errors on socket, aborting"));
+			rval = -1;
+			break;
+		}
+
 	}
 
 	close (sock);
 
 	servers.count = 0;
 	write_resolv(resolvpath);
-	return 0;
+	return rval;
 }
 
 static void merge_hook (const char *hookpath)
@@ -446,6 +452,7 @@ static void merge_hook (const char *hookpath)
 
 static int manager(pid_t worker_pid, int pipe, const char *hookpath)
 {
+	int rval = 0;
 	sigset_t emptyset;
 
 	sigemptyset(&emptyset);
@@ -458,10 +465,18 @@ static int manager(pid_t worker_pid, int pipe, const char *hookpath)
 		if (ppoll(&pfd, 1, NULL, &emptyset) <= 0)
 			continue;
 
-		read(pipe, &buf, sizeof(buf));
+		if (pfd.revents & POLLIN) {
+			read(pipe, &buf, sizeof(buf));
 
-		if (hookpath)
-			merge_hook(hookpath);
+			if (hookpath)
+				merge_hook(hookpath);
+
+		} else {
+			syslog (LOG_ERR, _("child process hung up unexpectedly, aborting"));
+			rval = -1;
+			break;
+		}
+
 	}
 
 	int status;
@@ -472,7 +487,7 @@ static int manager(pid_t worker_pid, int pipe, const char *hookpath)
 	if (hookpath)
 		merge_hook (hookpath);
 
-	return 0;
+	return rval;
 }
 
 static int rdnssd (const char *resolvpath, const char *hookpath)
