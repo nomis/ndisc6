@@ -24,20 +24,20 @@
 
 #ifdef __linux__
 
-#include <stddef.h>
+#include <string.h>
 
+#include <errno.h>
 #include <syslog.h>
 #include <sys/types.h>
-#include <netinet/icmp6.h>
-
-#include "rdnssd.h"
-
-#include "gettext.h"
-
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/icmp6.h>
+#include <sys/utsname.h>
 #include <linux/rtnetlink.h>
+
+#include "rdnssd.h"
+#include "gettext.h"
 
 
 /* Belongs in <linux/rtnetlink.h> */
@@ -88,7 +88,16 @@ static int nl_recv (int fd)
 static int nl_socket (void)
 {
 	struct sockaddr_nl saddr;
+	struct utsname uts;
 	int fd;
+
+	/* Netlink RDNSS support starts with 2.6.24 */
+	uname (&uts);
+	if (strverscmp (uts.release, "2.6.24") < 0)
+	{
+		errno = ENOSYS;
+		return -1;
+	}
 
 	fd = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
 	if (fd == -1)
