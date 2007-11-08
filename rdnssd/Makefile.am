@@ -22,7 +22,9 @@ sbin_PROGRAMS = rdnssd
 conf_DATA = merge-hook
 
 # rdnssd
-rdnssd_SOURCES = rdnssd.c
+rdnssd_SOURCES = rdnssd.c rdnssd.h \
+	icmp.c \
+	netlink.c
 rdnssd_LDADD = $(LIBRT)
 
 # merge-hook
