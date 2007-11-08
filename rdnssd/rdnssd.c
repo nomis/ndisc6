@@ -45,6 +45,7 @@
 #include <resolv.h>
 #include <sys/wait.h>
 #include <getopt.h>
+#include <pwd.h>
 
 
 /* Belongs in <netinet/icmp6.h> */
@@ -357,6 +358,23 @@ static int nl_socket()
 
 #define setup_socket nl_socket
 
+static int drop_privileges(const char *username)
+{
+	if (username) {
+		struct passwd *pw = getpwnam(username);
+
+		if (pw == NULL) {
+			syslog (LOG_ERR, _("cannot setuid to user %s: %m"), username);
+			return -1;
+		}
+
+		setgid(pw->pw_uid);
+		setuid(pw->pw_uid);
+	}
+
+	return 0;
+}
+
 static void prepare_fd (int fd)
 {
 	fcntl (fd, F_SETFD, FD_CLOEXEC);
@@ -375,7 +393,7 @@ static void ignore_handler (int signum)
 	(void)signum;
 }
 
-static int worker (int pipe, const char *resolvpath)
+static int worker (int pipe, const char *resolvpath, const char *username)
 {
 	sigset_t emptyset;
 	pid_t ppid = getppid ();
@@ -385,6 +403,11 @@ static int worker (int pipe, const char *resolvpath)
 		return -1;
 	prepare_fd (sock);
 	/* be defensive - we want to block on poll(), not recv() */
+
+	if (drop_privileges(username) < 0) {
+		close(sock);
+		return -1;
+	}
 
 	sigemptyset (&emptyset);
 
@@ -490,7 +513,7 @@ static int manager(pid_t worker_pid, int pipe, const char *hookpath)
 	return rval;
 }
 
-static int rdnssd (const char *resolvpath, const char *hookpath)
+static int rdnssd (const char *username, const char *resolvpath, const char *hookpath)
 {
 	int rval = 0;
 	struct sigaction act;
@@ -533,7 +556,7 @@ static int rdnssd (const char *resolvpath, const char *hookpath)
 			close(pfd[0]);
 
 			prepare_fd(pfd[1]);
-			rval = worker(pfd[1], resolvpath);
+			rval = worker(pfd[1], resolvpath, username);
 			close(pfd[1]);
 
 			exit(rval != 0);
@@ -617,7 +640,7 @@ usage (const char *path)
 "  -h, --help        display this help and exit\n"
 "  -p, --pidfile     override the location of the PID file\n"
 "  -r, --resolv-file set the path to the generated resolv.conf file\n"
-/*"  -u, --user       override the user to set UID to\n"*/
+"  -u, --user       override the user to set UID to\n"
 "  -V, --version    display program version and exit\n"), path);
 	return 0;
 }
@@ -644,9 +667,9 @@ version (void)
 
 int main (int argc, char *argv[])
 {
-	const char *hookpath = NULL;
-	const char *pidpath = LOCALSTATEDIR "/run/rdnssd.pid";
-	const char *resolvpath = LOCALSTATEDIR "/run/rdnssd/resolv.conf";
+	const char *username, *hookpath = NULL,
+	           *pidpath = LOCALSTATEDIR "/run/rdnssd.pid",
+	           *resolvpath = LOCALSTATEDIR "/run/rdnssd/resolv.conf";
 	int pidfd, val, pipefd = -1;
 	bool fg = false;
 
@@ -658,10 +681,12 @@ int main (int argc, char *argv[])
 		{ "help",			no_argument,		NULL, 'h' },
 		{ "pidfile",		required_argument,	NULL, 'p' },
 		{ "resolv-file",	required_argument,	NULL, 'r' },
+		{ "user",			required_argument,	NULL, 'u' },
+		{ "username",		required_argument,	NULL, 'u' },
 		{ "version",		no_argument,		NULL, 'V' },
 		{ NULL,				no_argument,		NULL, '\0'}
 	};
-	static const char optstring[] = "fH:hp:r:V";
+	static const char optstring[] = "fH:hp:r:u:V";
 
 	setlocale (LC_ALL, "");
 	bindtextdomain (PACKAGE, LOCALEDIR);
@@ -688,6 +713,10 @@ int main (int argc, char *argv[])
 
 			case 'r':
 				resolvpath = optarg;
+				break;
+
+			case 'u':
+				username = optarg;
 				break;
 
 			case 'V':
@@ -759,7 +788,7 @@ int main (int argc, char *argv[])
 		freopen ("/dev/null", "w", stderr);
 	}
 
-	val = rdnssd (resolvpath, hookpath);
+	val = rdnssd (username, resolvpath, hookpath);
 
 	closelog ();
 	unlink (pidpath);
