@@ -166,7 +166,7 @@ int parse_nd_opts (const struct nd_opt_hdr *opt, size_t opts_len)
 	for (; opts_len >= sizeof(struct nd_opt_hdr);
 	     opts_len -= opt->nd_opt_len << 3,
 	     opt = (const struct nd_opt_hdr *)
-		   ((const uint8_t *) opt) + (opt->nd_opt_len << 3)) {
+		   ((const uint8_t *) opt + (opt->nd_opt_len << 3))) {
 		struct nd_opt_rdnss *rdnss_opt;
 		size_t nd_opt_len = opt->nd_opt_len;
 		uint32_t lifetime;
