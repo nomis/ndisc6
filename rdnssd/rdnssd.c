@@ -492,12 +492,12 @@ usage (const char *path)
 "Starts the IPv6 Recursive DNS Server Discovery daemon.\n"
 "\n"
 "  -f, --foreground  run in the foreground\n"
-/* -H */
+"  -H, --merge-hook  execute this hook whenever resolv.conf is updated\n"
 "  -h, --help        display this help and exit\n"
 "  -p, --pidfile     override the location of the PID file\n"
 "  -r, --resolv-file set the path to the generated resolv.conf file\n"
-"  -u, --user       override the user to set UID to\n"
-"  -V, --version    display program version and exit\n"), path);
+"  -u, --user        override the user to set UID to\n"
+"  -V, --version     display program version and exit\n"), path);
 	return 0;
 }
 
