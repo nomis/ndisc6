@@ -45,7 +45,7 @@ struct nd_opt_rdnss
 extern "C" {
 # endif
 
-int parse_nd_opts (const struct nd_opt_hdr *opt, size_t opts_len);
+int parse_nd_opts (const struct nd_opt_hdr *opt, size_t opts_len, unsigned int ifindex);
 
 # ifdef __cplusplus
 }

@@ -74,7 +74,7 @@ static int icmp_recv (int fd)
 
 		/* Parses RA options */
 		len -= sizeof (icmp6);
-		return parse_nd_opts((struct nd_opt_hdr *) buf, len);
+		return parse_nd_opts((struct nd_opt_hdr *) buf, len, src.sin6_scope_id);
 
 }
 

@@ -37,6 +37,7 @@
 #include <netinet/in.h>
 #include <netinet/icmp6.h>
 #include <arpa/inet.h>
+#include <net/if.h>
 #include <poll.h>
 #include <errno.h>
 #include <resolv.h>
@@ -55,6 +56,7 @@ static time_t now;
 typedef struct
 {
 	struct in6_addr addr;
+	unsigned int    ifindex;
 	time_t          expiry;
 } rdnss_t;
 
@@ -84,9 +86,16 @@ static void write_resolv(const char *resolvpath)
 	}
 
 	for (size_t i = 0; i < servers.count; i++) {
-		char buf[INET6_ADDRSTRLEN];
-		inet_ntop(AF_INET6, &servers.list[i].addr, buf, INET6_ADDRSTRLEN);
-		fprintf(resolv, "nameserver %s\n", buf);
+		char addr[INET6_ADDRSTRLEN];
+		inet_ntop(AF_INET6, &servers.list[i].addr, addr, INET6_ADDRSTRLEN);
+
+/* Doesn't seem supported by glibc's resolver
+		if (IN6_IS_ADDR_LINKLOCAL(&servers.list[i].addr)) {
+			char iface[IFNAMSIZ];
+			if_indextoname(servers.list[i].ifindex, iface);
+			fprintf(resolv, "nameserver %s%%%s\n", addr, iface);
+		} else */
+			fprintf(resolv, "nameserver %s\n", addr);
 	}
 
 	fclose(resolv);
@@ -117,14 +126,16 @@ static int rdnss_older (const void *a, const void *b)
 	return 0;
 }
 
-static void rdnss_update (const struct in6_addr *addr, time_t expiry)
+static void rdnss_update (const struct in6_addr *addr, unsigned int ifindex, time_t expiry)
 {
 	size_t i;
 
 	/* Does this entry already exist? */
 	for (i = 0; i < servers.count; i++)
 	{
-		if (memcmp (addr, &servers.list[i].addr, sizeof (*addr)) == 0)
+		if (memcmp (addr, &servers.list[i].addr, sizeof (*addr)) == 0
+		    && (! IN6_IS_ADDR_LINKLOCAL(addr)
+		        || ifindex == servers.list[i].ifindex))
 			break;
 	}
 
@@ -145,6 +156,7 @@ static void rdnss_update (const struct in6_addr *addr, time_t expiry)
 	}
 
 	memcpy (&servers.list[i].addr, addr, sizeof (*addr));
+	servers.list[i].ifindex = ifindex;
 	servers.list[i].expiry = expiry;
 
 	qsort (servers.list, servers.count, sizeof (rdnss_t), rdnss_older);
@@ -161,7 +173,7 @@ static void rdnss_update (const struct in6_addr *addr, time_t expiry)
 #endif
 }
 
-int parse_nd_opts (const struct nd_opt_hdr *opt, size_t opts_len)
+int parse_nd_opts (const struct nd_opt_hdr *opt, size_t opts_len, unsigned int ifindex)
 {
 	for (; opts_len >= sizeof(struct nd_opt_hdr);
 	     opts_len -= opt->nd_opt_len << 3,
@@ -193,7 +205,7 @@ int parse_nd_opts (const struct nd_opt_hdr *opt, size_t opts_len)
 
 		for (struct in6_addr *addr = (struct in6_addr *) (rdnss_opt + 1);
 		     nd_opt_len >= 2; addr++, nd_opt_len -= 2)
-			rdnss_update(addr, lifetime);
+			rdnss_update(addr, ifindex, lifetime);
 
 	}
 

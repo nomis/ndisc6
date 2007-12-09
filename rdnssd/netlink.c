@@ -47,9 +47,11 @@ struct nduseroptmsg
 	unsigned char	nduseropt_family;
 	unsigned char	nduseropt_pad1;
 	unsigned short	nduseropt_opts_len; /* Total length of options */
+	int		nduseropt_ifindex;
 	__u8		nduseropt_icmp_type;
 	__u8		nduseropt_icmp_code;
 	unsigned short	nduseropt_pad2;
+	unsigned int	nduseropt_pad3;
 	/* Followed by one or more ND options */
 };
 
@@ -80,7 +82,7 @@ static int nl_recv (int fd)
 	if (msg_size < NLMSG_SPACE(sizeof(struct nduseroptmsg) + ndmsg->nduseropt_opts_len))
 		return -1;
 
-	return parse_nd_opts((struct nd_opt_hdr *) (ndmsg + 1), ndmsg->nduseropt_opts_len);
+	return parse_nd_opts((struct nd_opt_hdr *) (ndmsg + 1), ndmsg->nduseropt_opts_len, ndmsg->nduseropt_ifindex);
 
 }
 
