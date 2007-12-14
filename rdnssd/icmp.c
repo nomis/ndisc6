@@ -33,6 +33,11 @@
 #include "rdnssd.h"
 #include "gettext.h"
 
+#ifndef IPV6_RECVHOPLIMIT
+# warning using RFC2922 instead of RFC3542
+# define IPV6_RECVHOPLIMIT IPV6_HOPLIMIT
+#endif
+
 static int icmp_recv (int fd)
 {
 		struct nd_router_advert icmp6;
