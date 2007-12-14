@@ -14,7 +14,8 @@ subst_script = sed \
 	-e 's,[@]PERL[@],$(PERL),g' \
 	-e 's,[@]PACKAGE[@],$(PACKAGE),g' \
 	-e 's,[@]VERSION[@],$(VERSION),g' \
-	-e 's,[@]LOCALSTATEDIR[@],$(localstatedir),g'
+	-e 's,[@]LOCALSTATEDIR[@],$(localstatedir),g' \
+	-e 's,[@]SYSCONFDIR[@],$(sysconfdir),g'
 
 EXTRA_DIST = merge-hook.in
 CLEANFILES = $(conf_DATA)

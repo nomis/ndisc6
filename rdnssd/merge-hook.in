@@ -31,12 +31,17 @@ my $MAXNS = 3;
 # will limit the IPv6 entries it adds to $RDNSS_LIMIT only.
 my $RDNSS_LIMIT = $MAXNS - 1;
 
+my $sysconfdir = '@SYSCONFDIR@';
+my $localstatedir = '@LOCALSTATEDIR@';
+my $resolvconf = "$sysconfdir/resolv.conf";
+my $myresolvconf = "$localstatedir/run/rdnssd/resolv.conf";
+
 # Script code
 
 # Parse both files to merge
 
-open(RESOLV, "< /etc/resolv.conf") or die("cannot read /etc/resolv.conf: $!");
-open(RDNSS, "< @LOCALSTATEDIR@/run/rdnssd/resolv.conf") or die("cannot read @LOCALSTATEDIR@/run/rdnssd/resolv.conf: $!");
+open(RESOLV, "< $resolvconf") or die("cannot read $resolvconf: $!\n");
+open(RDNSS, "< $myresolvconf") or die("cannot read $myresolvconf: $!\n");
 
 my @dnsv4 = ();
 my @other = ();
@@ -82,8 +87,8 @@ $resolv .= join("", @dnsv4);
 
 # Write the result
 
-open(TMP, "> /etc/.resolv.conf.tmp") or die("cannot write /etc/.resolv.conf.tmp: $!");
+open(TMP, "> $resolvconf.tmp") or die("cannot write $resolvconf..tmp: $!\n");
 print TMP $resolv;
 close(TMP);
-rename("/etc/.resolv.conf.tmp", "/etc/resolv.conf") or die("cannot write /etc/resolv.conf: $!");;
+rename("$resolvconf.tmp", "$resolvconf") or die("cannot write $resolvconf: $!\n");
 
