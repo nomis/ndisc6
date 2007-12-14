@@ -500,8 +500,8 @@ static int
 usage (const char *path)
 {
 	printf (_(
-"Usage: %s TODO\n"
-"Starts the IPv6 Recursive DNS Server Discovery daemon.\n"
+"Usage: %s [OPTIONS]\n"
+"Starts the IPv6 Recursive DNS Server discovery Daemon.\n"
 "\n"
 "  -f, --foreground  run in the foreground\n"
 "  -H, --merge-hook  execute this hook whenever resolv.conf is updated\n"
@@ -517,7 +517,7 @@ usage (const char *path)
 static int
 version (void)
 {
-	printf (_("rdnssd: IPv6 Recursive DNS Server Discovery daemon %s (%s)\n"),
+	printf (_("rdnssd: IPv6 Recursive DNS Server discovery Daemon %s (%s)\n"),
 	        VERSION, "$Rev$");
 	printf (_(" built %s on %s\n"), __DATE__, PACKAGE_BUILD_HOSTNAME);
 	printf (_("Configured with: %s\n"), PACKAGE_CONFIGURE_INVOCATION);
