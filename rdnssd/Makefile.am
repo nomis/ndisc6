@@ -8,7 +8,7 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 	-DLOCALEDIR=\"$(localedir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLOCALSTATEDIR=\"$(localstatedir)\"
-confdir = $(sysconfdir)/$(PACKAGE)
+confdir = $(sysconfdir)/rdnssd
 
 subst_script = sed \
 	-e 's,[@]PERL[@],$(PERL),g' \
