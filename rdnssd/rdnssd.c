@@ -293,20 +293,15 @@ static int worker (int pipe, const char *resolvpath, const char *username)
 		write(pipe, &buf, sizeof(buf));
 
 		if (servers.count)
+		{
 			ts.tv_sec = (servers.list[servers.count - 1].expiry - now);
 			ts.tv_nsec = 0;
+		}
 
 		if (ppoll (&pfd, 1, servers.count ? &ts : NULL, &emptyset) <= 0)
 			continue;
 
-		if (pfd.revents & POLLIN)
-			src->process (sock);
-		else {
-			syslog(LOG_ERR, _("ppoll returned errors on socket, aborting"));
-			rval = -1;
-			break;
-		}
-
+		src->process (sock);
 	}
 
 	close (sock);
