@@ -9,6 +9,26 @@ man8_MANS = ndisc6.8 rdisc6.8 rltraceroute6.8
 
 EXTRA_DIST = $(man1_MANS) $(man8_MANS)
 
+install-data-hook:
+	inst=`echo rltraceroute6 | sed '$(transform)'`; \
+	for a in tcptraceroute6 tracert6; do \
+		ln -sf "$(man8dir)/$${inst}.8" \
+			"$(DESTDIR)$(man8dir)/$$a.8" ; \
+	done
+	inst=`echo tcpspray | sed '$(transform)'`; \
+	ln -sf "$(man1dir)/$${inst}.1" \
+		"$(DESTDIR)$(man1dir)/tcpspray6.1"
+	inst=`echo addr2name | sed '$(transform)'`; \
+	ln -sf "$(man1dir)/$${inst}.1" \
+		"$(DESTDIR)$(man1dir)/name2addr.1"
+
+uninstall-hook:
+	for a in tcptraceroute6 tracert6; do \
+		unlink "$(DESTDIR)$(man8dir)/$$a.8" ; \
+	done
+	unlink "$(DESTDIR)$(man1dir)/tcpspray6.1"
+	unlink "$(DESTDIR)$(man1dir)/name2addr.1"
+
 # Make sure manpages are plain ASCII
 distcheck-hook:
 	cd "$(srcdir)" && \
