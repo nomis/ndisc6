@@ -5,9 +5,19 @@
 # This file is distributed under the same license as the ndisc6 package.
 
 man1_MANS = addr2name.1 dnssort.1 tcpspray.1
-man8_MANS = ndisc6.8 rdisc6.8 rltraceroute6.8
+man8_MANS = ndisc6.8 rdisc6.8 rltraceroute6.8 rdnssd.8
+SOURCES_MAN = $(man1_MANS) ndisc6.8 rdisc6.8 rltraceroute6.8 rdnssd.8-in
 
 EXTRA_DIST = $(man1_MANS) $(man8_MANS)
+CLEANFILES = rdnssd.8
+
+edit = sed \
+	-e 's,@localstatedir\@,$(localstatedir),g' \
+	-e 's,@sysconfdir\@,$(sysconfdir),g'
+
+.8-in.8:
+	rm -f -- $@
+	$(edit) $< > $@
 
 install-data-hook:
 	inst=`echo rltraceroute6 | sed '$(transform)'`; \

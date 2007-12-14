@@ -29,9 +29,9 @@ autoconfiguration, carried by Router Advertisements.
 rdnssd parses RDNSS options and keeps track of resolvers to write
 nameservers entries to a resolv.conf(5) configuration file. By default,
 it writes its own separate file, and may call an external hook to merge
-it with the main @confdir@/resolv.conf. This is aimed at easing coexistence
+it with the main @sysconfdir@/resolv.conf. This is aimed at easing coexistence
 with concurrent daemons, especially IPv4 ones, updating
-@confdir@/resolv.conf too.
+@sysconfdir@/resolv.conf too.
 
 On Linux, since version 2.6.24, rdnssd takes advantage of a new netlink
 interface, forwarding RDNSS options validated by the kernel to userland.
@@ -71,7 +71,7 @@ Display program version and license and exit.
 
 .SH FILES
 .TP
-.I @confdir@/rdnssd/merge-hook
+.I @sysconfdir@/rdnssd/merge-hook
 A basic merge hook shipped with rdnssd, to be called with the -H option.
 
 .TP
