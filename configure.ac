@@ -110,6 +110,7 @@ AS_MESSAGE(writing results...)
 AC_CONFIG_FILES([Makefile
 	m4/Makefile
 	po/Makefile.in
+	doc/Makefile
 	src/Makefile
 	rdnssd/Makefile
 ])

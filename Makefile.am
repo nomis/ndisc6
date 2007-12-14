@@ -6,13 +6,10 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = po src rdnssd
+SUBDIRS = po doc src rdnssd
 DIST_SUBDIRS = m4 $(SUBDIRS)
-man1_MANS = doc/addr2name.1 doc/dnssort.1 doc/tcpspray.1
-man8_MANS = doc/ndisc6.8 doc/rdisc6.8 doc/rdnssd.8 doc/rltraceroute6.8
 noinst_HEADERS = include/gettext.h
 
-EXTRA_DIST = $(man1_MANS) $(man8_MANS)
 DISTCLEANFILES = stamp-svn
 
 install-data-hook:
@@ -36,9 +33,7 @@ uninstall-hook:
 	unlink "$(DESTDIR)$(man1dir)/name2addr.1"
 
 distcheck-hook:
-	cd "$(srcdir)" && \
-	cat $(man1_MANS) $(man8_MANS) | grep -ve '\.\\"' | \
-		iconv -f ASCII >/dev/null
+	cd doc && $(MAKE) $(AM_MAKEFLAGS) distcheck-hook
 
 distclean-local:
 	test "$(top_srcdir)" = "$(top_builddir)" || rm -f ChangeLog
