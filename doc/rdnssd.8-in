@@ -12,7 +12,7 @@
 .\" *  You should have received a copy of the GNU General Public License    *
 .\" *  along with this program. If not, see <http://www.gnu.org/licenses/>. *
 .\" *************************************************************************
-.TH "RDNSSD" "8" "$Date:  $" "rdnssd" "System Manager's Manual"
+.TH "RDNSSD" "8" "$Date$" "rdnssd" "System Manager's Manual"
 .SH NAME
 rdnssd \- IPv6 Recursive DNS Server discovery Daemon
 .SH SYNOPSIS
@@ -99,6 +99,6 @@ resolv.conf(5), rdisc6(8), ipv6(7)
 .SH AUTHOR
 Pierre Ynard <linkfanel at yahoo.fr>
 
-$Id: $
+$Id$
 
 http://www.remlab.net/ndisc6/
