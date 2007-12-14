@@ -89,12 +89,11 @@ static void write_resolv(const char *resolvpath)
 		char addr[INET6_ADDRSTRLEN];
 		inet_ntop(AF_INET6, &servers.list[i].addr, addr, INET6_ADDRSTRLEN);
 
-/* Doesn't seem supported by glibc's resolver
 		if (IN6_IS_ADDR_LINKLOCAL(&servers.list[i].addr)) {
 			char iface[IFNAMSIZ];
 			if_indextoname(servers.list[i].ifindex, iface);
 			fprintf(resolv, "nameserver %s%%%s\n", addr, iface);
-		} else */
+		} else
 			fprintf(resolv, "nameserver %s\n", addr);
 	}
 
