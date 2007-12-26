@@ -81,7 +81,7 @@ static void write_resolv(const char *resolvpath)
 	resolv = fopen(tmpfile, "w");
 
 	if (! resolv) {
-		syslog (LOG_ERR, _("cannot write resolv.conf: %m"));
+		syslog (LOG_ERR, _("Cannot write %s: %m"), tmpfile);
 		return;
 	}
 
@@ -102,7 +102,7 @@ static void write_resolv(const char *resolvpath)
 	rval = rename(tmpfile, resolvpath);
 
 	if (rval == -1)
-		syslog(LOG_ERR, _("cannot write resolv.conf: %m"));
+		syslog(LOG_ERR, _("Cannot write %s: %m"), tmpfile);
 
 }
 
@@ -219,7 +219,7 @@ static int drop_privileges(const char *username)
 		struct passwd *pw = getpwnam(username);
 
 		if (pw == NULL) {
-			syslog (LOG_ERR, _("cannot setuid to user %s: %m"), username);
+			syslog (LOG_ERR, _("Cannot find user \"%s\""), username);
 			return -1;
 		}
 
@@ -319,11 +319,11 @@ static void merge_hook (const char *hookpath)
 	{
 		case 0:
 			execl (hookpath, hookpath, (char *)NULL);
-			syslog (LOG_ERR, _("cannot run %s: %m"), hookpath);
+			syslog (LOG_ERR, _("Cannot run \"%s\": %m"), hookpath);
 			exit(1);
 
 		case -1:
-			syslog (LOG_ERR, _("cannot run %s: %m"), hookpath);
+			syslog (LOG_ERR, _("Cannot run \"%s\": %m"), hookpath);
 			break;
 
 		default:
@@ -357,7 +357,8 @@ static int manager(pid_t worker_pid, int pipe, const char *hookpath)
 				merge_hook(hookpath);
 
 		} else {
-			syslog (LOG_ERR, _("child process hung up unexpectedly, aborting"));
+			syslog (LOG_ERR, _("Child process %u hung up unexpectedly, aborting"),
+			        (unsigned)worker_pid);
 			rval = -1;
 			break;
 		}
@@ -385,7 +386,7 @@ static int rdnssd (const char *username, const char *resolvpath, const char *hoo
 
 	rval = pipe(pfd);
 	if (rval == -1) {
-		syslog (LOG_CRIT, _("cannot open pipe: %m"));
+		syslog (LOG_CRIT, _("Cannot open pipe: %m"));
 		return -1;
 	}
 
@@ -424,7 +425,7 @@ static int rdnssd (const char *username, const char *resolvpath, const char *hoo
 			exit(rval != 0);
 
 		case -1:
-			syslog (LOG_CRIT, _("cannot fork: %m"));
+			syslog (LOG_CRIT, _("Cannot fork: %m"));
 			close(pfd[0]);
 			close(pfd[1]);
 			rval = -1;
@@ -633,7 +634,7 @@ int main (int argc, char *argv[])
 	pidfd = create_pidfile (pidpath);
 	if (pidfd == -1)
 	{
-		syslog (LOG_ERR, _("Cannot create %s (%m) - already running?\n"),
+		syslog (LOG_ERR, _("Cannot create %s (%m) - already running?"),
 		        pidpath);
 		closelog ();
 		return 1;
