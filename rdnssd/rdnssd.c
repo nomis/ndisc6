@@ -408,7 +408,7 @@ static int rdnssd (const char *username, const char *resolvpath, const char *hoo
 
 	/* TODO: HUP handling */
 
-	sigprocmask (SIG_BLOCK, &handled, NULL);
+	sigprocmask (SIG_SETMASK, &handled, NULL);
 
 	worker_pid = fork();
 
