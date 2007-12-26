@@ -31,10 +31,10 @@ rdnssd_LDADD = $(LIBRT)
 
 # merge-hook
 merge-hook: merge-hook.in Makefile.in $(top_builddir)/config.status
-	rm -f $@.tmp $@
+	rm -f -- $@.tmp $@
 	$(subst_script) < $(srcdir)/$@.in > $@.tmp
-	chmod +x $@.tmp
-	mv -f $@.tmp $@
+	chmod -- +x $@.tmp
+	mv -f -- $@.tmp $@
 
 install-data-hook:
 	$(install_sh) -d -- $(DESTDIR)$(myrundir)
