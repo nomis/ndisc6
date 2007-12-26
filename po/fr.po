@@ -5,9 +5,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: ndisc6 0.9.1\n"
+"Project-Id-Version: ndisc6 0.9.4\n"
 "Report-Msgid-Bugs-To: miredo-devel_no_bulk_mail@remlab.net\n"
-"POT-Creation-Date: 2007-11-03 14:32+0200\n"
+"POT-Creation-Date: 2007-12-26 23:52+0200\n"
 "PO-Revision-Date: 2007-02-02 21:15+0200\n"
 "Last-Translator: Rémi Denis-Courmont\n"
 "Language-Team: French <fr@li.org>\n"
@@ -16,52 +16,84 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n>1;\n"
 
-#: rdnssd/rdnssd.c:624 src/addrinfo.c:143 src/ndisc.c:740 src/tcpspray.c:270
+#: rdnssd/rdnssd.c:84 rdnssd/rdnssd.c:105
+#, c-format
+msgid "Cannot write %s: %m"
+msgstr "Impossible d’écrire %s : %m"
+
+#: rdnssd/rdnssd.c:222
+#, c-format
+msgid "Cannot find user \"%s\""
+msgstr "Impossible de trouver l’utilisateur « %s »"
+
+#: rdnssd/rdnssd.c:322 rdnssd/rdnssd.c:326
+#, c-format
+msgid "Cannot run \"%s\": %m"
+msgstr "Impossible d’exécuter « %s » : %m"
+
+#: rdnssd/rdnssd.c:360
+#, c-format
+msgid "Child process %u hung up unexpectedly, aborting"
+msgstr ""
+
+#: rdnssd/rdnssd.c:389
+#, c-format
+msgid "Cannot open pipe: %m"
+msgstr ""
+
+#: rdnssd/rdnssd.c:428
+#, c-format
+msgid "Cannot fork: %m"
+msgstr ""
+
+#: rdnssd/rdnssd.c:488 src/addrinfo.c:143 src/ndisc.c:740 src/tcpspray.c:270
 #: src/tcptraceroute.c:42 src/traceroute.c:1161
 #, c-format
 msgid "Try \"%s -h\" for more information.\n"
 msgstr "Essayez « %s -h » pour plus de détails.\n"
 
-#: rdnssd/rdnssd.c:634
+#: rdnssd/rdnssd.c:498
 #, c-format
 msgid ""
-"Usage: %s TODO\n"
-"Starts the IPv6 Recursive DNS Server Discovery daemon.\n"
+"Usage: %s [OPTIONS]\n"
+"Starts the IPv6 Recursive DNS Server discovery Daemon.\n"
 "\n"
 "  -f, --foreground  run in the foreground\n"
+"  -H, --merge-hook  execute this hook whenever resolv.conf is updated\n"
 "  -h, --help        display this help and exit\n"
 "  -p, --pidfile     override the location of the PID file\n"
 "  -r, --resolv-file set the path to the generated resolv.conf file\n"
-"  -V, --version    display program version and exit\n"
+"  -u, --user        override the user to set UID to\n"
+"  -V, --version     display program version and exit\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:652
+#: rdnssd/rdnssd.c:515
 #, c-format
-msgid "rdnssd: IPv6 Recursive DNS Server Discovery daemon %s (%s)\n"
-msgstr "rdnssd: démon de Découverte IPv6 des Serveurs DNS Récursifs %s (%s)\n"
+msgid "rdnssd: IPv6 Recursive DNS Server discovery Daemon %s (%s)\n"
+msgstr "rdnssd : démon de Découverte IPv6 des Serveurs DNS Récursifs %s (%s)\n"
 
-#: rdnssd/rdnssd.c:654 src/addrinfo.c:151 src/ndisc.c:771 src/tcpspray.c:306
+#: rdnssd/rdnssd.c:517 src/addrinfo.c:151 src/ndisc.c:771 src/tcpspray.c:306
 #: src/traceroute.c:1208
 #, c-format
 msgid " built %s on %s\n"
 msgstr " compilé le %s sur %s\n"
 
-#: rdnssd/rdnssd.c:655 src/addrinfo.c:152 src/ndisc.c:773 src/tcpspray.c:307
+#: rdnssd/rdnssd.c:518 src/addrinfo.c:152 src/ndisc.c:773 src/tcpspray.c:307
 #: src/traceroute.c:1209
 #, c-format
 msgid "Configured with: %s\n"
 msgstr "Configuré avec : %s\n"
 
-#: rdnssd/rdnssd.c:656
+#: rdnssd/rdnssd.c:519
 msgid "Written by Pierre Ynard and Remi Denis-Courmont\n"
 msgstr "Écrit par Pierre Ynard et Rémi Denis-Courmont\n"
 
-#: rdnssd/rdnssd.c:658
+#: rdnssd/rdnssd.c:521
 #, c-format
 msgid "Copyright (C) %u-%u Pierre Ynard, Remi Denis-Courmont\n"
 msgstr "Copyright © %u-%u Pierre Ynard, Rémi Denis-Courmont\n"
 
-#: rdnssd/rdnssd.c:661 src/addrinfo.c:156 src/ndisc.c:777 src/tcpspray.c:311
+#: rdnssd/rdnssd.c:524 src/addrinfo.c:156 src/ndisc.c:777 src/tcpspray.c:311
 #: src/traceroute.c:1213
 msgid ""
 "This is free software; see the source for copying conditions.\n"
@@ -71,6 +103,11 @@ msgstr ""
 "Ce logiciel est libre; voir les sources pour les conditions de\n"
 "reproduction. Il n’y a AUCUNE garantie; pas même pour la\n"
 "COMMERCIALISATION ou l’ADÉQUATION POUR UNE UTILISATION PARTICULIÈRE.\n"
+
+#: rdnssd/rdnssd.c:637
+#, c-format
+msgid "Cannot create %s (%m) - already running?"
+msgstr ""
 
 #: src/addrinfo.c:116
 msgid "Input error"
@@ -117,7 +154,7 @@ msgid ""
 "Looks up an on-link IPv6 node link-layer address (Neighbor Discovery)\n"
 msgstr ""
 "Usage: %s [options] <adresse IPv6> <interface>\n"
-"Recherche l'adresse de lien d'un nœud IPv6 sur le lien (Neighbor Discovery)\n"
+"Recherche l’adresse de lien d’un nœud IPv6 sur le lien (Neighbor Discovery)\n"
 
 #: src/ndisc.c:177
 msgid "link-layer address"
@@ -248,7 +285,7 @@ msgstr " (      0x%02x)\n"
 #: src/ndisc.c:430
 #, c-format
 msgid "Stateful address conf.    :          %3s\n"
-msgstr "Conf. d'adresse par DHCP  :          %3s\n"
+msgstr "Conf. d’adresse par DHCP  :          %3s\n"
 
 #: src/ndisc.c:431 src/ndisc.c:433
 msgid "Yes"
@@ -274,7 +311,7 @@ msgstr "Durée de vie du routeur   : "
 
 #: src/ndisc.c:443
 msgid "Reachable time            : "
-msgstr "Temps d'atteinte          : "
+msgstr "Temps d’atteinte          : "
 
 #: src/ndisc.c:447 src/ndisc.c:456
 msgid "millisecond"
@@ -382,7 +419,7 @@ msgstr "Connexion terminée par le correspondant"
 #: src/tcpspray.c:216 src/traceroute.c:1067
 #, c-format
 msgid "Cannot send data: %s\n"
-msgstr "Impossible d'envoyer les données : %s\n"
+msgstr "Impossible d’envoyer les données : %s\n"
 
 #: src/tcpspray.c:240
 #, c-format
@@ -404,8 +441,8 @@ msgid ""
 "Use the discard TCP service at the specified host\n"
 "(the default host is the local system, the default service is discard)\n"
 msgstr ""
-"Usage: %s [options] <nom d'hôte/adresse> [service/numéro de port]\n"
-"Utilise le service TCP « discard » sur le port indiqué (l'hôte par défaut\n"
+"Usage: %s [options] <nom d’hôte/adresse> [service/numéro de port]\n"
+"Utilise le service TCP « discard » sur le port indiqué (l’hôte par défaut\n"
 "est le système local, le service par défaut est « discard »)\n"
 
 #: src/tcpspray.c:284
@@ -434,7 +471,7 @@ msgid ""
 "Usage: %s [options] <IPv6 hostname/address> [%s]\n"
 "Print IPv6 network route to a host\n"
 msgstr ""
-"Usage: %s [options] <nom d'hôte/adresse IPv6> [%s]\n"
+"Usage: %s [options] <nom d’hôte/adresse IPv6> [%s]\n"
 "Affiche la route sur le réseau IPv6 vers un hôte\n"
 
 #: src/tcptraceroute.c:52
