@@ -9,6 +9,7 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLOCALSTATEDIR=\"$(localstatedir)\"
 confdir = $(sysconfdir)/rdnssd
+myrundir = $(localstatedir)/run/rdnssd
 
 subst_script = sed \
 	-e 's,[@]PERL[@],$(PERL),g' \
@@ -35,3 +36,6 @@ merge-hook: merge-hook.in Makefile.in $(top_builddir)/config.status
 	chmod +x $@.tmp
 	mv -f $@.tmp $@
 
+install-data-hook:
+	$(install_sh) -d -- $(DESTDIR)$(myrundir)
+	-chown -- nobody $(DESTDIR)$(myrundir)
