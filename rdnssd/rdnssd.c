@@ -223,7 +223,8 @@ static int drop_privileges(const char *username)
 			return -1;
 		}
 
-		setgid(pw->pw_uid);
+		setgid (pw->pw_gid);
+		initgroups (username, pw->pw_gid);
 		setuid(pw->pw_uid);
 	}
 
