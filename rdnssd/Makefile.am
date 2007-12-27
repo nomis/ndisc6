@@ -8,7 +8,7 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 	-DLOCALEDIR=\"$(localedir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLOCALSTATEDIR=\"$(localstatedir)\"
-confdir = $(sysconfdir)/rdnssd
+confexecdir = $(sysconfdir)/rdnssd
 myrundir = $(localstatedir)/run/rdnssd
 
 subst_script = sed \
@@ -19,9 +19,9 @@ subst_script = sed \
 	-e 's,[@]SYSCONFDIR[@],$(sysconfdir),g'
 
 EXTRA_DIST = merge-hook.in
-CLEANFILES = $(conf_DATA)
+CLEANFILES = $(confexec_DATA)
 sbin_PROGRAMS = rdnssd
-conf_DATA = merge-hook
+confexec_DATA = merge-hook
 
 # rdnssd
 rdnssd_SOURCES = rdnssd.c rdnssd.h \
