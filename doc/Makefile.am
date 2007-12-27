@@ -42,5 +42,5 @@ uninstall-hook:
 # Make sure manpages are plain ASCII
 distcheck-hook:
 	cd "$(srcdir)" && \
-	cat $(man1_MANS) $(man8_MANS) | grep -ve '\.\\"' | \
+	cat $(SOURCES_MAN) | grep -ve '\.\\"' | \
 		iconv -f ASCII >/dev/null
