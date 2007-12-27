@@ -1,5 +1,5 @@
 RELEASE NOTES for NDisc6
-version 0.9.4
+version 0.9.5
 =========================
 $Id$
 
@@ -11,6 +11,10 @@ Thanks for your help.
   You can find major changes since version 0.1.5 below. For more general
 informations on this program, see README. For syntax details, read the
 provided manual pages.
+
+============================================================================
+??? RELEASE 0.9.5 : Minor bugfixes
+
 
 ============================================================================
 TEST RELEASE 0.9.4 : Major feature enhancements
