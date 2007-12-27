@@ -44,6 +44,7 @@
 #include <sys/wait.h>
 #include <getopt.h>
 #include <pwd.h>
+#include <grp.h>
 
 #include "rdnssd.h"
 #include "gettext.h"
