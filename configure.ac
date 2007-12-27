@@ -51,7 +51,7 @@ LIBRT=""
 AC_CHECK_LIB([rt], clock_gettime, [LIBRT="-lrt"])
 AC_SUBST(LIBRT)
 
-AM_GNU_GETTEXT_VERSION([0.16.1])
+AM_GNU_GETTEXT_VERSION([0.17])
 AM_GNU_GETTEXT([external], [need-ngettext])
 
 dnl AC_DEFINE_UNQUOTED(PACKAGE_BUILD, "$build",
