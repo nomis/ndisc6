@@ -13,7 +13,7 @@ informations on this program, see README. For syntax details, read the
 provided manual pages.
 
 ============================================================================
-??? RELEASE 0.9.4 : Major feature enhancements
+TEST RELEASE 0.9.4 : Major feature enhancements
 
 # RDNSS client daemon for Linux.
 # Fix name2addr and addr2name inversion.
