@@ -16,8 +16,8 @@
 .SH NAME
 rdnssd \- IPv6 Recursive DNS Server discovery Daemon
 .SH SYNOPSIS
-.BR "rdnssd" " [" "-f" "] [" "-H merge-hook" "] [" "-r resolv-file" "]
-.BR [" "-p pidfile" "] [" "-u username" "]
+.BR "rdnssd" " [" "-f" "] [" "-H merge-hook" "] [" "-r resolv-file" "]"
+.BR "" "[" "-p pidfile" "] [" "-u username" "]"
 
 .SH DESCRIPTON
 .B rdnssd
