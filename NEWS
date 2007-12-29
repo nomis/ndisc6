@@ -13,8 +13,10 @@ informations on this program, see README. For syntax details, read the
 provided manual pages.
 
 ============================================================================
-??? RELEASE 0.9.5 : Minor bugfixes
+STABLE RELEASE 0.9.5 : Minor bugfixes
 
+# Fix RDNSSD handling of GID.
+# Various cosmetic fixes.
 
 ============================================================================
 TEST RELEASE 0.9.4 : Major feature enhancements
