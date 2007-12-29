@@ -39,3 +39,6 @@ merge-hook: merge-hook.in Makefile.in $(top_builddir)/config.status
 install-data-hook:
 	$(install_sh) -d -- $(DESTDIR)$(myrundir)
 	-chown -- nobody $(DESTDIR)$(myrundir)
+
+uninstall-hook:
+	-rmdir $(DESTDIR)$(myrundir)
