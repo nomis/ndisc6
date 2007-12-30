@@ -388,7 +388,7 @@ static int rdnssd (const char *username, const char *resolvpath, const char *hoo
 
 	rval = pipe(pfd);
 	if (rval == -1) {
-		syslog (LOG_CRIT, _("Cannot open pipe: %m"));
+		syslog (LOG_CRIT, _("Fatal error (%s): %m"), "pipe");
 		return -1;
 	}
 
@@ -427,7 +427,7 @@ static int rdnssd (const char *username, const char *resolvpath, const char *hoo
 			exit(rval != 0);
 
 		case -1:
-			syslog (LOG_CRIT, _("Cannot fork: %m"));
+			syslog (LOG_CRIT, _("Fatal error (%s): %m"), "fork");
 			close(pfd[0]);
 			close(pfd[1]);
 			rval = -1;
