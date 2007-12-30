@@ -34,17 +34,17 @@ msgstr "Impossible d’exécuter « %s » : %m"
 #: rdnssd/rdnssd.c:360
 #, c-format
 msgid "Child process %u hung up unexpectedly, aborting"
-msgstr ""
+msgstr "Le processus fils %u a raccroché de manière inattendue, abandon"
 
 #: rdnssd/rdnssd.c:389
 #, c-format
 msgid "Cannot open pipe: %m"
-msgstr ""
+msgstr "Impossible d’ouvrir le tube : %m"
 
 #: rdnssd/rdnssd.c:428
 #, c-format
 msgid "Cannot fork: %m"
-msgstr ""
+msgstr "Impossible d’exécuter fork() : %m"
 
 #: rdnssd/rdnssd.c:488 src/addrinfo.c:143 src/ndisc.c:740 src/tcpspray.c:270
 #: src/tcptraceroute.c:42 src/traceroute.c:1161
@@ -66,6 +66,17 @@ msgid ""
 "  -u, --user        override the user to set UID to\n"
 "  -V, --version     display program version and exit\n"
 msgstr ""
+"Usage: %s [OPTIONS]\n"
+"Démarre le démon de Découverte IPv6 des Serveurs DNS Récursifs.\n"
+"\n"
+"  -f, --foreground  s’exécute en avant plan\n"
+"  -H, --merge-hook  exécute ce script quand resolv.conf est mis à jour\n"
+"  -h, --help        affiche cette aide et se termine\n"
+"  -p, --pidfile     redéfinit l’emplacement du fichier de PID\n"
+"  -r, --resolv-file règle le chemin vers le fichier resolv.conf généré\n"
+"  -u, --user        redéfinit l’utilisateur qui exécute le programme "
+"(setuid)\n"
+"  -V, --version     affiche la version du programme et se termine\n"
 
 #: rdnssd/rdnssd.c:515
 #, c-format
@@ -107,7 +118,7 @@ msgstr ""
 #: rdnssd/rdnssd.c:637
 #, c-format
 msgid "Cannot create %s (%m) - already running?"
-msgstr ""
+msgstr "Impossible de créer %s (%m) - déjà lancé ?"
 
 #: src/addrinfo.c:116
 msgid "Input error"
