@@ -48,6 +48,9 @@
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
 #endif
+#ifdef __linux__
+# include <linux/filter.h>
+#endif
 
 #include "gettime.h"
 #include "inet6rth.h"
@@ -1006,6 +1009,48 @@ traceroute (const char *dsthost, const char *dstport,
 	if (connect_proto (protofd, &dst, dsthost, dstport, srchost, srcport))
 		goto error;
 	printf (_("%u hops max, "), max_ttl);
+
+#ifdef SO_ATTACH_FILTER
+	{
+		/* Static socket filter for the unconnected ICMPv6 socket.
+		* We are only interested if the inner IPv6 packet has the
+		* right IPv6 destination */
+		struct sock_filter f[10], *pc = f;
+		struct sock_fprog sfp = {
+			.len = sizeof (f) / sizeof (f[0]),
+			.filter = f,
+		};
+
+		for (unsigned i = 0; i < 4; i++)
+		{
+			/* A = icmp->ip6_dst.s6_addr32[i]; */
+			pc->code = BPF_LD + BPF_W + BPF_ABS;
+			pc->jt = pc->jf = 0;
+			pc->k = 8 + 24 + (i * 4);
+			pc++;
+
+			/* if (A != dst.sin6_addr.s6_addr32[i]) goto drop; */
+			pc->code = BPF_JMP + BPF_JEQ + BPF_K;
+			pc->jt = 0;
+			pc->jf = f + (sizeof (f) / sizeof (f[0])) - (pc + 2);
+			pc->k = ntohl (dst.sin6_addr.s6_addr32[i]);
+			pc++;
+		}
+
+		/* return ~0U; */
+		pc->code = BPF_RET + BPF_K;
+		pc->jt = pc->jf = 0;
+		pc->k = ~0U;
+		pc++;
+
+		/* drop: return 0; */
+		pc->code = BPF_RET + BPF_K;
+		pc->jt = pc->jf = pc->k = 0;
+
+		assert ((++pc - f) == (sizeof (f) / sizeof (f[0])));
+		setsockopt (icmpfd, SOL_SOCKET, SO_ATTACH_FILTER, &sfp, sizeof (sfp));
+	}
+#endif
 
 	/* Adjusts packets length */
 	size_t overhead = sizeof (struct ip6_hdr);
