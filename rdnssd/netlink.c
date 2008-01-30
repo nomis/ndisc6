@@ -40,6 +40,8 @@
 #include "gettext.h"
 
 
+#ifndef RTNLGRP_ND_USEROPT
+# warning You need to update your Linux kernel headers (>= 2.6.24)
 /* Belongs in <linux/rtnetlink.h> */
 
 struct nduseroptmsg
@@ -55,7 +57,8 @@ struct nduseroptmsg
 	/* Followed by one or more ND options */
 };
 
-#define RTNLGRP_ND_USEROPT 20
+# define RTNLGRP_ND_USEROPT 20
+#endif
 
 static int nl_recv (int fd)
 {
