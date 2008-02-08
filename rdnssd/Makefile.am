@@ -20,6 +20,7 @@ subst_script = sed \
 
 EXTRA_DIST = merge-hook.in
 CLEANFILES = $(conf_SCRIPTS)
+AM_INSTALLCHECK_STD_OPTIONS_EXEMPT = merge-hook
 sbin_PROGRAMS = rdnssd
 conf_SCRIPTS = merge-hook
 
