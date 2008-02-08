@@ -87,7 +87,7 @@ $resolv .= join("", @dnsv4);
 
 # Write the result
 
-open(TMP, "> $resolvconf.tmp") or die("cannot write $resolvconf..tmp: $!\n");
+open(TMP, "> $resolvconf.tmp") or die("cannot write $resolvconf.tmp: $!\n");
 print TMP $resolv;
 close(TMP);
 rename("$resolvconf.tmp", "$resolvconf") or die("cannot write $resolvconf: $!\n");
