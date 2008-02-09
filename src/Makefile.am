@@ -72,6 +72,9 @@ myexecdir = $(sbindir)
 else
 myexecdir = $(bindir)
 
+# IMPORTANT NOTE for packagers:
+# If you want to disable setuid installation,
+# you can invoke the configure with '--disable-suid-install'.
 install-exec-hook:
 	@for f in $(mysuidexec_PROGRAMS); do \
 		i="`echo "$$f" | sed -e '$(program)'`" ; \
