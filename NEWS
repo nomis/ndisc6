@@ -16,6 +16,7 @@ provided manual pages.
 STABLE RELEASE 0.9.6 : Minor bugfixes
 
 # Fix compilation against Linux kernel headers version 2.6.24.
+# Use the socket filter on Linux as an optimization for traceroute6.
 
 ============================================================================
 STABLE RELEASE 0.9.5 : Minor bugfixes
