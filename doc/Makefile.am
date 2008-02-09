@@ -21,16 +21,16 @@ edit = sed \
 
 install-data-hook:
 	inst=`echo rltraceroute6 | sed '$(transform)'`; \
+	cd "$(DESTDIR)$(man8dir)" && \
 	for a in tcptraceroute6 tracert6; do \
-		ln -sf "$(man8dir)/$${inst}.8" \
-			"$(DESTDIR)$(man8dir)/$$a.8" ; \
+		ln -sf -- "$${inst}.8" "$$a.8" ; \
 	done
 	inst=`echo tcpspray | sed '$(transform)'`; \
-	ln -sf "$(man1dir)/$${inst}.1" \
-		"$(DESTDIR)$(man1dir)/tcpspray6.1"
+	cd "$(DESTDIR)$(man1dir)" && \
+	ln -sf -- "$${inst}.1" "tcpspray6.1"
 	inst=`echo addr2name | sed '$(transform)'`; \
-	ln -sf "$(man1dir)/$${inst}.1" \
-		"$(DESTDIR)$(man1dir)/name2addr.1"
+	cd "$(DESTDIR)$(man1dir)" && \
+	ln -sf -- "$${inst}.1" "name2addr.1"
 
 uninstall-hook:
 	for a in tcptraceroute6 tracert6; do \
