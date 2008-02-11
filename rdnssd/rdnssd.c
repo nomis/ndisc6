@@ -352,12 +352,10 @@ static int manager(pid_t worker_pid, int pipe, const char *hookpath)
 		if (ppoll(&pfd, 1, NULL, &emptyset) <= 0)
 			continue;
 
-		if (pfd.revents & POLLIN) {
-			read(pipe, &buf, sizeof(buf));
-
+		if (read(pipe, &buf, sizeof(buf)) > 0)
+		{
 			if (hookpath)
 				merge_hook(hookpath);
-
 		} else {
 			syslog (LOG_ERR, _("Child process %u hung up unexpectedly, aborting"),
 			        (unsigned)worker_pid);
@@ -371,9 +369,6 @@ static int manager(pid_t worker_pid, int pipe, const char *hookpath)
 
 	kill (worker_pid, SIGTERM);
 	while (waitpid (worker_pid, &status, 0) != worker_pid);
-
-	if (hookpath)
-		merge_hook (hookpath);
 
 	return rval;
 }
