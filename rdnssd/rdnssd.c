@@ -656,6 +656,9 @@ int main (int argc, char *argv[])
 	val = rdnssd (username, resolvpath, hookpath);
 
 	closelog ();
+	/* Unlink *before* close, i.e. unlink while still holding the 
+	 * advisory lock. Otherwise there would be a race condition whereby
+	 * we could remove another instance's PID file. */
 	unlink (pidpath);
 	close (pidfd);
 
