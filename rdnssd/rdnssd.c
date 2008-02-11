@@ -331,7 +331,7 @@ static void merge_hook (const char *hookpath)
 		default:
 		{
 			int status;
-			waitpid (pid, &status, 0);
+			while (waitpid (pid, &status, 0) != pid);
 		}
 	}
 
@@ -370,7 +370,7 @@ static int manager(pid_t worker_pid, int pipe, const char *hookpath)
 	int status;
 
 	kill (worker_pid, SIGTERM);
-	while (waitpid (worker_pid, &status, 0) == -1);
+	while (waitpid (worker_pid, &status, 0) != worker_pid);
 
 	if (hookpath)
 		merge_hook (hookpath);
@@ -623,7 +623,7 @@ int main (int argc, char *argv[])
 				if (val != 0)
 				{
 					/* failure! */
-					while (waitpid (pid, &val, 0) == -1);
+					while (waitpid (pid, &val, 0) != pid);
 					return WIFEXITED (val) ? WEXITSTATUS (val) : 1;
 				}
 				return 0;
