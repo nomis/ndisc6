@@ -315,9 +315,6 @@ static int worker (int pipe, const char *resolvpath, const char *username)
 	}
 
 	close (sock);
-
-	servers.count = 0;
-	write_resolv(resolvpath);
 	return rval;
 }
 

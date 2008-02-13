@@ -1,5 +1,5 @@
 RELEASE NOTES for NDisc6
-version 0.9.6
+version 0.9.7
 =========================
 $Id$
 
@@ -11,6 +11,12 @@ Thanks for your help.
   You can find major changes since version 0.1.5 below. For more general
 informations on this program, see README. For syntax details, read the
 provided manual pages.
+
+============================================================================
+STABLE RELEASE 0.9.7 : Minor bugfixes
+
+# Don't remove DNS servers from resolv.conf at RDNSSD exit.
+# Use relative links for manual pages.
 
 ============================================================================
 STABLE RELEASE 0.9.6 : Minor bugfixes
