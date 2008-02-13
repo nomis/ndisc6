@@ -337,7 +337,7 @@ static void merge_hook (const char *hookpath)
 
 }
 
-static int manager(pid_t worker_pid, int pipe, const char *hookpath)
+static int manager (int pipe, const char *hookpath)
 {
 	int rval = 0;
 	sigset_t emptyset;
@@ -357,23 +357,18 @@ static int manager(pid_t worker_pid, int pipe, const char *hookpath)
 			if (hookpath)
 				merge_hook(hookpath);
 		} else {
-			syslog (LOG_ERR, _("Child process %u hung up unexpectedly, aborting"),
-			        (unsigned)worker_pid);
+			syslog (LOG_ERR, _("Child process hung up unexpectedly, aborting"));
 			rval = -1;
 			break;
 		}
 
 	}
 
-	int status;
-
-	kill (worker_pid, SIGTERM);
-	while (waitpid (worker_pid, &status, 0) != worker_pid);
-
 	return rval;
 }
 
-static int rdnssd (const char *username, const char *resolvpath, const char *hookpath)
+static int
+rdnssd (const char *username, const char *resolvpath, const char *hookpath)
 {
 	int rval = 0;
 	struct sigaction act;
@@ -432,12 +427,16 @@ static int rdnssd (const char *username, const char *resolvpath, const char *hoo
 			close(pfd[1]);
 
 			prepare_fd(pfd[0]);
-			rval = manager(worker_pid, pfd[0], hookpath);
+			rval = manager (pfd[0], hookpath);
 			close(pfd[0]);
 	}
 
-	return rval;
+	int status;
 
+	kill (worker_pid, SIGTERM);
+	while (waitpid (worker_pid, &status, 0) != worker_pid);
+
+	return rval;
 }
 
 
