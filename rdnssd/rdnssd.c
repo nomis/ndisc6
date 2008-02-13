@@ -296,7 +296,11 @@ static int worker (int pipe, const char *resolvpath, const char *username)
 
 		if (servers.count)
 		{
-			ts.tv_sec = (servers.list[servers.count - 1].expiry - now);
+			time_t expiry = servers.list[servers.count - 1].expiry;
+			if (ts.tv_sec < expiry)
+				ts.tv_sec = expiry - ts.tv_sec;
+			else
+				ts.tv_sec = 0;
 			ts.tv_nsec = 0;
 		}
 
