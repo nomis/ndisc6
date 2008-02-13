@@ -300,10 +300,18 @@ static int worker (int pipe, const char *resolvpath, const char *username)
 			ts.tv_nsec = 0;
 		}
 
-		if (ppoll (&pfd, 1, servers.count ? &ts : NULL, &emptyset) <= 0)
-			continue;
+		if (ppoll (&pfd, 1, servers.count ? &ts : NULL, &emptyset) < 0)
+		{
+			if (errno == EINTR)
+				continue;
 
-		src->process (sock);
+			syslog (LOG_CRIT, _("Fatal error (%s): %m"), "ppoll");
+			rval = -1;
+			break;
+		}
+
+		if (pfd.revents)
+			src->process (sock);
 	}
 
 	close (sock);
