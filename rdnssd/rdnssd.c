@@ -280,7 +280,7 @@ static int worker (int pipe, const char *resolvpath, const char *username)
 
 	sigemptyset (&emptyset);
 
-	while (termsig == 0)
+	for (bool ready = false; termsig == 0;)
 	{
 		struct pollfd pfd =
 			{ .fd = sock,  .events = POLLIN, .revents = 0 };
@@ -290,12 +290,19 @@ static int worker (int pipe, const char *resolvpath, const char *username)
 		clock_gettime (CLOCK_MONOTONIC, &ts);
 		now = ts.tv_sec;
 
-		trim_expired();
-		write_resolv(resolvpath);
-		write(pipe, &buf, sizeof(buf));
+		if (ready)
+		{
+			/* Flush out expired entries */
+			trim_expired ();
+			/* Update resolv.conf */
+			write_resolv (resolvpath);
+			/* Notify manager process */
+			write (pipe, &buf, sizeof(buf));
+		}
 
 		if (servers.count)
 		{
+			/* Compute event deadline */
 			time_t expiry = servers.list[servers.count - 1].expiry;
 			if (ts.tv_sec < expiry)
 				ts.tv_sec = expiry - ts.tv_sec;
@@ -315,7 +322,13 @@ static int worker (int pipe, const char *resolvpath, const char *username)
 		}
 
 		if (pfd.revents)
+		{
+			/* Receive new server from kernel */
 			src->process (sock);
+			/* From now on, we can write resolv.conf
+			 * TODO: send unsoliticited RS to avoid this hack */
+			ready = true;
+		}
 	}
 
 	close (sock);
