@@ -15,7 +15,7 @@ provided manual pages.
 ============================================================================
 STABLE RELEASE 0.9.7 : Minor bugfixes
 
-# Don't remove DNS servers from resolv.conf at RDNSSD exit.
+# Don't remove DNS servers from resolv.conf at RDNSSD startup and exit.
 # Use relative links for manual pages.
 
 ============================================================================
