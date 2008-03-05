@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: ndisc6 0.9.6\n"
+"Project-Id-Version: ndisc6 0.9.7\n"
 "Report-Msgid-Bugs-To: miredo-devel_no_bulk_mail@remlab.net\n"
-"POT-Creation-Date: 2008-02-08 17:40+0200\n"
+"POT-Creation-Date: 2008-03-05 22:35+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -27,28 +27,27 @@ msgstr ""
 msgid "Cannot find user \"%s\""
 msgstr ""
 
-#: rdnssd/rdnssd.c:324 rdnssd/rdnssd.c:328
-#, c-format
-msgid "Cannot run \"%s\": %m"
-msgstr ""
-
-#: rdnssd/rdnssd.c:362
-#, c-format
-msgid "Child process %u hung up unexpectedly, aborting"
-msgstr ""
-
-#: rdnssd/rdnssd.c:391 rdnssd/rdnssd.c:430
+#: rdnssd/rdnssd.c:319 rdnssd/rdnssd.c:403 rdnssd/rdnssd.c:442
 #, c-format
 msgid "Fatal error (%s): %m"
 msgstr ""
 
-#: rdnssd/rdnssd.c:490 src/addrinfo.c:143 src/ndisc.c:740 src/tcpspray.c:270
+#: rdnssd/rdnssd.c:346 rdnssd/rdnssd.c:350
+#, c-format
+msgid "Cannot run \"%s\": %m"
+msgstr ""
+
+#: rdnssd/rdnssd.c:382
+msgid "Child process hung up unexpectedly, aborting"
+msgstr ""
+
+#: rdnssd/rdnssd.c:506 src/addrinfo.c:143 src/ndisc.c:740 src/tcpspray.c:270
 #: src/tcptraceroute.c:42 src/traceroute.c:1206
 #, c-format
 msgid "Try \"%s -h\" for more information.\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:500
+#: rdnssd/rdnssd.c:516
 #, c-format
 msgid ""
 "Usage: %s [OPTIONS]\n"
@@ -63,33 +62,33 @@ msgid ""
 "  -V, --version     display program version and exit\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:517
+#: rdnssd/rdnssd.c:533
 #, c-format
 msgid "rdnssd: IPv6 Recursive DNS Server discovery Daemon %s (%s)\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:519 src/addrinfo.c:151 src/ndisc.c:771 src/tcpspray.c:306
+#: rdnssd/rdnssd.c:535 src/addrinfo.c:151 src/ndisc.c:771 src/tcpspray.c:306
 #: src/traceroute.c:1253
 #, c-format
 msgid " built %s on %s\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:520 src/addrinfo.c:152 src/ndisc.c:773 src/tcpspray.c:307
+#: rdnssd/rdnssd.c:536 src/addrinfo.c:152 src/ndisc.c:773 src/tcpspray.c:307
 #: src/traceroute.c:1254
 #, c-format
 msgid "Configured with: %s\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:521
+#: rdnssd/rdnssd.c:537
 msgid "Written by Pierre Ynard and Remi Denis-Courmont\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:523
+#: rdnssd/rdnssd.c:539
 #, c-format
 msgid "Copyright (C) %u-%u Pierre Ynard, Remi Denis-Courmont\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:526 src/addrinfo.c:156 src/ndisc.c:777 src/tcpspray.c:311
+#: rdnssd/rdnssd.c:542 src/addrinfo.c:156 src/ndisc.c:777 src/tcpspray.c:311
 #: src/traceroute.c:1258
 msgid ""
 "This is free software; see the source for copying conditions.\n"
@@ -97,7 +96,7 @@ msgid ""
 "FITNESS FOR A PARTICULAR PURPOSE.\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:639
+#: rdnssd/rdnssd.c:655
 #, c-format
 msgid "Cannot create %s (%m) - already running?"
 msgstr ""
