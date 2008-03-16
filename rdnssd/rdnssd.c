@@ -92,8 +92,8 @@ static void write_resolv(const char *resolvpath)
 
 		if (IN6_IS_ADDR_LINKLOCAL(&servers.list[i].addr)) {
 			char iface[IFNAMSIZ];
-			if_indextoname(servers.list[i].ifindex, iface);
-			fprintf(resolv, "nameserver %s%%%s\n", addr, iface);
+			if (if_indextoname(servers.list[i].ifindex, iface) != NULL)
+				fprintf(resolv, "nameserver %s%%%s\n", addr, iface);
 		} else
 			fprintf(resolv, "nameserver %s\n", addr);
 	}
