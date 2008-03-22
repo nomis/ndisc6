@@ -1,5 +1,5 @@
 /*
- * Various fixes for obsolete, or plain broken, C libraries.
+ * fdatasync.c - fdatasync() replacement
  */
 
 /***********************************************************************
@@ -19,10 +19,12 @@
  *  http://www.gnu.org/copyleft/gpl.html                               *
  ***********************************************************************/
 
-#ifdef NDISC6_COMPAT_FIXUPS_H
-# error How come you include this header twice?!
+#ifdef HAVE_CONFIG_H
+# include <config.h>
 #endif
+#include <unistd.h>
 
-#ifndef HAVE_FDATASYNC
-int fdatasync (int fd);
-#endif
+int fdatasync (int fd)
+{
+	return fsync (fd);
+}

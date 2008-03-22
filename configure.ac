@@ -80,6 +80,7 @@ LIBS_save="$LIBS"
 LIBS="$LIBRT $LIBS"
 AC_CHECK_FUNCS([clock_nanosleep inet6_rth_add])
 LIBS="$LIBS_save"
+AC_REPLACE_FUNCS([fdatasync])
 
 # Network stuff
 RDC_FUNC_SOCKET
