@@ -28,7 +28,8 @@ conf_SCRIPTS = merge-hook
 rdnssd_SOURCES = rdnssd.c rdnssd.h \
 	icmp.c \
 	netlink.c
-rdnssd_LDADD = $(LIBRT)
+rdnssd_LDADD = $(LIBRT) \
+		@top_builddir@/compat/libcompat.a
 
 # merge-hook
 merge-hook: merge-hook.in Makefile.in $(top_builddir)/config.status

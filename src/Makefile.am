@@ -1,7 +1,7 @@
 # Makefile.am - src/ directory Makefile for ndisc6
 # $Id$
 
-# Copyright © 2006 Rémi Denis-Courmont
+# Copyright © 2006-2008 Rémi Denis-Courmont
 # This file is distributed under the same license as the ndisc6 package.
 
 bindir = @bindir@
@@ -10,6 +10,7 @@ mysuidexecdir = $(myexecdir)
 
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 	-DLOCALEDIR=\"$(localedir)\"
+AM_LIBADD = @top_builddir@/compat/libcompat.a
 
 mysuidexec_PROGRAMS = ndisc6 rdisc6 rltraceroute6
 myexec_PROGRAMS = tcptraceroute6
@@ -25,17 +26,17 @@ gen_alias = transform="$(transform)" ${SHELL} $(srcdir)/gen-alias
 
 # ndisc6
 ndisc6_SOURCES = ndisc.c
-ndisc6_LDADD = $(LIBRT)
+ndisc6_LDADD = $(LIBRT) $(AM_LIBADD)
 
 # rdisc6
 rdisc6_SOURCES = ndisc.c
 rdisc6_CPPFLAGS = -DRDISC $(AM_CPPFLAGS)
-rdisc6_LDADD = $(LIBRT)
+rdisc6_LDADD = $(LIBRT) $(AM_LIBADD)
 
 # traceroute6
 rltraceroute6_SOURCES = traceroute.c traceroute.h \
 			trace-tcp.c trace-udp.c trace-icmp.c
-rltraceroute6_LDADD = $(LIBRT)
+rltraceroute6_LDADD = $(LIBRT) $(AM_LIBADD)
 tcptraceroute6_SOURCES = tcptraceroute.c
 tcptraceroute6_CPPFLAGS = $(AM_CPPFLAGS) \
 	-DRLTRACEROUTE6=\"`echo rltraceroute6 | sed '$(transform)'`\"
@@ -45,7 +46,7 @@ tracert6: Makefile.am gen-alias
 
 # tcpspray
 tcpspray_SOURCES = tcpspray.c
-tcpspray_LDADD = $(LIBRT)
+tcpspray_LDADD = $(LIBRT) $(AM_LIBADD)
 
 tcpspray6: Makefile.am gen-alias
 	$(gen_alias) tcpspray6 tcpspray -6
