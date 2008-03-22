@@ -6,7 +6,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = po doc src rdnssd
+SUBDIRS = po doc compat src rdnssd
 DIST_SUBDIRS = m4 $(SUBDIRS)
 noinst_HEADERS = include/gettext.h
 

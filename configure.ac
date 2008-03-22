@@ -4,7 +4,7 @@ dnl based on earlier configure.ac from tcpreen by the same author
 dnl Process this file with GNU Autoconf to produce a configure script
 
 dnl *************************************************************************
-dnl *  Copyright © 2002-2007 Rémi Denis-Courmont.                           *
+dnl *  Copyright © 2002-2008 Rémi Denis-Courmont.                           *
 dnl *  This program is free software: you can redistribute and/or modify    *
 dnl *  it under the terms of the GNU General Public License as published by *
 dnl *  the Free Software Foundation, version 2 or 3 of the license.         *
@@ -39,10 +39,13 @@ AS_MESSAGE([checking required programs...])
 AC_PROG_CC_C99
 AM_PROG_CC_C_O
 AC_USE_SYSTEM_EXTENSIONS
-AM_INIT_AUTOMAKE([check-news dist-bzip2 no-dist-gzip no-exeext std-options])
+
+AC_PROG_RANLIB
 
 AC_PATH_PROG(PERL, perl, :)
 AC_ARG_VAR(PERL, [Perl interpreter])
+
+AM_INIT_AUTOMAKE([check-news dist-bzip2 no-dist-gzip no-exeext std-options])
 
 # Checks for libraries.
 AS_MESSAGE([checking required libraries...])
@@ -96,6 +99,8 @@ AC_MSG_RESULT([${enable_suid_install}])
 
 # Defines for <config.h>
 AH_BOTTOM([
+#include "compat/fixups.h"
+
 #ifndef HAVE_CLOCK_NANOSLEEP
 # define clock_nanosleep( c, f, d, r ) nanosleep( d, r )
 #endif
@@ -111,6 +116,7 @@ AC_CONFIG_FILES([Makefile
 	m4/Makefile
 	po/Makefile.in
 	doc/Makefile
+	compat/Makefile
 	src/Makefile
 	rdnssd/Makefile
 ])
