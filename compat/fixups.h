@@ -31,6 +31,14 @@ int fdatasync (int fd);
 # include <sys/types.h>
 # include <sys/socket.h>
 
+/* Price of the totally broken OS goes to MacOS X, which declares these
+ * functions, but does not define them! Bug inherited from FreeBSD 4 and
+ * still not fixed (as of early 2008). */
+# include <netinet/in.h>
+# define inet6_rth_space working_inet6_rth_space
+# define inet6_rth_init working_inet6_rth_init
+# define inet6_rth_add working_inet6_rth_add
+
 struct in6_addr;
 
 socklen_t inet6_rth_space (int type, int segments);
