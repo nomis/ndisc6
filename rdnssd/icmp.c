@@ -4,7 +4,7 @@
  */
 
 /*************************************************************************
- *  Copyright © 2007 Pierre Ynard, Rémi Denis-Courmont.                  *
+ *  Copyright © 2007-2008 Pierre Ynard, Rémi Denis-Courmont.             *
  *  This program is free software: you can redistribute and/or modify    *
  *  it under the terms of the GNU General Public License as published by *
  *  the Free Software Foundation, versions 2 or 3 of the license.        *
@@ -36,6 +36,13 @@
 #ifndef IPV6_RECVHOPLIMIT
 # warning using RFC2922 instead of RFC3542
 # define IPV6_RECVHOPLIMIT IPV6_HOPLIMIT
+#endif
+
+#ifndef SOL_IPV6
+# define SOL_IPV6 IPPROTO_IPV6
+#endif
+#ifndef SOL_ICMPV6
+# define SOL_ICMPV6 IPPROTO_ICMPV6
 #endif
 
 static int icmp_recv (int fd)
