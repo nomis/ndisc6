@@ -1,9 +1,9 @@
 /*
- * Various fixes for obsolete, or plain broken, C libraries.
+ * ppoll.c - GNU extension ppoll() replacement
  */
 
 /***********************************************************************
- *  Copyright © 2006 Rémi Denis-Courmont.                              *
+ *  Copyright © 2008 Rémi Denis-Courmont.                              *
  *  This program is free software; you can redistribute and/or modify  *
  *  it under the terms of the GNU General Public License as published  *
  *  by the Free Software Foundation; version 2 of the license, or (at  *
@@ -19,36 +19,48 @@
  *  http://www.gnu.org/copyleft/gpl.html                               *
  ***********************************************************************/
 
-#ifdef NDISC6_COMPAT_FIXUPS_H
-# error How come you include this header twice?!
+#ifdef HAVE_CONFIG_H
+# include <config.h>
 #endif
 
-#ifndef HAVE_FDATASYNC
-int fdatasync (int fd);
+#include <time.h>
+#include <signal.h>
+
+#include <sys/types.h>
+#include <poll.h>
+#if 0
+# include <pthread.h> // sigprocmask is not thread-safe
 #endif
-
-#ifndef HAVE_INET6_RTH_ADD
-# include <sys/types.h>
-# include <sys/socket.h>
-
-struct in6_addr;
-
-socklen_t inet6_rth_space (int type, int segments);
-void *inet6_rth_init (void *bp, socklen_t bp_len, int type, int segments);
-int inet6_rth_add (void *bp, const struct in6_addr *addr);
-#endif
-
-#ifndef IPV6_RTHDR_TYPE_0
-# define IPV6_RTHDR_TYPE_0 0
-#endif
-
-#ifndef HAVE_PPOLL
-# include <signal.h>
-struct pollfd;
-struct timespec;
 
 int ppoll (struct pollfd *restrict fds, int n,
            const struct timespec *restrict ts,
-           const sigset_t *restrict sigmask);
+           const sigset_t *restrict sigset)
+{
+	sigset_t origset;
+	int val;
+
+	/* NOTE: ppoll() was introduced to fix the race condition between
+	 * sigprocmask()/pthread_sigmask() and poll(). This replacement
+	 * obviously reintroduces it. A more intricate implementation could
+	 * avoid this bug (at a high performance cost).
+	 */
+#if 0
+	val = pthread_sigmask (SIG_SETMASK, sigset, &origset);
+	if (val)
+	{
+		errno = val;
+		return -1;
+	}
+#else
+	sigprocmask (SIG_SETMASK, sigset, &origset);
 #endif
 
+	val = poll (fds, n, (ts->tv_sec * 1000) + (ts->tv_nsec / 1000000));
+
+#if 0
+	pthread_sigmask (SIG_SETMASK, &origset, NULL); /* cannot fail */
+#else
+	sigprocmask (SIG_SETMASK, &origset, NULL); /* cannot fail */
+#endif
+	return val;
+}
