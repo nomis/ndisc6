@@ -50,6 +50,7 @@
 
 #include "rdnssd.h"
 #include "gettext.h"
+#include "../src/gettime.h"
 
 /* Internal defines */
 
@@ -199,7 +200,7 @@ int parse_nd_opts (const struct nd_opt_hdr *opt, size_t opts_len, unsigned int i
 
 		{
 			struct timespec ts;
-			clock_gettime(CLOCK_MONOTONIC, &ts);
+			mono_gettime (&ts);
 			now = ts.tv_sec;
 		}
 
@@ -289,7 +290,7 @@ static int worker (int pipe, const char *resolvpath, const char *username)
 		struct timespec ts;
 		char buf = 42;
 
-		clock_gettime (CLOCK_MONOTONIC, &ts);
+		mono_gettime (&ts);
 		now = ts.tv_sec;
 
 		if (ready)
