@@ -78,9 +78,9 @@ AS_MESSAGE([checking library functions...])
 RDC_REPLACE_FUNC_GETOPT_LONG
 LIBS_save="$LIBS"
 LIBS="$LIBRT $LIBS"
-AC_CHECK_FUNCS([clock_nanosleep inet6_rth_add])
+AC_CHECK_FUNCS([clock_nanosleep])
 LIBS="$LIBS_save"
-AC_REPLACE_FUNCS([fdatasync])
+AC_REPLACE_FUNCS([fdatasync inet6_rth_add])
 
 # Network stuff
 RDC_FUNC_SOCKET

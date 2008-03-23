@@ -53,7 +53,6 @@
 #endif
 
 #include "gettime.h"
-#include "inet6rth.h"
 #include "traceroute.h"
 
 #ifndef AI_IDN

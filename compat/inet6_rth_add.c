@@ -18,28 +18,15 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>. *
  *************************************************************************/
 
-#ifndef HAVE_INET6_RTH_ADD
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
 
-#include <inttypes.h>
+#include <stdint.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-/*
- * As usual, we have C libraries who define functions though they don't
- * actually provide them. This time, the winner is FreeBSD 4.
- */
-#define inet6_rth_space working_inet6_rth_space
-#define inet6_rth_init working_inet6_rth_init
-#define inet6_rth_add working_inet6_rth_add
-
-#ifndef IPV6_RTHDR_TYPE_0
-# define IPV6_RTHDR_TYPE_0 0
-#endif
-
-#define LINKAGE static inline
-
-LINKAGE
 socklen_t inet6_rth_space (int type, int segments)
 {
 	if ((type != IPV6_RTHDR_TYPE_0) || (segments < 0) || (segments > 127))
@@ -48,7 +35,7 @@ socklen_t inet6_rth_space (int type, int segments)
 	return 8 + (segments * 16);
 }
 
-LINKAGE
+
 void *inet6_rth_init (void *bp, socklen_t bp_len, int type, int segments)
 {
 	socklen_t needlen;
@@ -63,7 +50,7 @@ void *inet6_rth_init (void *bp, socklen_t bp_len, int type, int segments)
 	return bp;
 }
 
-LINKAGE
+
 int inet6_rth_add (void *bp, const struct in6_addr *addr)
 {
 	if (((uint8_t *)bp)[2] != IPV6_RTHDR_TYPE_0)
@@ -72,21 +59,3 @@ int inet6_rth_add (void *bp, const struct in6_addr *addr)
 	memcpy (((uint8_t *)bp) + 8 + 16 * ((uint8_t *)bp)[3]++, addr, 16);
 	return 0;
 }
-
-#endif /* ifndef HAVE_INET6_RTH_ADD */
-
-#ifndef IPV6_RECVRTHDR
-# undef IPV6_RTHDR
-
-# if defined (__linux__)
-#  define IPV6_RECVRTHDR 56
-#  define IPV6_RTHDR 57
-# elif defined (__FreeBSD__) || defined (__FreeBSD_kernel__) \
-    || defined (__NetBSD__)  || defined (__NetBSD_kernel__)
-#  define IPV6_RECVRTHDR 38
-#  define IPV6_RTHDR 51
-# else
-#  warning Routing Header support missing! Define IPV6_(RECV)RTHDR!
-# endif
-
-#endif /* ! IPV6_RECVRTHDR */
