@@ -54,7 +54,7 @@ send_udp_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 	packet.uh.uh_sport = sport;
 	packet.uh.uh_dport = htons (ntohs (port) + ttl);
 	/* For UDP-Lite we have full checksum coverage, if only because the
-	 * IPV6_CHECKSUM setsockopt cannot only supports full coverage, so
+	 * IPV6_CHECKSUM setsockopt only supports full coverage. Hence
 	 * we can set coverage to the length of the packet, even though zero
 	 * would be more idiosyncrasic. */
 	packet.uh.uh_ulen = htons (plen);
