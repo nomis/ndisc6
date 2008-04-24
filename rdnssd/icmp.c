@@ -109,7 +109,6 @@ static int icmp_socket()
 	}
 
 	setsockopt (fd, SOL_IPV6, IPV6_RECVHOPLIMIT, &(int){ 1 }, sizeof (int));
-	setsockopt (fd, SOL_IPV6, IPV6_CHECKSUM, &(int){ 2 }, sizeof (int));
 
 	return fd;
 }
