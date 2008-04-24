@@ -427,8 +427,6 @@ static int prepare_icmp_socket (int fd)
 	            sizeof (int));
 	setsockopt (fd, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &(int){ 1 },
 	            sizeof (int));
-	setsockopt (fd, IPPROTO_IPV6, IPV6_CHECKSUM, &(int){ 2 },
-	            sizeof (int));
 
 	return 0;
 }
