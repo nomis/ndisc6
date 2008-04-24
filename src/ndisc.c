@@ -108,10 +108,12 @@ getipv6byname (const char *name, const char *ifname, int numeric,
 
 
 static inline int
-setmcasthoplimit (int fd, int value)
+sethoplimit (int fd, int value)
 {
-	return setsockopt (fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
-	                   &value, sizeof (value));
+	return (setsockopt (fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
+	                    &value, sizeof (value))
+	     || setsockopt (fd, IPPROTO_IPV6, IPV6_UNICAST_HOPS,
+	                    &value, sizeof (value))) ? -1 : 0;
 }
 
 
@@ -667,7 +669,7 @@ ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
 	setsockopt (fd, SOL_SOCKET, SO_DONTROUTE, &(int){ 1 }, sizeof (int));
 
 	/* sets Hop-by-hop limit to 255 */
-	setmcasthoplimit (fd, 255);
+	sethoplimit (fd, 255);
 	setsockopt (fd, IPPROTO_IPV6, IPV6_RECVHOPLIMIT,
 	            &(int){ 1 }, sizeof (int));
 

@@ -16,6 +16,7 @@ provided manual pages.
 STABLE RELEASE 0.9.8 : Major portability fixes
 
 # Fix compilation for BSD and OS X.
+# Fix rdisc6 support for ISATAP interfaces.
 
 ============================================================================
 STABLE RELEASE 0.9.7 : Minor bugfixes
