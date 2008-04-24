@@ -95,5 +95,5 @@ parse_echo_error (const void *data, size_t len, int *ttl, unsigned *n,
 
 
 const tracetype echo_type =
-	{ SOCK_DGRAM, IPPROTO_ICMPV6, 2,
+	{ SOCK_DGRAM, IPPROTO_ICMPV6, -1 /* checksum auto-set for ICMPv6 */,
 	  send_echo_probe, parse_echo_reply, parse_echo_error };
