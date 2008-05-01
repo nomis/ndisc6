@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: ndisc6 0.9.7\n"
+"Project-Id-Version: ndisc6 0.9.8\n"
 "Report-Msgid-Bugs-To: miredo-devel_no_bulk_mail@remlab.net\n"
-"POT-Creation-Date: 2008-03-05 22:35+0200\n"
+"POT-Creation-Date: 2008-05-01 15:48+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,37 +17,37 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: rdnssd/rdnssd.c:85 rdnssd/rdnssd.c:106
+#: rdnssd/rdnssd.c:88 rdnssd/rdnssd.c:109
 #, c-format
 msgid "Cannot write %s: %m"
 msgstr ""
 
-#: rdnssd/rdnssd.c:223
+#: rdnssd/rdnssd.c:226
 #, c-format
 msgid "Cannot find user \"%s\""
 msgstr ""
 
-#: rdnssd/rdnssd.c:319 rdnssd/rdnssd.c:403 rdnssd/rdnssd.c:442
+#: rdnssd/rdnssd.c:322 rdnssd/rdnssd.c:406 rdnssd/rdnssd.c:445
 #, c-format
 msgid "Fatal error (%s): %m"
 msgstr ""
 
-#: rdnssd/rdnssd.c:346 rdnssd/rdnssd.c:350
+#: rdnssd/rdnssd.c:349 rdnssd/rdnssd.c:353
 #, c-format
 msgid "Cannot run \"%s\": %m"
 msgstr ""
 
-#: rdnssd/rdnssd.c:382
+#: rdnssd/rdnssd.c:385
 msgid "Child process hung up unexpectedly, aborting"
 msgstr ""
 
-#: rdnssd/rdnssd.c:506 src/addrinfo.c:143 src/ndisc.c:740 src/tcpspray.c:270
-#: src/tcptraceroute.c:42 src/traceroute.c:1206
+#: rdnssd/rdnssd.c:509 src/addrinfo.c:143 src/ndisc.c:742 src/tcpspray.c:270
+#: src/tcptraceroute.c:42 src/traceroute.c:1205
 #, c-format
 msgid "Try \"%s -h\" for more information.\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:516
+#: rdnssd/rdnssd.c:519
 #, c-format
 msgid ""
 "Usage: %s [OPTIONS]\n"
@@ -62,41 +62,41 @@ msgid ""
 "  -V, --version     display program version and exit\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:533
+#: rdnssd/rdnssd.c:536
 #, c-format
 msgid "rdnssd: IPv6 Recursive DNS Server discovery Daemon %s (%s)\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:535 src/addrinfo.c:151 src/ndisc.c:771 src/tcpspray.c:306
-#: src/traceroute.c:1253
+#: rdnssd/rdnssd.c:538 src/addrinfo.c:151 src/ndisc.c:773 src/tcpspray.c:306
+#: src/traceroute.c:1252
 #, c-format
 msgid " built %s on %s\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:536 src/addrinfo.c:152 src/ndisc.c:773 src/tcpspray.c:307
-#: src/traceroute.c:1254
+#: rdnssd/rdnssd.c:539 src/addrinfo.c:152 src/ndisc.c:775 src/tcpspray.c:307
+#: src/traceroute.c:1253
 #, c-format
 msgid "Configured with: %s\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:537
+#: rdnssd/rdnssd.c:540
 msgid "Written by Pierre Ynard and Remi Denis-Courmont\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:539
+#: rdnssd/rdnssd.c:542
 #, c-format
 msgid "Copyright (C) %u-%u Pierre Ynard, Remi Denis-Courmont\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:542 src/addrinfo.c:156 src/ndisc.c:777 src/tcpspray.c:311
-#: src/traceroute.c:1258
+#: rdnssd/rdnssd.c:545 src/addrinfo.c:156 src/ndisc.c:779 src/tcpspray.c:311
+#: src/traceroute.c:1257
 msgid ""
 "This is free software; see the source for copying conditions.\n"
 "There is NO warranty; not even for MERCHANTABILITY or\n"
 "FITNESS FOR A PARTICULAR PURPOSE.\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:655
+#: rdnssd/rdnssd.c:658
 #, c-format
 msgid "Cannot create %s (%m) - already running?"
 msgstr ""
@@ -125,231 +125,231 @@ msgstr ""
 msgid "addrinfo %s (%s)\n"
 msgstr ""
 
-#: src/addrinfo.c:153 src/ndisc.c:774 src/tcpspray.c:308 src/traceroute.c:1255
+#: src/addrinfo.c:153 src/ndisc.c:776 src/tcpspray.c:308 src/traceroute.c:1254
 msgid "Written by Remi Denis-Courmont\n"
 msgstr ""
 
-#: src/addrinfo.c:155 src/ndisc.c:776 src/tcpspray.c:310 src/traceroute.c:1257
+#: src/addrinfo.c:155 src/ndisc.c:778 src/tcpspray.c:310 src/traceroute.c:1256
 #, c-format
 msgid "Copyright (C) %u-%u Remi Denis-Courmont\n"
 msgstr ""
 
-#: src/ndisc.c:91 src/traceroute.c:947
+#: src/ndisc.c:91 src/traceroute.c:946
 #, c-format
 msgid "%s: %s\n"
 msgstr ""
 
-#: src/ndisc.c:175
+#: src/ndisc.c:177
 #, c-format
 msgid ""
 "Usage: %s [options] <IPv6 address> <interface>\n"
 "Looks up an on-link IPv6 node link-layer address (Neighbor Discovery)\n"
 msgstr ""
 
-#: src/ndisc.c:177
+#: src/ndisc.c:179
 msgid "link-layer address"
 msgstr ""
 
-#: src/ndisc.c:256
+#: src/ndisc.c:258
 msgid "Target link-layer address: "
 msgstr ""
 
-#: src/ndisc.c:269
+#: src/ndisc.c:271
 #, c-format
 msgid ""
 "Usage: %s [options] [IPv6 address] <interface>\n"
 "Solicits on-link IPv6 routers (Router Discovery)\n"
 msgstr ""
 
-#: src/ndisc.c:271
+#: src/ndisc.c:273
 msgid "advertised prefixes"
 msgstr ""
 
-#: src/ndisc.c:296
+#: src/ndisc.c:298
 msgid "    infinite (0xffffffff)\n"
 msgstr ""
 
-#: src/ndisc.c:298 src/ndisc.c:439 src/ndisc.c:446 src/ndisc.c:455
+#: src/ndisc.c:300 src/ndisc.c:441 src/ndisc.c:448 src/ndisc.c:457
 #, c-format
 msgid "%12u (0x%08x) %s\n"
 msgstr ""
 
-#: src/ndisc.c:299 src/ndisc.c:440 src/tcpspray.c:120
+#: src/ndisc.c:301 src/ndisc.c:442 src/tcpspray.c:120
 msgid "second"
 msgid_plural "seconds"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ndisc.c:317
+#: src/ndisc.c:319
 msgid " Prefix                   : "
 msgstr ""
 
-#: src/ndisc.c:322
+#: src/ndisc.c:324
 msgid "  Valid time              : "
 msgstr ""
 
-#: src/ndisc.c:324
+#: src/ndisc.c:326
 msgid "  Pref. time              : "
 msgstr ""
 
-#: src/ndisc.c:336
+#: src/ndisc.c:338
 msgid " MTU                      : "
 msgstr ""
 
-#: src/ndisc.c:338 src/tcpspray.c:119 src/tcpspray.c:155 src/tcpspray.c:156
+#: src/ndisc.c:340 src/tcpspray.c:119 src/tcpspray.c:155 src/tcpspray.c:156
 #: src/tcpspray.c:164 src/tcpspray.c:165
 msgid "byte"
 msgid_plural "bytes"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ndisc.c:339
+#: src/ndisc.c:341
 msgid "valid"
 msgstr ""
 
-#: src/ndisc.c:339
+#: src/ndisc.c:341
 msgid "invalid"
 msgstr ""
 
-#: src/ndisc.c:347
+#: src/ndisc.c:349
 msgid "medium"
 msgstr ""
 
-#: src/ndisc.c:347
+#: src/ndisc.c:349
 msgid "high"
 msgstr ""
 
-#: src/ndisc.c:347
+#: src/ndisc.c:349
 msgid "medium (invalid)"
 msgstr ""
 
-#: src/ndisc.c:347
+#: src/ndisc.c:349
 msgid "low"
 msgstr ""
 
-#: src/ndisc.c:365
+#: src/ndisc.c:367
 #, c-format
 msgid " Route                    : %s/%u\n"
 msgstr ""
 
-#: src/ndisc.c:366
+#: src/ndisc.c:368
 #, c-format
 msgid "  Route preference        :       %6s\n"
 msgstr ""
 
-#: src/ndisc.c:367
+#: src/ndisc.c:369
 msgid "  Route lifetime          : "
 msgstr ""
 
-#: src/ndisc.c:389
+#: src/ndisc.c:391
 #, c-format
 msgid " Recursive DNS server     : %s\n"
 msgstr ""
 
-#: src/ndisc.c:392
+#: src/ndisc.c:394
 msgid "  DNS server lifetime     : "
 msgid_plural "  DNS servers lifetime    : "
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ndisc.c:421
+#: src/ndisc.c:423
 msgid "Hop limit                 :    "
 msgstr ""
 
-#: src/ndisc.c:424
+#: src/ndisc.c:426
 #, c-format
 msgid "      %3u"
 msgstr ""
 
-#: src/ndisc.c:426
+#: src/ndisc.c:428
 msgid "undefined"
 msgstr ""
 
-#: src/ndisc.c:427
+#: src/ndisc.c:429
 #, c-format
 msgid " (      0x%02x)\n"
 msgstr ""
 
-#: src/ndisc.c:430
+#: src/ndisc.c:432
 #, c-format
 msgid "Stateful address conf.    :          %3s\n"
 msgstr ""
 
-#: src/ndisc.c:431 src/ndisc.c:433
+#: src/ndisc.c:433 src/ndisc.c:435
 msgid "Yes"
 msgstr ""
 
-#: src/ndisc.c:431 src/ndisc.c:433
+#: src/ndisc.c:433 src/ndisc.c:435
 msgid "No"
-msgstr ""
-
-#: src/ndisc.c:432
-#, c-format
-msgid "Stateful other conf.      :          %3s\n"
 msgstr ""
 
 #: src/ndisc.c:434
 #, c-format
+msgid "Stateful other conf.      :          %3s\n"
+msgstr ""
+
+#: src/ndisc.c:436
+#, c-format
 msgid "Router preference         :       %6s\n"
 msgstr ""
 
-#: src/ndisc.c:437
+#: src/ndisc.c:439
 msgid "Router lifetime           : "
 msgstr ""
 
-#: src/ndisc.c:443
+#: src/ndisc.c:445
 msgid "Reachable time            : "
 msgstr ""
 
-#: src/ndisc.c:447 src/ndisc.c:456
+#: src/ndisc.c:449 src/ndisc.c:458
 msgid "millisecond"
 msgid_plural "milliseconds"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ndisc.c:449 src/ndisc.c:458
+#: src/ndisc.c:451 src/ndisc.c:460
 msgid " unspecified (0x00000000)\n"
 msgstr ""
 
-#: src/ndisc.c:452
+#: src/ndisc.c:454
 msgid "Retransmit time           : "
 msgstr ""
 
-#: src/ndisc.c:481
+#: src/ndisc.c:483
 msgid " Source link-layer address: "
 msgstr ""
 
-#: src/ndisc.c:609
+#: src/ndisc.c:611
 msgid "Receiving ICMPv6 packet"
 msgstr ""
 
-#: src/ndisc.c:626
+#: src/ndisc.c:628
 #, c-format
 msgid " from %s\n"
 msgstr ""
 
-#: src/ndisc.c:652 src/traceroute.c:922 src/traceroute.c:930
+#: src/ndisc.c:654 src/traceroute.c:921 src/traceroute.c:929
 msgid "Raw IPv6 socket"
 msgstr ""
 
-#: src/ndisc.c:683
+#: src/ndisc.c:685
 #, c-format
 msgid "Soliciting %s (%s) on %s...\n"
 msgstr ""
 
-#: src/ndisc.c:703
+#: src/ndisc.c:705
 msgid "Sending ICMPv6 packet"
 msgstr ""
 
-#: src/ndisc.c:719
+#: src/ndisc.c:721
 msgid "Timed out."
 msgstr ""
 
-#: src/ndisc.c:728
+#: src/ndisc.c:730
 msgid "No response."
 msgstr ""
 
-#: src/ndisc.c:750
+#: src/ndisc.c:752
 #, c-format
 msgid ""
 "\n"
@@ -365,7 +365,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: src/ndisc.c:770
+#: src/ndisc.c:772
 #, c-format
 msgid "ndisc6: IPv6 Neighbor/Router Discovery userland tool %s (%s)\n"
 msgstr ""
@@ -395,7 +395,7 @@ msgstr ""
 msgid "Sending %lu %s with blocksize %lu %s\n"
 msgstr ""
 
-#: src/tcpspray.c:180 src/traceroute.c:498
+#: src/tcpspray.c:180 src/traceroute.c:497
 #, c-format
 msgid "Receive error: %s\n"
 msgstr ""
@@ -404,7 +404,7 @@ msgstr ""
 msgid "Connection closed by peer"
 msgstr ""
 
-#: src/tcpspray.c:216 src/traceroute.c:1112
+#: src/tcpspray.c:216 src/traceroute.c:1111
 #, c-format
 msgid "Cannot send data: %s\n"
 msgstr ""
@@ -450,7 +450,7 @@ msgstr ""
 msgid "tcpspray6: TCP/IP bandwidth tester %s (%s)\n"
 msgstr ""
 
-#: src/tcptraceroute.c:51 src/traceroute.c:1215
+#: src/tcptraceroute.c:51 src/traceroute.c:1214
 #, c-format
 msgid ""
 "Usage: %s [options] <IPv6 hostname/address> [%s]\n"
@@ -486,67 +486,67 @@ msgid ""
 "  -z  specify a time to wait (in ms) between each probes (default: 0)\n"
 msgstr ""
 
-#: src/traceroute.c:621
+#: src/traceroute.c:620
 #, c-format
 msgid " %u.%03u ms "
 msgstr ""
 
-#: src/traceroute.c:662
+#: src/traceroute.c:661
 msgid "[closed] "
 msgstr ""
 
-#: src/traceroute.c:666
+#: src/traceroute.c:665
 msgid "[open] "
 msgstr ""
 
-#: src/traceroute.c:724
+#: src/traceroute.c:723
 #, c-format
 msgid "%s%s%s%s: %s\n"
 msgstr ""
 
-#: src/traceroute.c:725
+#: src/traceroute.c:724
 msgid "port "
 msgstr ""
 
-#: src/traceroute.c:785
+#: src/traceroute.c:784
 #, c-format
 msgid "traceroute to %s (%s) "
 msgstr ""
 
-#: src/traceroute.c:790
+#: src/traceroute.c:789
 #, c-format
 msgid "from %s, "
 msgstr ""
 
-#: src/traceroute.c:794
+#: src/traceroute.c:793
 #, c-format
 msgid "port %u, from port %u, "
 msgstr ""
 
-#: src/traceroute.c:1011
+#: src/traceroute.c:1010
 #, c-format
 msgid "%u hops max, "
 msgstr ""
 
-#: src/traceroute.c:1062
+#: src/traceroute.c:1061
 #, c-format
 msgid "%lu byte packets\n"
 msgstr ""
 
-#: src/traceroute.c:1089 src/traceroute.c:1163
+#: src/traceroute.c:1088 src/traceroute.c:1162
 #, c-format
 msgid " %3u%% completed..."
 msgstr ""
 
-#: src/traceroute.c:1179
+#: src/traceroute.c:1178
 msgid "                  "
 msgstr ""
 
-#: src/traceroute.c:1216
+#: src/traceroute.c:1215
 msgid "packet length"
 msgstr ""
 
-#: src/traceroute.c:1218
+#: src/traceroute.c:1217
 msgid ""
 "\n"
 "  -A  send TCP ACK probes\n"
@@ -573,17 +573,17 @@ msgid ""
 "  -z  specify a time to wait (in ms) between each probes (default: 0)\n"
 msgstr ""
 
-#: src/traceroute.c:1252
+#: src/traceroute.c:1251
 #, c-format
 msgid "traceroute6: TCP & UDP IPv6 traceroute tool %s (%s)\n"
 msgstr ""
 
-#: src/traceroute.c:1272
+#: src/traceroute.c:1271
 #, c-format
 msgid "%s: invalid hop limit\n"
 msgstr ""
 
-#: src/traceroute.c:1286
+#: src/traceroute.c:1285
 #, c-format
 msgid "%s: invalid packet length\n"
 msgstr ""
