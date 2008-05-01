@@ -24,6 +24,7 @@
 
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h> // uint16_t
 
 #include <unistd.h> // getpid()
 #include <sys/socket.h>

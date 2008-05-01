@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h> /* div() */
-#include <inttypes.h>
+#include <stdint.h> /* uint8_t */
 #include <limits.h> /* UINT_MAX */
 #include <locale.h>
 #include <stdbool.h>

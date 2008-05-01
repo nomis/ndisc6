@@ -28,7 +28,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <inttypes.h> // SIZE_MAX
+#include <stdint.h> // uint8_t, SIZE_MAX
 #include <limits.h> // SIZE_MAX on Solaris (non-standard)
 #ifndef SIZE_MAX
 # define SIZE_MAX SIZE_T_MAX // FreeBSD 4.x workaround

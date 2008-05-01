@@ -29,6 +29,7 @@
 #include <stdlib.h> /* div() */
 #include <limits.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <time.h> /* nanosleep() */
 #include <assert.h>
 

@@ -27,6 +27,7 @@
 
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include <sys/types.h>
 #include <sys/socket.h> // SOCK_DGRAM
