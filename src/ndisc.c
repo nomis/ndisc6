@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h> /* div() */
-#include <stdint.h> /* uint8_t */
+#include <inttypes.h> /* uint8_t */
 #include <limits.h> /* UINT_MAX */
 #include <locale.h>
 #include <stdbool.h>
@@ -364,7 +364,7 @@ parseroute (const uint8_t *opt)
 	if (inet_ntop (AF_INET6, &dst, str, sizeof (str)) == NULL)
 		return -1;
 
-	printf (_(" Route                    : %s/%u\n"), str, (unsigned)plen);
+	printf (_(" Route                    : %s/%"PRIu8"\n"), str, plen);
 	printf (_("  Route preference        :       %6s\n"), pref_i2n (opt[3]));
 	fputs (_("  Route lifetime          : "), stdout);
 	print32time (((const uint32_t *)opt)[1]);
