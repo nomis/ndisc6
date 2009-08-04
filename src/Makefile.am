@@ -25,7 +25,7 @@ MOSTLYCLEANFILES = $(myexec_SCRIPTS) $(bin_SCRIPTS)
 gen_alias = transform="$(transform)" ${SHELL} $(srcdir)/gen-alias
 
 # isatapd
-isatapd_SOURCES = isatapd.c
+isatapd_SOURCES = isatapd.c isatapd.h
 isatapd_LDADD = $(LIBRT) $(AM_LIBADD)
 
 # ndisc6
