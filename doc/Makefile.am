@@ -5,7 +5,7 @@
 # This file is distributed under the same license as the ndisc6 package.
 
 man1_MANS = addr2name.1 dnssort.1 tcpspray.1
-man8_MANS = ndisc6.8 rdisc6.8 rltraceroute6.8 rdnssd.8
+man8_MANS = ndisc6.8 rdisc6.8 rltraceroute6.8 rdnssd.8 isatapd.8
 SOURCES_MAN = $(man1_MANS) ndisc6.8 rdisc6.8 rltraceroute6.8 rdnssd.8-in
 
 EXTRA_DIST = $(SOURCES_MAN)

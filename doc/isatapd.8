@@ -1,0 +1,108 @@
+.\" *************************************************************************
+.\" *  Copyright © 2004-2006 Rémi Denis-Courmont.                           *
+.\" *  This program is free software: you can redistribute and/or modify    *
+.\" *  it under the terms of the GNU General Public License as published by *
+.\" *  the Free Software Foundation, versions 2 or 3 of the license.        *
+.\" *                                                                       *
+.\" *  This program is distributed in the hope that it will be useful,      *
+.\" *  but WITHOUT ANY WARRANTY; without even the implied warranty of       *
+.\" *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
+.\" *  GNU General Public License for more details.                         *
+.\" *                                                                       *
+.\" *  You should have received a copy of the GNU General Public License    *
+.\" *  along with this program. If not, see <http://www.gnu.org/licenses/>. *
+.\" *************************************************************************
+.TH "ISATAPD" "8" "$Date: 2009-05-29 14:00:00 +0800 (Fri, 29 May 2009) $" "isatapd" "System Manager's Manual"
+.SH NAME
+isatapd \- ISATAP IPv6 Router and Prefix Discovery
+.SH SYNOPSIS
+.BR "isatapd" " [" "OPTIONS" "] ... [" "ADDRS" "] ..."
+
+.SH DESCRIPTON
+.B isatapd
+implements the ISATAP IPv6 Router and Prefix Discovery procedures
+specified in Section 8.3 of [RFC5214]. It uses a Potential Router
+List (PRL) that records the IPv4 addresses of candidate default
+routers available on the ISATAP link. PRL discovery is through
+domain name lookup in the site name service, through manual
+configuration of IPv4 addresses, or a combination of both.
+
+This program is used on ISATAP hosts and non-default routers;
+it sends Router Solicitation (RS) messages over the ISATAP
+interface to elicit Router Advertisements (RAs) from default
+routers.
+
+This program is also intended for use on hosts and routers that
+follow the specifications for Virtual Enterprise Traversal (VET)
+(draft-templin-autoconf-dhcp).
+
+.SH OPTIONS
+
+.TP
+.BR "\-h" " or " "\-\-help"
+Display some help and exit.
+
+.TP
+.BR "\-d ifname" " or " "\-\-dev ifname"
+Supply the name of an ISATAP/VET netwok interface associated
+with the Potential Router List. By default, isatapd uses the
+name "is0".
+
+.TP
+.BR "\-p prlname" " or " "\-\-prl prlname"
+Supply the Potential Router List (PRL) name for use on this
+ISATAP/VET interface (e.g., isatap.example.com). There is
+no default PRL name, and this option may be ommitted if IPv4
+addresses are manually configured.
+
+.TP
+.BR "\-q" " or " "\-\-quiet"
+Only display advertised IPv6 prefixes. Display nothing in case of failure.
+That is mostly useful when calling the program from a shell script.
+
+.TP
+.BR "\-r attempts" " or " "\-\-retry attempts"
+Send ICMPv6 Router Solicitations that many times until a
+Router Advertisement is received. (If no advertisement is
+received, isatapd will initiate the sending sequence again
+after delaying 120 seconds.) By default, isatapd will try
+3 times (MAX_RTR_SOLICITATIONS from RFC2461) before
+delaying 120 seconds and trying again.
+
+.TP
+.BR "\-V" " or " "\-\-version"
+Display program version and license and exit.
+
+.TP
+.BR "\-v" " or " "\-\-verbose"
+Display verbose information. That is the default.
+
+.TP
+.BR "\-w wait_ms" " or " "\-\-wait wait_ms"
+.RI "Wait " "wait_ms" " milliseconds for a response before retrying."
+By default, isatapd waits 4 second between each attempts
+(RTR_SOLICITATION_INTERVAL from RFC2461).
+
+.TP
+.BR "ADDRS"
+A list of IPv4 addresses of ISATAP default routers. This list
+is in addition to any IPv4 addresses discovered through domain
+name resolution in the site name service.
+
+.SH SECURITY
+.RI "isatapd must be " "setuid" " " "root" " to allow use by non "
+privileged users. It will drop its root privileges before any attempt
+is made to send or receive data from the network to reduce the possible
+impact of a security vulnerability.
+
+.SH "SEE ALSO"
+ndisc6(8), rdisc6(8), ipv6(7)
+
+.SH AUTHOR
+Kwong-Sang Yin <kwong-sang.yin@boeing.com>
+
+Fred Templin <fred.l.templin at boeing.com>
+
+$Id: isatapd.8 483 2009-05-29 14:00:00Z fltemplin $
+
+http://www.remlab.net/ndisc6/

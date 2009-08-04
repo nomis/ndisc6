@@ -12,7 +12,7 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 	-DLOCALEDIR=\"$(localedir)\"
 AM_LIBADD = @top_builddir@/compat/libcompat.a
 
-mysuidexec_PROGRAMS = ndisc6 rdisc6 rltraceroute6
+mysuidexec_PROGRAMS = isatapd ndisc6 rdisc6 rltraceroute6
 myexec_PROGRAMS = tcptraceroute6
 myexec_SCRIPTS = tracert6
 bin_PROGRAMS = tcpspray name2addr
@@ -23,6 +23,10 @@ EXTRA_DIST = dnssort.in
 MOSTLYCLEANFILES = $(myexec_SCRIPTS) $(bin_SCRIPTS)
 
 gen_alias = transform="$(transform)" ${SHELL} $(srcdir)/gen-alias
+
+# isatapd
+isatapd_SOURCES = isatapd.c
+isatapd_LDADD = $(LIBRT) $(AM_LIBADD)
 
 # ndisc6
 ndisc6_SOURCES = ndisc.c
