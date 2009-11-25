@@ -12,7 +12,6 @@ confdir = $(sysconfdir)/rdnssd
 myrundir = $(localstatedir)/run/rdnssd
 
 subst_script = sed \
-	-e 's,[@]PERL[@],$(PERL),g' \
 	-e 's,[@]PACKAGE[@],$(PACKAGE),g' \
 	-e 's,[@]VERSION[@],$(VERSION),g' \
 	-e 's,[@]LOCALSTATEDIR[@],$(localstatedir),g' \

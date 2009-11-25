@@ -1,11 +1,11 @@
-#! @PERL@
+#! /bin/sh
 #
 # resolv.conf merge hook for rdnssd
 # 
 # $Id$
 
 # *************************************************************************
-# *  Copyright © 2007 Pierre Ynard.                                       *
+# *  Copyright © 2007-2009 Pierre Ynard.                                  *
 # *  This program is free software: you can redistribute and/or modify    *
 # *  it under the terms of the GNU General Public License as published by *
 # *  the Free Software Foundation, versions 2 or 3 of the license.        *
@@ -19,76 +19,47 @@
 # *  along with this program. If not, see <http://www.gnu.org/licenses/>. *
 # *************************************************************************
 
-use strict;
+set -e
+
+PATH=/sbin:/bin
 
 # Max number of nameserver options taken into account. Should be as
 # defined in <resolv.h>
-my $MAXNS = 3;
+MAXNS=3
 
 # This script tries to share available nameserver slots with IPv4
 # entries, for example to allow fallback to IPv4 if IPv6 fails. If
 # there is not enough room for all IPv6 and IPv4 entries, this script
 # will limit the IPv6 entries it adds to $RDNSS_LIMIT only.
-my $RDNSS_LIMIT = $MAXNS - 1;
+RDNSS_LIMIT=$(($MAXNS - 1))
 
-my $sysconfdir = '@SYSCONFDIR@';
-my $localstatedir = '@LOCALSTATEDIR@';
-my $resolvconf = "$sysconfdir/resolv.conf";
-my $myresolvconf = "$localstatedir/run/rdnssd/resolv.conf";
+sysconfdir='@SYSCONFDIR@'
+localstatedir='@LOCALSTATEDIR@'
+resolvconf="$sysconfdir/resolv.conf"
+myresolvconf="$localstatedir/run/rdnssd/resolv.conf"
 
-# Script code
+# These should be POSIX-compliant BREs
+RE_NSV4='^nameserver  *\([0-9]\{1,3\}\.\)\{3,3\}[0-9]\{1,3\} *$'
+RE_NSV4OR6='^nameserver  *[a-fA-F0-9:\.]\{1,46\}\(%[a-zA-Z0-9]\{1,\}\)\{,1\} *$'
 
-# Parse both files to merge
+# Count how many IPv6 nameservers we can fit
 
-open(RESOLV, "< $resolvconf") or die("cannot read $resolvconf: $!\n");
-open(RDNSS, "< $myresolvconf") or die("cannot read $myresolvconf: $!\n");
+limit=$RDNSS_LIMIT
 
-my @dnsv4 = ();
-my @other = ();
-my @rdnss = ();
+nnsv4=`grep -c "$RE_NSV4" $resolvconf || [ $? -le 1 ]`
+room=$(($MAXNS - $nnsv4))
 
-while (<RESOLV>) {
-	if (/^nameserver\s+\d+\.\d+\.\d+\.\d+\s*\n$/) {
-		push(@dnsv4, $_);
-	} elsif (/^nameserver\s+[a-fA-F\d:\.]+\s*\n$/) {
-	} else {
-		push(@other, $_);
-	}
-}
+if [ $limit -lt $room ]; then
+	limit=$room
+fi
 
-close(RESOLV);
+# Merge and write the result
 
-while (<RDNSS>) {
-	push(@rdnss, $_);
-}
+{
+	sed -e "/$RE_NSV4OR6/d" < $resolvconf
+        [ $limit -gt 0 ] && sed -e "${limit}q" < $myresolvconf
+	sed -ne "/$RE_NSV4/p" < $resolvconf
+} >| $resolvconf.tmp
 
-close(RDNSS);
-
-# Merge: insert a limited number of IPv6 RDNSS before IPv4 resolvers
-
-my $resolv;
-
-$resolv .= join("", @other);
-
-my $limit = scalar(@rdnss);
-
-if (scalar(@rdnss) > $RDNSS_LIMIT) {
-	my $room = $MAXNS - scalar(@dnsv4);
-	if (scalar(@rdnss) > $room) {
-		$limit = ($room > $RDNSS_LIMIT) ? $room : $RDNSS_LIMIT;
-	}
-}
-
-for (my $i = 0; $i < $limit; $i++) {
-	$resolv .= $rdnss[$i];
-}
-
-$resolv .= join("", @dnsv4);
-
-# Write the result
-
-open(TMP, "> $resolvconf.tmp") or die("cannot write $resolvconf.tmp: $!\n");
-print TMP $resolv;
-close(TMP);
-rename("$resolvconf.tmp", "$resolvconf") or die("cannot write $resolvconf: $!\n");
+mv -f $resolvconf.tmp $resolvconf
 
