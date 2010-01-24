@@ -20,7 +20,7 @@ dnl *************************************************************************
 
 AC_COPYRIGHT([Copyright (C) 2005-2010 Remi Denis-Courmont])
 AC_INIT(ndisc6, 1.0.0, rdenis@simphalempin.com)
-AC_PREREQ(2.59c)
+AC_PREREQ(2.62)
 INVOCATION="`echo "$0 $ac_configure_args" | sed -e 's/\\\/\\\\\\\/g'`"
 
 AS_MESSAGE(checking system...)
@@ -45,7 +45,11 @@ AC_PROG_RANLIB
 AC_PATH_PROG(PERL, perl, :)
 AC_ARG_VAR(PERL, [Perl interpreter])
 
+AS_IF([test "x${enable_silent_rules}" = "x"], [
+  enable_silent_rules="yes"
+])
 AM_INIT_AUTOMAKE
+AM_SILENT_RULES
 
 # Checks for libraries.
 AS_MESSAGE([checking required libraries...])

@@ -6,11 +6,13 @@
 
 ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = \
+	1.11 \
 	check-news \
 	dist-bzip2 \
 	no-dist-gzip \
 	no-exeext \
-	std-options
+	std-options \
+	-Wall
 
 SUBDIRS = po doc compat src rdnssd
 DIST_SUBDIRS = m4 $(SUBDIRS)
