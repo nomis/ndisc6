@@ -16,9 +16,9 @@
 .SH NAME
 addr2name, name2addr \- perform DNS lookups from scripts
 .SH SYNOPSIS
-.BR "addr2name" " [" "-46mnr" "] [" "HOSTNAMES" "]"
+.BR "addr2name" " [" "-46cmnr" "] [" "HOSTNAMES" "]"
 
-.BR "name2addr" " [" "-46n" "] [" "HOSTNAMES" "]"
+.BR "name2addr" " [" "-46cn" "] [" "HOSTNAMES" "]"
 
 .SH DESCRIPTON
 Write addresses or canonical hostname of specified names to the standard
@@ -34,6 +34,12 @@ Only try to perform IPv4 lookups.
 .TP
 .BR "\-6" " or " "\-\-ipv6"
 Only try to perform IPv6 lookups.
+
+.TP
+.BR "\-c" " or " "\-\-config"
+Only lookup and print results for address families that match locally
+configured addresses (If the system has no IPv4 resp IPv6 address,
+then IPv4 resp IPv6 addresses are ignored).
 
 .TP
 .BR "\-h" " or " "\-\-help"
