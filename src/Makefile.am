@@ -24,6 +24,13 @@ MOSTLYCLEANFILES = $(myexec_SCRIPTS) $(bin_SCRIPTS)
 
 gen_alias = transform="$(transform)" ${SHELL} $(srcdir)/gen-alias
 
+sed_verbose = $(sed_verbose_$(V))
+sed_verbose_ = $(sed_verbose_$(AM_DEFAULT_VERBOSITY))
+sed_verbose_0 = @echo "  SED    $@";
+alias_verbose = $(alias_verbose_$(V))
+alias_verbose_ = $(alias_verbose_$(AM_DEFAULT_VERBOSITY))
+alias_verbose_0 = @echo "  ALIAS  $@";
+
 # isatapd
 isatapd_SOURCES = isatapd.c isatapd.h
 isatapd_LDADD = $(LIBRT) $(AM_LIBADD)
@@ -46,19 +53,19 @@ tcptraceroute6_CPPFLAGS = $(AM_CPPFLAGS) \
 	-DRLTRACEROUTE6=\"`echo rltraceroute6 | sed '$(transform)'`\"
 
 tracert6: Makefile.am gen-alias
-	$(gen_alias) tracert6 rltraceroute6 -I
+	$(alias_verbose)$(gen_alias) tracert6 rltraceroute6 -I
 
 # tcpspray
 tcpspray_SOURCES = tcpspray.c
 tcpspray_LDADD = $(LIBRT) $(AM_LIBADD)
 
 tcpspray6: Makefile.am gen-alias
-	$(gen_alias) tcpspray6 tcpspray -6
+	$(alias_verbose)$(gen_alias) tcpspray6 tcpspray -6
 
 # addr2name
 name2addr_SOURCES = addrinfo.c
 addr2name: Makefile.am gen-alias
-	$(gen_alias) addr2name name2addr -r
+	$(alias_verbose)$(gen_alias) addr2name name2addr -r
 
 subst_script = sed \
 	-e 's,[@]PERL[@],$(PERL),g' \
@@ -67,10 +74,10 @@ subst_script = sed \
 
 # dnssort
 dnssort: dnssort.in Makefile.in $(top_builddir)/config.status
-	rm -f $@.tmp $@
-	$(subst_script) < $(srcdir)/$@.in > $@.tmp
-	chmod +x $@.tmp
-	mv -f $@.tmp $@
+	$(AM_V_at)rm -f $@.tmp $@
+	$(sed_verbose)$(subst_script) < $(srcdir)/$@.in > $@.tmp
+	$(AM_V_at)chmod +x $@.tmp
+	$(AM_V_at)mv -f $@.tmp $@
 
 if NOSUID
 myexecdir = $(sbindir)
