@@ -5,6 +5,12 @@
 # This file is distributed under the same license as the ndisc6 package.
 
 ACLOCAL_AMFLAGS = -I m4
+AUTOMAKE_OPTIONS = \
+	check-news \
+	dist-bzip2 \
+	no-dist-gzip \
+	no-exeext \
+	std-options
 
 SUBDIRS = po doc compat src rdnssd
 DIST_SUBDIRS = m4 $(SUBDIRS)

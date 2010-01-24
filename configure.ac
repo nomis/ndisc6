@@ -45,7 +45,7 @@ AC_PROG_RANLIB
 AC_PATH_PROG(PERL, perl, :)
 AC_ARG_VAR(PERL, [Perl interpreter])
 
-AM_INIT_AUTOMAKE([check-news dist-bzip2 no-dist-gzip no-exeext std-options])
+AM_INIT_AUTOMAKE
 
 # Checks for libraries.
 AS_MESSAGE([checking required libraries...])
