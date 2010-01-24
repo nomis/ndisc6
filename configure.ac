@@ -18,8 +18,8 @@ dnl *  You should have received a copy of the GNU General Public License    *
 dnl *  along with this program. If not, see <http://www.gnu.org/licenses/>. *
 dnl *************************************************************************
 
-AC_COPYRIGHT([Copyright (C) 2005-2008 Remi Denis-Courmont])
-AC_INIT(ndisc6, 0.9.9, rdenis@simphalempin.com)
+AC_COPYRIGHT([Copyright (C) 2005-2010 Remi Denis-Courmont])
+AC_INIT(ndisc6, 1.0.0, rdenis@simphalempin.com)
 AC_PREREQ(2.59c)
 INVOCATION="`echo "$0 $ac_configure_args" | sed -e 's/\\\/\\\\\\\/g'`"
 
