@@ -17,6 +17,10 @@ subst_script = sed \
 	-e 's,[@]LOCALSTATEDIR[@],$(localstatedir),g' \
 	-e 's,[@]SYSCONFDIR[@],$(sysconfdir),g'
 
+sed_verbose = $(sed_verbose_$(V))
+sed_verbose_ = $(sed_verbose_$(AM_DEFAULT_VERBOSITY))
+sed_verbose_0 = @echo "  SED    $@";
+
 EXTRA_DIST = merge-hook.in
 CLEANFILES = $(conf_SCRIPTS)
 AM_INSTALLCHECK_STD_OPTIONS_EXEMPT = merge-hook
@@ -32,10 +36,10 @@ rdnssd_LDADD = $(LIBRT) \
 
 # merge-hook
 merge-hook: merge-hook.in Makefile.in $(top_builddir)/config.status
-	rm -f -- $@.tmp $@
-	$(subst_script) < $(srcdir)/$@.in > $@.tmp
-	chmod -- +x $@.tmp
-	mv -f -- $@.tmp $@
+	$(AM_V_at)rm -f -- $@.tmp $@
+	$(sed_verbose)$(subst_script) < $(srcdir)/$@.in > $@.tmp
+	$(AM_V_at)chmod -- +x $@.tmp
+	$(AM_V_at)mv -f -- $@.tmp $@
 
 install-data-hook:
 	$(install_sh) -d -- $(DESTDIR)$(myrundir)

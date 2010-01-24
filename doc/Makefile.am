@@ -16,13 +16,17 @@ SOURCES_MAN = \
 EXTRA_DIST = $(SOURCES_MAN)
 CLEANFILES = rdnssd.8
 
+sed_verbose = $(sed_verbose_$(V))
+sed_verbose_ = $(sed_verbose_$(AM_DEFAULT_VERBOSITY))
+sed_verbose_0 = @echo "  SED    $@";
+
 edit = sed \
 	-e 's,@localstatedir\@,$(localstatedir),g' \
 	-e 's,@sysconfdir\@,$(sysconfdir),g'
 
 .8-in.8:
-	rm -f -- $@
-	$(edit) $< > $@
+	$(AM_V_at)rm -f -- $@
+	$(sed_verbose)$(edit) $< > $@
 
 install-data-hook:
 	inst=`echo rltraceroute6 | sed '$(transform)'`; \
