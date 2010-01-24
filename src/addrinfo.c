@@ -4,7 +4,7 @@
  */
 
 /*************************************************************************
- *  Copyright © 2002-2007 Rémi Denis-Courmont.                           *
+ *  Copyright © 2002-2009 Rémi Denis-Courmont.                           *
  *  This program is free software: you can redistribute and/or modify    *
  *  it under the terms of the GNU General Public License as published by *
  *  the Free Software Foundation, versions 2 or 3 of the license.        *
@@ -129,6 +129,7 @@ static int usage (const char *path)
 "\n"
 "  -4, --ipv4     only lookup IPv4 addresses\n"
 "  -6, --ipv6     only lookup IPv6 addresses\n"
+"  -c, --config   only return addresses for locally configured protocols\n"
 "  -h, --help     display this help and exit\n"
 "  -m, --multiple print multiple results separated by spaces\n"
 "  -n- --numeric  do not perform forward hostname lookup\n"
@@ -163,6 +164,7 @@ static const struct option lopts[] =
 {
 	{ "ipv4",     no_argument,       NULL, '4' },
 	{ "ipv6",     no_argument,       NULL, '6' },
+	{ "config",   no_argument,       NULL, 'c' },
 	{ "help",     no_argument,       NULL, 'h' },
 	{ "multiple", no_argument,       NULL, 'm' },
 	{ "numeric",  no_argument,       NULL, 'n' },
@@ -171,7 +173,7 @@ static const struct option lopts[] =
 	{ NULL,       0,                 NULL, 0   }
 };
 
-static const char sopts[] = "46hmnrV";
+static const char sopts[] = "46chmnrV";
 
 int main (int argc, char *argv[])
 {
@@ -193,6 +195,10 @@ int main (int argc, char *argv[])
 				family = AF_INET6;
 				break;
 
+			case 'c':
+				aflags |= AI_ADDRCONFIG;
+				break;
+
 			case 'h':
 				return usage (argv[0]);
 
@@ -201,7 +207,7 @@ int main (int argc, char *argv[])
 				break;
 
 			case 'n':
-				aflags = AI_NUMERICHOST;
+				aflags |= AI_NUMERICHOST;
 				break;
 
 			case 'r':
