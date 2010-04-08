@@ -5,10 +5,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: ndisc6 0.9.8\n"
+"Project-Id-Version: ndisc6 0.9.9\n"
 "Report-Msgid-Bugs-To: miredo-devel_no_bulk_mail@remlab.net\n"
 "POT-Creation-Date: 2009-08-04 21:35+0300\n"
-"PO-Revision-Date: 2008-12-17 23:32+0100\n"
+"PO-Revision-Date: 2010-03-16 18:13+0100\n"
 "Last-Translator: Petr Pisar <petr.pisar@atlas.cz>\n"
 "Language-Team: Czech <translation-team-cs@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -259,9 +259,9 @@ msgid "low"
 msgstr "nízká"
 
 #: src/ndisc.c:367
-#, fuzzy, c-format
+#, c-format
 msgid " Route                    : %s/%<PRIu8>\n"
-msgstr " Cesta                    : %s/%u\n"
+msgstr " Cesta                    : %s/%<PRIu8>\n"
 
 #: src/ndisc.c:368
 #, c-format
