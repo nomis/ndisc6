@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ndisc6 0.9.4\n"
 "Report-Msgid-Bugs-To: miredo-devel_no_bulk_mail@remlab.net\n"
-"POT-Creation-Date: 2010-05-01 10:40+0300\n"
+"POT-Creation-Date: 2010-05-01 10:49+0300\n"
 "PO-Revision-Date: 2007-12-27 19:15+0200\n"
 "Last-Translator: Rémi Denis-Courmont\n"
 "Language-Team: French <fr@li.org>\n"
@@ -119,7 +119,7 @@ msgid "Input error"
 msgstr "Erreur d’entrée"
 
 #: src/addrinfo.c:127
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: %s [-4|-6] [hostnames]\n"
 "Converts names to addresses.\n"
@@ -129,7 +129,7 @@ msgid ""
 "  -c, --config   only return addresses for locally configured protocols\n"
 "  -h, --help     display this help and exit\n"
 "  -m, --multiple print multiple results separated by spaces\n"
-"  -n- --numeric  do not perform forward hostname lookup\n"
+"  -n, --numeric  do not perform forward hostname lookup\n"
 "  -r, --reverse  perform reverse address to hostname lookup\n"
 "  -V, --version  display program version and exit\n"
 msgstr ""
@@ -138,9 +138,10 @@ msgstr ""
 "\n"
 "  -4, --ipv4     recherche uniquement les adresses IPv4\n"
 "  -6, --ipv6     recherche uniquement les adresses IPv6\n"
+"  -c, --config   ignore les adresses pour des protocoles réseaux non gérés\n"
 "  -h, --help     affiche cet aide et quitte le programme\n"
 "  -m, --multiple affiche les résultats multiples séparés par des espaces\n"
-"  -n- --numeric  ne résout pas les noms d'hôte en adresse\n"
+"  -n, --numeric  ne résout pas les noms d'hôte en adresse\n"
 "  -r, --reverse  effectue une résolution inversée : adresse vers nom\n"
 "  -V, --version  affiche sa version et quitte le programme\n"
 
@@ -256,9 +257,9 @@ msgid "low"
 msgstr "faible"
 
 #: src/ndisc.c:367
-#, fuzzy, c-format
+#, c-format
 msgid " Route                    : %s/%<PRIu8>\n"
-msgstr " Route                    : %s/%u\n"
+msgstr " Route                    : %s/%<PRIu8>\n"
 
 #: src/ndisc.c:368
 #, c-format
