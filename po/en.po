@@ -163,7 +163,7 @@ msgstr ""
 
 #: src/ndisc.c:273
 msgid "advertised prefixes"
-msgstr ""
+msgstr "advertized prefixes"
 
 #: src/ndisc.c:298
 msgid "    infinite (0xffffffff)\n"
