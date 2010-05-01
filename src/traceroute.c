@@ -1008,7 +1008,7 @@ traceroute (const char *dsthost, const char *dstport,
 	memset (&dst, 0, sizeof (dst));
 	if (connect_proto (protofd, &dst, dsthost, dstport, srchost, srcport))
 		goto error;
-	printf (_("%u hops max, "), max_ttl);
+	printf (ngettext ("%u hop max, ", "%u hops max, ", max_ttl), max_ttl);
 
 #ifdef SO_ATTACH_FILTER
 	{
@@ -1059,7 +1059,8 @@ traceroute (const char *dsthost, const char *dstport,
 	if (packet_len < overhead)
 		packet_len = overhead;
 
-	printf (_("%lu byte packets\n"), (unsigned long)packet_len);
+	printf (ngettext ("%zu byte packets\n", "%zu bytes packets\n", packet_len),
+            packet_len);
 	packet_len -= overhead;
 
 	struct timespec delay_ts;
