@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ndisc6 0.9.4\n"
 "Report-Msgid-Bugs-To: miredo-devel_no_bulk_mail@remlab.net\n"
-"POT-Creation-Date: 2009-08-04 21:35+0300\n"
+"POT-Creation-Date: 2010-05-01 10:40+0300\n"
 "PO-Revision-Date: 2007-12-27 19:14+0200\n"
 "Last-Translator: Rémi Denis-Courmont\n"
 "Language-Team: English <en@li.org>\n"
@@ -40,7 +40,7 @@ msgstr "Cannot run “%s”: %m"
 msgid "Child process hung up unexpectedly, aborting"
 msgstr ""
 
-#: rdnssd/rdnssd.c:509 src/addrinfo.c:143 src/ndisc.c:742 src/tcpspray.c:270
+#: rdnssd/rdnssd.c:509 src/addrinfo.c:144 src/ndisc.c:742 src/tcpspray.c:270
 #: src/tcptraceroute.c:42 src/traceroute.c:1206
 #, c-format
 msgid "Try \"%s -h\" for more information.\n"
@@ -66,13 +66,13 @@ msgstr ""
 msgid "rdnssd: IPv6 Recursive DNS Server discovery Daemon %s (%s)\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:538 src/addrinfo.c:151 src/ndisc.c:773 src/tcpspray.c:306
+#: rdnssd/rdnssd.c:538 src/addrinfo.c:152 src/ndisc.c:773 src/tcpspray.c:306
 #: src/traceroute.c:1253
 #, c-format
 msgid " built %s on %s\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:539 src/addrinfo.c:152 src/ndisc.c:775 src/tcpspray.c:307
+#: rdnssd/rdnssd.c:539 src/addrinfo.c:153 src/ndisc.c:775 src/tcpspray.c:307
 #: src/traceroute.c:1254
 #, c-format
 msgid "Configured with: %s\n"
@@ -87,7 +87,7 @@ msgstr "Written by Pierre Ynard and Rémi Denis-Courmont\n"
 msgid "Copyright (C) %u-%u Pierre Ynard, Remi Denis-Courmont\n"
 msgstr "Copyright © %u-%u Pierre Ynard, Rémi Denis-Courmont\n"
 
-#: rdnssd/rdnssd.c:545 src/addrinfo.c:156 src/ndisc.c:779 src/tcpspray.c:311
+#: rdnssd/rdnssd.c:545 src/addrinfo.c:157 src/ndisc.c:779 src/tcpspray.c:311
 #: src/traceroute.c:1258
 msgid ""
 "This is free software; see the source for copying conditions.\n"
@@ -112,6 +112,7 @@ msgid ""
 "\n"
 "  -4, --ipv4     only lookup IPv4 addresses\n"
 "  -6, --ipv6     only lookup IPv6 addresses\n"
+"  -c, --config   only return addresses for locally configured protocols\n"
 "  -h, --help     display this help and exit\n"
 "  -m, --multiple print multiple results separated by spaces\n"
 "  -n- --numeric  do not perform forward hostname lookup\n"
@@ -119,16 +120,16 @@ msgid ""
 "  -V, --version  display program version and exit\n"
 msgstr ""
 
-#: src/addrinfo.c:150
+#: src/addrinfo.c:151
 #, c-format
 msgid "addrinfo %s (%s)\n"
 msgstr ""
 
-#: src/addrinfo.c:153 src/ndisc.c:776 src/tcpspray.c:308 src/traceroute.c:1255
+#: src/addrinfo.c:154 src/ndisc.c:776 src/tcpspray.c:308 src/traceroute.c:1255
 msgid "Written by Remi Denis-Courmont\n"
 msgstr "Written by Rémi Denis-Courmont\n"
 
-#: src/addrinfo.c:155 src/ndisc.c:778 src/tcpspray.c:310 src/traceroute.c:1257
+#: src/addrinfo.c:156 src/ndisc.c:778 src/tcpspray.c:310 src/traceroute.c:1257
 #, c-format
 msgid "Copyright (C) %u-%u Remi Denis-Courmont\n"
 msgstr "Copyright © %u-%u Rémi Denis-Courmont\n"
