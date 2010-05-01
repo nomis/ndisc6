@@ -132,7 +132,7 @@ static int usage (const char *path)
 "  -c, --config   only return addresses for locally configured protocols\n"
 "  -h, --help     display this help and exit\n"
 "  -m, --multiple print multiple results separated by spaces\n"
-"  -n- --numeric  do not perform forward hostname lookup\n"
+"  -n, --numeric  do not perform forward hostname lookup\n"
 "  -r, --reverse  perform reverse address to hostname lookup\n"
 "  -V, --version  display program version and exit\n"), path);
 	return 0;
