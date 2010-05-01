@@ -150,19 +150,19 @@ tcpspray (const char *host, const char *serv, unsigned long n, size_t blen,
 		size_t res = fread (block, 1, blen, stream);
 		if (res < blen)
 		{
-			fprintf (stderr, _("Warning: \"%s\" is too small (%lu %s) "
-			           "to fill block of %lu %s.\n"), fillname,
-			         (unsigned long)res, ngettext ("byte", "bytes", res),
-			         (unsigned long)blen, ngettext ("byte", "bytes", blen));
+			fprintf (stderr, _("Warning: \"%s\" is too small (%zu %s) "
+			           "to fill block of %zu %s.\n"), fillname,
+			         res, ngettext ("byte", "bytes", res),
+			         blen, ngettext ("byte", "bytes", blen));
 		}
 		fclose (stream);
 	}
 
 	if (verbose)
 	{
-		printf (_("Sending %lu %s with blocksize %lu %s\n"),
-		        n * blen, ngettext ("byte", "bytes", n * blen),
-		        (unsigned long)blen, ngettext ("byte", "bytes", n * blen));
+		printf (_("Sending %ju %s with blocksize %zu %s\n"),
+		        (uintmax_t)n * blen, ngettext ("byte", "bytes", n * blen),
+		        blen, ngettext ("byte", "bytes", n * blen));
 	}
 
 	pid_t child = -1;
