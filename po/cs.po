@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ndisc6 0.9.9\n"
 "Report-Msgid-Bugs-To: miredo-devel_no_bulk_mail@remlab.net\n"
-"POT-Creation-Date: 2010-05-01 10:49+0300\n"
-"PO-Revision-Date: 2010-03-16 18:13+0100\n"
+"POT-Creation-Date: 2010-05-01 11:09+0300\n"
+"PO-Revision-Date: 2010-05-02 19:30+0200\n"
 "Last-Translator: Petr Pisar <petr.pisar@atlas.cz>\n"
 "Language-Team: Czech <translation-team-cs@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -41,7 +41,7 @@ msgid "Child process hung up unexpectedly, aborting"
 msgstr "Proces potomka se neočekávaně zasekl, ukončuji činnost"
 
 #: rdnssd/rdnssd.c:509 src/addrinfo.c:144 src/ndisc.c:742 src/tcpspray.c:270
-#: src/tcptraceroute.c:42 src/traceroute.c:1206
+#: src/tcptraceroute.c:42 src/traceroute.c:1207
 #, c-format
 msgid "Try \"%s -h\" for more information.\n"
 msgstr "Podrobnosti získáte příkazem „%s -h“.\n"
@@ -61,7 +61,7 @@ msgid ""
 "  -V, --version     display program version and exit\n"
 msgstr ""
 "Použití: %s [PŘEPÍNAČE]\n"
-"Spustí démona hledajícího IPv6 rekurzivní DNS servery (RDNSSD).\n"
+"Spustí démona hledajícího IPv6 rekurzivní DNS servery (RDNSSD).\n"
 "\n"
 "  -f, --foreground  běží na popředí\n"
 "  -H, --merge-hook  spustí tento háček vždy, když se aktualizuje resolv."
@@ -79,13 +79,13 @@ msgstr "rdnssd: Démon hledající IPv6 rekurzivní DNS servery (RDNSSD) %s (%
 
 # FIXME: Localize %1$s date using strftime("%x")
 #: rdnssd/rdnssd.c:538 src/addrinfo.c:152 src/ndisc.c:773 src/tcpspray.c:306
-#: src/traceroute.c:1253
+#: src/traceroute.c:1254
 #, c-format
 msgid " built %s on %s\n"
 msgstr " sestaveno %s na %s\n"
 
 #: rdnssd/rdnssd.c:539 src/addrinfo.c:153 src/ndisc.c:775 src/tcpspray.c:307
-#: src/traceroute.c:1254
+#: src/traceroute.c:1255
 #, c-format
 msgid "Configured with: %s\n"
 msgstr "Konfigurováno s: %s\n"
@@ -100,7 +100,7 @@ msgid "Copyright (C) %u-%u Pierre Ynard, Remi Denis-Courmont\n"
 msgstr "Copyright © %u–%u Pierre Ynard, Rémi Denis-Courmont\n"
 
 #: rdnssd/rdnssd.c:545 src/addrinfo.c:157 src/ndisc.c:779 src/tcpspray.c:311
-#: src/traceroute.c:1258
+#: src/traceroute.c:1259
 msgid ""
 "This is free software; see the source for copying conditions.\n"
 "There is NO warranty; not even for MERCHANTABILITY or\n"
@@ -120,7 +120,7 @@ msgid "Input error"
 msgstr "Chyba vstupu"
 
 #: src/addrinfo.c:127
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: %s [-4|-6] [hostnames]\n"
 "Converts names to addresses.\n"
@@ -139,9 +139,10 @@ msgstr ""
 "\n"
 "  -4, --ipv4     hledá pouze IPv4 adresy\n"
 "  -6, --ipv6     hledá pouze IPv6 adresy\n"
+"  -c, --config   vrátí pouze adresy vhodné pro místně nastavené protokoly\n"
 "  -h, --help     zobrazí tuto nápovědu a skončí\n"
 "  -m, --multiple vypíše násobné výsledky oddělené mezerami\n"
-"  -n- --numeric  neprovádí dopředné hledání jmen\n"
+"  -n, --numeric  neprovádí dopředné hledání jmen\n"
 "  -r, --reverse  zpětně dohledá k adrese jméno stroje\n"
 "  -V, --version  zobrazí verzi programu a skončí\n"
 
@@ -150,11 +151,11 @@ msgstr ""
 msgid "addrinfo %s (%s)\n"
 msgstr "addrinfo %s (%s)\n"
 
-#: src/addrinfo.c:154 src/ndisc.c:776 src/tcpspray.c:308 src/traceroute.c:1255
+#: src/addrinfo.c:154 src/ndisc.c:776 src/tcpspray.c:308 src/traceroute.c:1256
 msgid "Written by Remi Denis-Courmont\n"
 msgstr "Napsal Rémi Denis-Courmont\n"
 
-#: src/addrinfo.c:156 src/ndisc.c:778 src/tcpspray.c:310 src/traceroute.c:1257
+#: src/addrinfo.c:156 src/ndisc.c:778 src/tcpspray.c:310 src/traceroute.c:1258
 #, c-format
 msgid "Copyright (C) %u-%u Remi Denis-Courmont\n"
 msgstr "Copyright © %u–%u Rémi Denis-Courmont\n"
@@ -432,14 +433,13 @@ msgstr " (%0.3f kB/s)"
 
 #: src/tcpspray.c:153
 #, c-format
-msgid "Warning: \"%s\" is too small (%lu %s) to fill block of %lu %s.\n"
-msgstr ""
-"Varování: „%s“ je příliš malý (%lu %s) na vyplnění bloku délky %lu %s.\n"
+msgid "Warning: \"%s\" is too small (%zu %s) to fill block of %zu %s.\n"
+msgstr "Pozor: „%s“ je příliš malý (%zu %s) na vyplnění bloku délky %zu %s.\n"
 
 #: src/tcpspray.c:163
 #, c-format
-msgid "Sending %lu %s with blocksize %lu %s\n"
-msgstr "Odesílám %lu %s s velikostí bloku %lu %s\n"
+msgid "Sending %ju %s with blocksize %zu %s\n"
+msgstr "Odesílá se %ju %s s velikostí bloku %zu %s\n"
 
 #: src/tcpspray.c:180 src/traceroute.c:498
 #, c-format
@@ -450,7 +450,7 @@ msgstr "Chyba na příjmu: %s\n"
 msgid "Connection closed by peer"
 msgstr "Spojení uzavřeno druhou stranou"
 
-#: src/tcpspray.c:216 src/traceroute.c:1112
+#: src/tcpspray.c:216 src/traceroute.c:1113
 #, c-format
 msgid "Cannot send data: %s\n"
 msgstr "Data nelze odeslat: %s\n"
@@ -476,7 +476,7 @@ msgid ""
 "(the default host is the local system, the default service is discard)\n"
 msgstr ""
 "Použití: %s [PŘEPÍNAČE] <JMÉNO_STROJE/ADRESA> [SLUŽBA/ČÍSLO_PORTU]\n"
-"Použije TCP službu discrard na určeném stroji\n"
+"Použije TCP službu discard na určeném stroji\n"
 "(implicitní stroj je místní systém, implicitní služba je discard)\n"
 
 #: src/tcpspray.c:284
@@ -510,7 +510,7 @@ msgstr ""
 msgid "tcpspray6: TCP/IP bandwidth tester %s (%s)\n"
 msgstr "tcpspray6: zkoušečka TCP/IP průtoku %s (%s)\n"
 
-#: src/tcptraceroute.c:51 src/traceroute.c:1215
+#: src/tcptraceroute.c:51 src/traceroute.c:1216
 #, c-format
 msgid ""
 "Usage: %s [options] <IPv6 hostname/address> [%s]\n"
@@ -606,31 +606,36 @@ msgstr "z %s, "
 msgid "port %u, from port %u, "
 msgstr "port %u, z portu %u, "
 
-# FIXME: plural form
 #: src/traceroute.c:1011
 #, c-format
-msgid "%u hops max, "
-msgstr "max. %u hopů, "
+msgid "%u hop max, "
+msgid_plural "%u hops max, "
+msgstr[0] "max. %u hop, "
+msgstr[1] "max. %u hopy, "
+msgstr[2] "max. %u hopů, "
 
 #: src/traceroute.c:1062
 #, c-format
-msgid "%lu byte packets\n"
-msgstr "%luB packety\n"
+msgid "%zu byte packets\n"
+msgid_plural "%zu bytes packets\n"
+msgstr[0] "%zuB packety\n"
+msgstr[1] "%zuB packety\n"
+msgstr[2] "%zuB packety\n"
 
-#: src/traceroute.c:1089 src/traceroute.c:1163
+#: src/traceroute.c:1090 src/traceroute.c:1164
 #, c-format
 msgid " %3u%% completed..."
 msgstr " %3u %% hotovo…"
 
-#: src/traceroute.c:1179
+#: src/traceroute.c:1180
 msgid "                  "
 msgstr "              "
 
-#: src/traceroute.c:1216
+#: src/traceroute.c:1217
 msgid "packet length"
 msgstr "délka packetu"
 
-#: src/traceroute.c:1218
+#: src/traceroute.c:1219
 msgid ""
 "\n"
 "  -A  send TCP ACK probes\n"
@@ -680,17 +685,17 @@ msgstr ""
 "  -w  přebije délku čekání na odpověď v sekundách (implicitně: 5)\n"
 "  -z  určí délku čekání (v ms) mezi každou zkouškou (implicitně: 0)\n"
 
-#: src/traceroute.c:1252
+#: src/traceroute.c:1253
 #, c-format
 msgid "traceroute6: TCP & UDP IPv6 traceroute tool %s (%s)\n"
 msgstr "traceroute6: nástroj pro zjišťování TCP a UDP IPv6 cest %s (%s)\n"
 
-#: src/traceroute.c:1272
+#: src/traceroute.c:1273
 #, c-format
 msgid "%s: invalid hop limit\n"
 msgstr "%s: neplatné omezení počtu hopů\n"
 
-#: src/traceroute.c:1286
+#: src/traceroute.c:1287
 #, c-format
 msgid "%s: invalid packet length\n"
 msgstr "%s: neplatná délka packetu\n"
