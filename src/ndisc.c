@@ -601,10 +601,14 @@ recvadv (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
 
 		/* receives an ICMPv6 packet */
 		// TODO: use interface MTU as buffer size
-		uint8_t buf[1460];
+		union
+		{
+			uint8_t  b[1460];
+			uint64_t align;
+		} buf;
 		struct sockaddr_in6 addr;
 
-		val = recvfromLL (fd, buf, sizeof (buf), MSG_DONTWAIT, &addr);
+		val = recvfromLL (fd, &buf, sizeof (buf), MSG_DONTWAIT, &addr);
 		if (val == -1)
 		{
 			if (errno != EAGAIN)
@@ -617,7 +621,7 @@ recvadv (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
 		 && (addr.sin6_scope_id != tgt->sin6_scope_id))
 			continue;
 
-		if (parseadv (buf, val, tgt, (flags & NDISC_VERBOSE) != 0) == 0)
+		if (parseadv (buf.b, val, tgt, (flags & NDISC_VERBOSE) != 0) == 0)
 		{
 			if (flags & NDISC_VERBOSE)
 			{
