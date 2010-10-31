@@ -22,12 +22,12 @@ License (GPL) version 2 written by the Free Software Foundation, Inc.
 for full licensing details, please read COPYING.
 
   If you have further questions, you can contact me via email at:
-    rdenis (at) simphalempin (dot) com
+    reim (at) remlab (dot) net
 
   All programs are known to run on Linux (with either glibc or µclibc).
 They should also work on any recent open-source BSD variant, and might
 work on Solaris or other BSD derivatives.
 
 -- 
-Rémi Denis-Courmont <rdenis (at) simphalempin (dot) com>
+Rémi Denis-Courmont <remi (at) remlab (dot) net>
 http://www.remlab.net/ndisc6/

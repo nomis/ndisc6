@@ -19,7 +19,7 @@ dnl *  along with this program. If not, see <http://www.gnu.org/licenses/>. *
 dnl *************************************************************************
 
 AC_COPYRIGHT([Copyright (C) 2005-2010 Remi Denis-Courmont])
-AC_INIT(ndisc6, 1.0.0, rdenis@simphalempin.com)
+AC_INIT(ndisc6, 1.0.0, remi_no_bulk_mail@remlab.net)
 AC_PREREQ(2.62)
 INVOCATION="`echo "$0 $ac_configure_args" | sed -e 's/\\\/\\\\\\\/g'`"
 
