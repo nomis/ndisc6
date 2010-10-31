@@ -17,6 +17,7 @@ STABLE RELEASE 1.0.0 : Minor feature enhancements
 
 # Add --config option to addr2name and name2addr.
 # German localization (credits to Chris Leck).
+# Fix memory alignment problems on ARM and SPARC systems.
 
 ============================================================================
 STABLE RELEASE 0.9.9 : Minor feature enhancements
