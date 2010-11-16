@@ -1,5 +1,5 @@
 RELEASE NOTES for NDisc6
-version 1.0.0
+version 1.0.1
 =========================
 $Id$
 
@@ -11,6 +11,11 @@ Thanks for your help.
   You can find major changes since version 0.1.5 below. For more general
 informations on this program, see README. For syntax details, read the
 provided manual pages.
+
+============================================================================
+STABLE RELEASE 1.0.1 :
+
+# Remove the deprecated ISATAP daemon from ndisc6.
 
 ============================================================================
 STABLE RELEASE 1.0.0 : Minor feature enhancements
