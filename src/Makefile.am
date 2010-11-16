@@ -12,7 +12,7 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 	-DLOCALEDIR=\"$(localedir)\"
 AM_LIBADD = @top_builddir@/compat/libcompat.a
 
-mysuidexec_PROGRAMS = isatapd ndisc6 rdisc6 rltraceroute6
+mysuidexec_PROGRAMS = ndisc6 rdisc6 rltraceroute6
 myexec_PROGRAMS = tcptraceroute6
 myexec_SCRIPTS = tracert6
 bin_PROGRAMS = tcpspray name2addr
@@ -30,10 +30,6 @@ sed_verbose_0 = @echo "  SED    $@";
 alias_verbose = $(alias_verbose_$(V))
 alias_verbose_ = $(alias_verbose_$(AM_DEFAULT_VERBOSITY))
 alias_verbose_0 = @echo "  ALIAS  $@";
-
-# isatapd
-isatapd_SOURCES = isatapd.c isatapd.h
-isatapd_LDADD = $(LIBRT) $(AM_LIBADD)
 
 # ndisc6
 ndisc6_SOURCES = ndisc.c
