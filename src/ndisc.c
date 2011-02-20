@@ -433,6 +433,8 @@ parseadv (const uint8_t *buf, size_t len, const struct sockaddr_in6 *tgt,
 		        gettext ((v & ND_RA_FLAG_MANAGED) ? N_ ("Yes") : N_("No")));
 		printf (_("Stateful other conf.      :          %3s\n"),
 		        gettext ((v & ND_RA_FLAG_OTHER) ? N_ ("Yes") : N_("No")));
+		printf (_("Mobile home agent         :          %3s\n"),
+		        gettext ((v & ND_RA_FLAG_HOME_AGENT) ? N_ ("Yes") : N_("No")));
 		printf (_("Router preference         :       %6s\n"), pref_i2n (v));
 
 		/* Router lifetime */
