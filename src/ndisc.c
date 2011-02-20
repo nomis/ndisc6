@@ -321,6 +321,13 @@ parseprefix (const struct nd_opt_prefix_info *pi, size_t optlen, bool verbose)
 
 	if (verbose)
 	{
+		uint8_t v = pi->nd_opt_pi_flags_reserved;
+
+		printf (_("  On-link                 :          %3s\n"),
+		        gettext ((v & ND_OPT_PI_FLAG_ONLINK) ? N_ ("Yes") : N_("No")));
+		printf (_("  Autonomous address conf.:          %3s\n"),
+		        gettext ((v & ND_OPT_PI_FLAG_AUTO) ? N_ ("Yes") : N_("No")));
+
 		fputs (_("  Valid time              : "), stdout);
 		print32time (pi->nd_opt_pi_valid_time);
 		fputs (_("  Pref. time              : "), stdout);
