@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ndisc6 0.9.4\n"
 "Report-Msgid-Bugs-To: miredo-devel_no_bulk_mail@remlab.net\n"
-"POT-Creation-Date: 2010-10-31 22:58+0200\n"
+"POT-Creation-Date: 2011-02-20 15:50+0200\n"
 "PO-Revision-Date: 2007-12-27 19:14+0200\n"
 "Last-Translator: Rémi Denis-Courmont\n"
 "Language-Team: English <en@li.org>\n"
@@ -41,7 +41,7 @@ msgstr "Cannot run “%s”: %m"
 msgid "Child process hung up unexpectedly, aborting"
 msgstr ""
 
-#: rdnssd/rdnssd.c:509 src/addrinfo.c:144 src/ndisc.c:746 src/tcpspray.c:270
+#: rdnssd/rdnssd.c:509 src/addrinfo.c:144 src/ndisc.c:757 src/tcpspray.c:270
 #: src/tcptraceroute.c:42 src/traceroute.c:1207
 #, c-format
 msgid "Try \"%s -h\" for more information.\n"
@@ -67,13 +67,13 @@ msgstr ""
 msgid "rdnssd: IPv6 Recursive DNS Server discovery Daemon %s (%s)\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:538 src/addrinfo.c:152 src/ndisc.c:777 src/tcpspray.c:306
+#: rdnssd/rdnssd.c:538 src/addrinfo.c:152 src/ndisc.c:788 src/tcpspray.c:306
 #: src/traceroute.c:1254
 #, c-format
 msgid " built %s on %s\n"
 msgstr ""
 
-#: rdnssd/rdnssd.c:539 src/addrinfo.c:153 src/ndisc.c:779 src/tcpspray.c:307
+#: rdnssd/rdnssd.c:539 src/addrinfo.c:153 src/ndisc.c:790 src/tcpspray.c:307
 #: src/traceroute.c:1255
 #, c-format
 msgid "Configured with: %s\n"
@@ -88,7 +88,7 @@ msgstr "Written by Pierre Ynard and Rémi Denis-Courmont\n"
 msgid "Copyright (C) %u-%u Pierre Ynard, Remi Denis-Courmont\n"
 msgstr "Copyright © %u-%u Pierre Ynard, Rémi Denis-Courmont\n"
 
-#: rdnssd/rdnssd.c:545 src/addrinfo.c:157 src/ndisc.c:783 src/tcpspray.c:311
+#: rdnssd/rdnssd.c:545 src/addrinfo.c:157 src/ndisc.c:794 src/tcpspray.c:311
 #: src/traceroute.c:1259
 msgid ""
 "This is free software; see the source for copying conditions.\n"
@@ -126,11 +126,11 @@ msgstr ""
 msgid "addrinfo %s (%s)\n"
 msgstr ""
 
-#: src/addrinfo.c:154 src/ndisc.c:780 src/tcpspray.c:308 src/traceroute.c:1256
+#: src/addrinfo.c:154 src/ndisc.c:791 src/tcpspray.c:308 src/traceroute.c:1256
 msgid "Written by Remi Denis-Courmont\n"
 msgstr "Written by Rémi Denis-Courmont\n"
 
-#: src/addrinfo.c:156 src/ndisc.c:782 src/tcpspray.c:310 src/traceroute.c:1258
+#: src/addrinfo.c:156 src/ndisc.c:793 src/tcpspray.c:310 src/traceroute.c:1258
 #, c-format
 msgid "Copyright (C) %u-%u Remi Denis-Courmont\n"
 msgstr "Copyright © %u-%u Rémi Denis-Courmont\n"
@@ -170,12 +170,12 @@ msgstr "advertized prefixes"
 msgid "    infinite (0xffffffff)\n"
 msgstr ""
 
-#: src/ndisc.c:300 src/ndisc.c:441 src/ndisc.c:448 src/ndisc.c:457
+#: src/ndisc.c:300 src/ndisc.c:452 src/ndisc.c:459 src/ndisc.c:468
 #, c-format
 msgid "%12u (0x%08x) %s\n"
 msgstr ""
 
-#: src/ndisc.c:301 src/ndisc.c:442 src/tcpspray.c:120
+#: src/ndisc.c:301 src/ndisc.c:453 src/tcpspray.c:120
 msgid "second"
 msgid_plural "seconds"
 msgstr[0] ""
@@ -185,172 +185,194 @@ msgstr[1] ""
 msgid " Prefix                   : "
 msgstr ""
 
-#: src/ndisc.c:324
+#: src/ndisc.c:326
+#, c-format
+msgid "  On-link                 :          %3s\n"
+msgstr ""
+
+#: src/ndisc.c:327 src/ndisc.c:329 src/ndisc.c:440 src/ndisc.c:442
+#: src/ndisc.c:444 src/ndisc.c:447
+msgid "Yes"
+msgstr ""
+
+#: src/ndisc.c:327 src/ndisc.c:329 src/ndisc.c:440 src/ndisc.c:442
+#: src/ndisc.c:444 src/ndisc.c:447
+msgid "No"
+msgstr ""
+
+#: src/ndisc.c:328
+#, c-format
+msgid "  Autonomous address conf.:          %3s\n"
+msgstr ""
+
+#: src/ndisc.c:331
 msgid "  Valid time              : "
 msgstr ""
 
-#: src/ndisc.c:326
+#: src/ndisc.c:333
 msgid "  Pref. time              : "
 msgstr ""
 
-#: src/ndisc.c:338
+#: src/ndisc.c:345
 msgid " MTU                      : "
 msgstr ""
 
-#: src/ndisc.c:340 src/tcpspray.c:119 src/tcpspray.c:155 src/tcpspray.c:156
+#: src/ndisc.c:347 src/tcpspray.c:119 src/tcpspray.c:155 src/tcpspray.c:156
 #: src/tcpspray.c:164 src/tcpspray.c:165
 msgid "byte"
 msgid_plural "bytes"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ndisc.c:341
+#: src/ndisc.c:348
 msgid "valid"
 msgstr ""
 
-#: src/ndisc.c:341
+#: src/ndisc.c:348
 msgid "invalid"
 msgstr ""
 
-#: src/ndisc.c:349
+#: src/ndisc.c:356
 msgid "medium"
 msgstr ""
 
-#: src/ndisc.c:349
+#: src/ndisc.c:356
 msgid "high"
 msgstr ""
 
-#: src/ndisc.c:349
+#: src/ndisc.c:356
 msgid "medium (invalid)"
 msgstr ""
 
-#: src/ndisc.c:349
+#: src/ndisc.c:356
 msgid "low"
 msgstr ""
 
-#: src/ndisc.c:367
+#: src/ndisc.c:374
 #, c-format
 msgid " Route                    : %s/%<PRIu8>\n"
 msgstr ""
 
-#: src/ndisc.c:368
+#: src/ndisc.c:375
 #, c-format
 msgid "  Route preference        :       %6s\n"
 msgstr ""
 
-#: src/ndisc.c:369
+#: src/ndisc.c:376
 msgid "  Route lifetime          : "
 msgstr ""
 
-#: src/ndisc.c:391
+#: src/ndisc.c:398
 #, c-format
 msgid " Recursive DNS server     : %s\n"
 msgstr ""
 
-#: src/ndisc.c:394
+#: src/ndisc.c:401
 msgid "  DNS server lifetime     : "
 msgid_plural "  DNS servers lifetime    : "
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ndisc.c:423
+#: src/ndisc.c:430
 msgid "Hop limit                 :    "
 msgstr ""
 
-#: src/ndisc.c:426
+#: src/ndisc.c:433
 #, c-format
 msgid "      %3u"
 msgstr ""
 
-#: src/ndisc.c:428
+#: src/ndisc.c:435
 msgid "undefined"
-msgstr ""
-
-#: src/ndisc.c:429
-#, c-format
-msgid " (      0x%02x)\n"
-msgstr ""
-
-#: src/ndisc.c:432
-#, c-format
-msgid "Stateful address conf.    :          %3s\n"
-msgstr ""
-
-#: src/ndisc.c:433 src/ndisc.c:435
-msgid "Yes"
-msgstr ""
-
-#: src/ndisc.c:433 src/ndisc.c:435
-msgid "No"
-msgstr ""
-
-#: src/ndisc.c:434
-#, c-format
-msgid "Stateful other conf.      :          %3s\n"
 msgstr ""
 
 #: src/ndisc.c:436
 #, c-format
-msgid "Router preference         :       %6s\n"
+msgid " (      0x%02x)\n"
 msgstr ""
 
 #: src/ndisc.c:439
-msgid "Router lifetime           : "
+#, c-format
+msgid "Stateful address conf.    :          %3s\n"
+msgstr ""
+
+#: src/ndisc.c:441
+#, c-format
+msgid "Stateful other conf.      :          %3s\n"
+msgstr ""
+
+#: src/ndisc.c:443
+#, c-format
+msgid "Mobile home agent         :          %3s\n"
 msgstr ""
 
 #: src/ndisc.c:445
+#, c-format
+msgid "Router preference         :       %6s\n"
+msgstr ""
+
+#: src/ndisc.c:446
+#, c-format
+msgid "Neighbor discovery proxy  :          %3s\n"
+msgstr ""
+
+#: src/ndisc.c:450
+msgid "Router lifetime           : "
+msgstr ""
+
+#: src/ndisc.c:456
 msgid "Reachable time            : "
 msgstr ""
 
-#: src/ndisc.c:449 src/ndisc.c:458
+#: src/ndisc.c:460 src/ndisc.c:469
 msgid "millisecond"
 msgid_plural "milliseconds"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ndisc.c:451 src/ndisc.c:460
+#: src/ndisc.c:462 src/ndisc.c:471
 msgid " unspecified (0x00000000)\n"
 msgstr ""
 
-#: src/ndisc.c:454
+#: src/ndisc.c:465
 msgid "Retransmit time           : "
 msgstr ""
 
-#: src/ndisc.c:483
+#: src/ndisc.c:494
 msgid " Source link-layer address: "
 msgstr ""
 
-#: src/ndisc.c:615
+#: src/ndisc.c:626
 msgid "Receiving ICMPv6 packet"
 msgstr ""
 
-#: src/ndisc.c:632
+#: src/ndisc.c:643
 #, c-format
 msgid " from %s\n"
 msgstr ""
 
-#: src/ndisc.c:658 src/traceroute.c:922 src/traceroute.c:930
+#: src/ndisc.c:669 src/traceroute.c:922 src/traceroute.c:930
 msgid "Raw IPv6 socket"
 msgstr ""
 
-#: src/ndisc.c:689
+#: src/ndisc.c:700
 #, c-format
 msgid "Soliciting %s (%s) on %s...\n"
 msgstr ""
 
-#: src/ndisc.c:709
+#: src/ndisc.c:720
 msgid "Sending ICMPv6 packet"
 msgstr ""
 
-#: src/ndisc.c:725
+#: src/ndisc.c:736
 msgid "Timed out."
 msgstr ""
 
-#: src/ndisc.c:734
+#: src/ndisc.c:745
 msgid "No response."
 msgstr ""
 
-#: src/ndisc.c:756
+#: src/ndisc.c:767
 #, c-format
 msgid ""
 "\n"
@@ -377,7 +399,7 @@ msgstr ""
 "  -w, --wait     how long to wait for a response [ms] (default: 1000)\n"
 "\n"
 
-#: src/ndisc.c:776
+#: src/ndisc.c:787
 #, c-format
 msgid "ndisc6: IPv6 Neighbor/Router Discovery userland tool %s (%s)\n"
 msgstr ""
