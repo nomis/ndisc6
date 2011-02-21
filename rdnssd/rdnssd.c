@@ -184,7 +184,7 @@ int parse_nd_opts (const struct nd_opt_hdr *opt, size_t opts_len, unsigned int i
 		   ((const uint8_t *) opt + (opt->nd_opt_len << 3))) {
 		struct nd_opt_rdnss *rdnss_opt;
 		size_t nd_opt_len = opt->nd_opt_len;
-		uint32_t lifetime;
+		uint64_t lifetime;
 
 		if (nd_opt_len == 0 || opts_len < (nd_opt_len << 3))
 			return -1;
@@ -204,7 +204,11 @@ int parse_nd_opts (const struct nd_opt_hdr *opt, size_t opts_len, unsigned int i
 			now = ts.tv_sec;
 		}
 
-		lifetime = now + ntohl(rdnss_opt->nd_opt_rdnss_lifetime);
+		lifetime = (uint64_t)now +
+		           (uint64_t)ntohl(rdnss_opt->nd_opt_rdnss_lifetime);
+		/* This should fit in a time_t */
+		if (lifetime > INT32_MAX)
+			lifetime = INT32_MAX;
 
 		for (struct in6_addr *addr = (struct in6_addr *) (rdnss_opt + 1);
 		     nd_opt_len >= 2; addr++, nd_opt_len -= 2)
