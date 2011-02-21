@@ -1,14 +1,16 @@
 # Czech translation of ndisc6.
 # Copyright (C) 2008 Rémi Denis-Courmont
 # This file is distributed under the same license as the ndisc6 package.
-# Petr Pisar <petr.pisar@atlas.cz>, 2008.
+# Petr Pisar <petr.pisar@atlas.cz>, 2008, 2011.
+#
+# neighbor discovery → objevování sousedů
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: ndisc6 0.9.9\n"
+"Project-Id-Version: ndisc6 1.0.2\n"
 "Report-Msgid-Bugs-To: miredo-devel_no_bulk_mail@remlab.net\n"
 "POT-Creation-Date: 2011-02-20 15:50+0200\n"
-"PO-Revision-Date: 2010-05-02 19:30+0200\n"
+"PO-Revision-Date: 2011-02-20 19:51+0100\n"
 "Last-Translator: Petr Pisar <petr.pisar@atlas.cz>\n"
 "Language-Team: Czech <translation-team-cs@lists.sourceforge.net>\n"
 "Language: cs\n"
@@ -76,7 +78,7 @@ msgstr ""
 #: rdnssd/rdnssd.c:536
 #, c-format
 msgid "rdnssd: IPv6 Recursive DNS Server discovery Daemon %s (%s)\n"
-msgstr "rdnssd: Démon hledající IPv6 rekurzivní DNS servery (RDNSSD) %s (%s)\n"
+msgstr "rdnssd: Démon hledající IPv6 rekurzivní DNS servery (RDNSSD) %s (%s)\n"
 
 # FIXME: Localize %1$s date using strftime("%x")
 #: rdnssd/rdnssd.c:538 src/addrinfo.c:152 src/ndisc.c:788 src/tcpspray.c:306
@@ -218,9 +220,9 @@ msgid " Prefix                   : "
 msgstr " Předpona                 : "
 
 #: src/ndisc.c:326
-#, fuzzy, c-format
+#, c-format
 msgid "  On-link                 :          %3s\n"
-msgstr " MTU                      :"
+msgstr "  Na lince                :          %3s\n"
 
 #: src/ndisc.c:327 src/ndisc.c:329 src/ndisc.c:440 src/ndisc.c:442
 #: src/ndisc.c:444 src/ndisc.c:447
@@ -233,9 +235,9 @@ msgid "No"
 msgstr "Ne"
 
 #: src/ndisc.c:328
-#, fuzzy, c-format
+#, c-format
 msgid "  Autonomous address conf.:          %3s\n"
-msgstr "Stavová konfigurace adres :          %3s\n"
+msgstr "  Autonomní konfigurace adres :      %3s\n"
 
 #: src/ndisc.c:331
 msgid "  Valid time              : "
@@ -336,9 +338,9 @@ msgid "Stateful other conf.      :          %3s\n"
 msgstr "Stavová další konfigurace :          %3s\n"
 
 #: src/ndisc.c:443
-#, fuzzy, c-format
+#, c-format
 msgid "Mobile home agent         :          %3s\n"
-msgstr "Stavová další konfigurace :          %3s\n"
+msgstr "Domácí agent IP mobility  :          %3s\n"
 
 #: src/ndisc.c:445
 #, c-format
@@ -348,7 +350,7 @@ msgstr "Přednost routeru          :       %6s\n"
 #: src/ndisc.c:446
 #, c-format
 msgid "Neighbor discovery proxy  :          %3s\n"
-msgstr ""
+msgstr "Proxy objevování sousedů  :          %3s\n"
 
 #: src/ndisc.c:450
 msgid "Router lifetime           : "
@@ -427,7 +429,7 @@ msgstr ""
 "  -h, --help     zobrazí tuto nápovědu a skončí\n"
 "  -m, --multiple počká na a zobrazí všechny odpovědi\n"
 "  -n, --numeric  nepřekládá jména strojů\n"
-"  -q, --quiet    zobrazí pouze %s (hlavně pro skripty)\n"
+"  -q, --quiet    zobrazí pouze: %s (hlavně pro skripty)\n"
 "  -r, --retry    maximální počet pokusů (implicitně: 3)\n"
 "  -V, --version  zobrazí verzi programu a skončí\n"
 "  -v, --verbose  vypisuje podrobnosti (toto je implicitní chování)\n"
@@ -499,8 +501,8 @@ msgid ""
 "(the default host is the local system, the default service is discard)\n"
 msgstr ""
 "Použití: %s [PŘEPÍNAČE] <JMÉNO_STROJE/ADRESA> [SLUŽBA/ČÍSLO_PORTU]\n"
-"Použije TCP službu discard na určeném stroji\n"
-"(implicitní stroj je místní systém, implicitní služba je discard)\n"
+"Použije TCP službu discard na určeném stroji.\n"
+"(Implicitní stroj je místní systém, implicitní služba je discard.)\n"
 
 #: src/tcpspray.c:284
 msgid ""
@@ -517,8 +519,8 @@ msgid ""
 "  -v  enable verbose output\n"
 msgstr ""
 "\n"
-"  -4  vynutí použití rodiny IPv4 protokolů\n"
-"  -6  vynutí použití rodiny IPv6 protokolů\n"
+"  -4  vynutí použití rodiny protokolů IPv4\n"
+"  -6  vynutí použití rodiny protokolů IPv6\n"
 "  -b  určí velikost bloku v bajtech (implicitně: 1024)\n"
 "  -d  čeká zadanou dobu (µs) mezi každým blokem (implicitně: 0)\n"
 "  -e  provádí oboustranný test (TCP Echo místo TCP Discard)\n"
@@ -584,13 +586,13 @@ msgstr ""
 "  -n  neprovádí zpětný překlad adres\n"
 "  -p  přebije zdrojové číslo TCP portu\n"
 "  -q  přebije počet zkušebních dotazů na hop (implicitně: 3)\n"
-"  -r  nesměruje packetu\n"
+"  -r  nesměruje packety\n"
 "  -S  odesílá TCP SYN packety (implicitní)\n"
 "  -s  určí zdrojovou IPv6 adresu zkušebních packetů\n"
 "  -t  nastaví třídu provozu zkušebním packetům\n"
 "  -V, --version  zobrazí verzi programu a skončí\n"
-"  -w  přebije délku čekání na odpověď v sekundách (implicitně: 5)\n"
-"  -z  určí délku čekání (v ms) mezi každou zkouškou (implicitně: 0)\n"
+"  -w  přebije dobu čekání na odpověď v sekundách (implicitně: 5)\n"
+"  -z  určí dobu čekání (v ms) mezi každou zkouškou (implicitně: 0)\n"
 
 #: src/traceroute.c:621
 #, c-format

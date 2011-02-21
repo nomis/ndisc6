@@ -1,14 +1,14 @@
 # Translation of ndisc6 to German
 # Copyright (C) 2005-2007 Rémi Denis-Courmont, Pierre Ynard.
 # This file is distributed under the same license as the ndisc6 package.
-# Chris Leick <c.leick@vollbio.de>, 2010.
+# Chris Leick <c.leick@vollbio.de>, 2010, 2011.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: ndisc6 0.9.8\n"
+"Project-Id-Version: ndisc6 1.0.2\n"
 "Report-Msgid-Bugs-To: miredo-devel_no_bulk_mail@remlab.net\n"
 "POT-Creation-Date: 2011-02-20 15:50+0200\n"
-"PO-Revision-Date: 2010-05-01 22:36+0100\n"
+"PO-Revision-Date: 2011-02-21 18:36+0100\n"
 "Last-Translator: Chris Leick <c.leick@vollbio.de>\n"
 "Language-Team: German <debian-l10n-german@lists.debian.org>\n"
 "Language: de\n"
@@ -76,7 +76,7 @@ msgstr ""
 #: rdnssd/rdnssd.c:536
 #, c-format
 msgid "rdnssd: IPv6 Recursive DNS Server discovery Daemon %s (%s)\n"
-msgstr "rdnssd: Rekursiver IPv6-DNS-Server-Such-Daemon %s (%s)\n"
+msgstr "rdnssd: rekursiver IPv6-DNS-Server-Such-Daemon %s (%s)\n"
 
 #: rdnssd/rdnssd.c:538 src/addrinfo.c:152 src/ndisc.c:788 src/tcpspray.c:306
 #: src/traceroute.c:1254
@@ -216,9 +216,9 @@ msgid " Prefix                   : "
 msgstr " Präfix                   : "
 
 #: src/ndisc.c:326
-#, fuzzy, c-format
+#, c-format
 msgid "  On-link                 :          %3s\n"
-msgstr " MTU                      : "
+msgstr "  On-link                 :          %3s\n"
 
 #: src/ndisc.c:327 src/ndisc.c:329 src/ndisc.c:440 src/ndisc.c:442
 #: src/ndisc.c:444 src/ndisc.c:447
@@ -231,9 +231,9 @@ msgid "No"
 msgstr "Nein"
 
 #: src/ndisc.c:328
-#, fuzzy, c-format
+#, c-format
 msgid "  Autonomous address conf.:          %3s\n"
-msgstr "Zustandsorientierte Adresskonf. :    %3s\n"
+msgstr "  Selbständige Adresskonf.:          %3s\n"
 
 #: src/ndisc.c:331
 msgid "  Valid time              : "
@@ -332,9 +332,9 @@ msgid "Stateful other conf.      :          %3s\n"
 msgstr "Andere zustandsorientierte Konf. :   %3s\n"
 
 #: src/ndisc.c:443
-#, fuzzy, c-format
+#, c-format
 msgid "Mobile home agent         :          %3s\n"
-msgstr "Andere zustandsorientierte Konf. :   %3s\n"
+msgstr "Mobiler Home-Agent        :          %3s\n"
 
 #: src/ndisc.c:445
 #, c-format
@@ -344,7 +344,7 @@ msgstr "Router-Einstellung        :       %6s\n"
 #: src/ndisc.c:446
 #, c-format
 msgid "Neighbor discovery proxy  :          %3s\n"
-msgstr ""
+msgstr "Nachbarschaftsermittlungs-Proxy:     %3s\n"
 
 #: src/ndisc.c:450
 msgid "Router lifetime           : "
