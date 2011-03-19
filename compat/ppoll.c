@@ -37,7 +37,13 @@ int ppoll (struct pollfd *restrict fds, int n,
            const sigset_t *restrict sigset)
 {
 	sigset_t origset;
+	int timeout:
 	int val;
+
+	if (ts != NULL)
+		timeout = (ts->tv_sec * 1000) + (ts->tv_nsec / 1000000);
+	else
+		timeout = -1;
 
 	/* NOTE: ppoll() was introduced to fix the race condition between
 	 * sigprocmask()/pthread_sigmask() and poll(). This replacement
@@ -55,7 +61,7 @@ int ppoll (struct pollfd *restrict fds, int n,
 	sigprocmask (SIG_SETMASK, sigset, &origset);
 #endif
 
-	val = poll (fds, n, (ts->tv_sec * 1000) + (ts->tv_nsec / 1000000));
+	val = poll (fds, n, timeout);
 
 #if 0
 	pthread_sigmask (SIG_SETMASK, &origset, NULL); /* cannot fail */
