@@ -37,7 +37,7 @@ int ppoll (struct pollfd *restrict fds, int n,
            const sigset_t *restrict sigset)
 {
 	sigset_t origset;
-	int timeout:
+	int timeout;
 	int val;
 
 	if (ts != NULL)
