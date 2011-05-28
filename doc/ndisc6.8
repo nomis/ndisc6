@@ -16,8 +16,8 @@
 .SH NAME
 ndisc6 \- ICMPv6 Neighbor Discovery tool
 .SH SYNOPSIS
-.BR "ndisc6" " [" "-1mnqv" "] [" "-r attempts" "] [" "-w wait_ms" "] <"
-.BR "IPv6 address" "> <" "iface" ">"
+.BR "ndisc6" " [" "-1mnqv" "] [" "-r attempts" "] [" "-w wait_ms" "]"
+.BR "" "<" "IPv6 address" "> <" "iface" ">"
 
 .SH DESCRIPTON
 .B NDisc6
@@ -73,6 +73,13 @@ Display verbose information. That is the default.
 By default, ndisc6 waits 1 second between each attempts
 (RETRANS_TIMER from RFC2461).
 
+.PP
+.RB "If " "ndisc6" " does not receive any response after the specified number"
+.RI "of attempts waiting for " "wait_ms" " milliseconds each time, it will"
+exit with code 2. On error, it exits with code 1.
+Otherwise it exits with code 0. This makes it possible to use the exit
+code to see if a host is on-link or not.
+
 .SH DIAGNOSTICS
 
 If you get no response while you know the remote host is up, it is
@@ -82,12 +89,13 @@ Neighbor Discovery packets received from nodes not on the same link
 (i.e. Ethernet segment), for the sake of security. Technically, that is
 done by ensuring that the Hop limit (TTL) is 255.
 
-Note that you cannot use ndisc6 to lookup the local host's link-layer
+.RB "Note that you cannot use " "ndisc6" " to lookup the local host's link-layer"
 address.
 
 .SH SECURITY
-.RI "ndisc6 should be " "setuid" " " "root" " to allow use by non "
-privileged users. It will drop its root privileges before any attempt
+.RB "" "ndisc6" " "
+.RI "should be " "setuid" " " "root" " to allow use by"
+non-privileged users. It will drop its root privileges before any attempt
 is made to send or receive data from the network to reduce the possible
 impact of a security vulnerability.
 
