@@ -220,22 +220,32 @@ int parse_nd_opts (const struct nd_opt_hdr *opt, size_t opts_len, unsigned int i
 
 }
 
-
-static int drop_privileges(const char *username)
+static int drop_privileges (const char *username)
 {
-	if (username) {
-		struct passwd *pw = getpwnam(username);
+	if (username == NULL)
+		return 0;
 
-		if (pw == NULL) {
-			syslog (LOG_ERR, _("Cannot find user \"%s\""), username);
-			return -1;
-		}
-
-		setgid (pw->pw_gid);
-		initgroups (username, pw->pw_gid);
-		setuid(pw->pw_uid);
+	struct passwd *pw = getpwnam (username);
+	if (pw == NULL)
+	{
+		syslog (LOG_ERR, _("Cannot find user \"%s\""), username);
+		return -1;
 	}
-
+	if (setgid (pw->pw_gid))
+	{
+		syslog (LOG_CRIT, _("Fatal error (%s): %m"), "setgid");
+		return -1;
+	}
+	if (initgroups (username, pw->pw_gid))
+	{
+		syslog (LOG_CRIT, _("Fatal error (%s): %m"), "setgid");
+		return -1;
+	}
+	if (setuid (pw->pw_uid))
+	{
+		syslog (LOG_CRIT, _("Fatal error (%s): %m"), "setuid");
+		return -1;
+	}
 	return 0;
 }
 
