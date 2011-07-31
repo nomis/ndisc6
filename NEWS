@@ -17,6 +17,8 @@ STABLE RELEASE 1.0.2 :
 
 # rdisc6: print RA ND proxy bit.
 # rdisc6: print RA prefix flags.
+# rdnssd: check for errors while dropping privileges
+# Fix compilation on BSD.
 
 ============================================================================
 STABLE RELEASE 1.0.1 :
