@@ -56,7 +56,6 @@
 
 static time_t now;
 
-
 typedef struct
 {
 	struct in6_addr addr;
@@ -155,6 +154,9 @@ static void rdnss_update (const struct in6_addr *addr, unsigned int ifindex, tim
 			/* No more room? replace the most obsolete entry */
 			if ((expiry - servers.list[MAX_RDNSS - 1].expiry) >= 0)
 				i = MAX_RDNSS - 1;
+			else
+				/* Do not write after end of the table */
+				return;
 		}
 	}
 
@@ -176,43 +178,54 @@ static void rdnss_update (const struct in6_addr *addr, unsigned int ifindex, tim
 #endif
 }
 
+void parse_rdnss (const struct nd_opt_hdr *opt, unsigned int ifindex)
+{
+	struct nd_opt_rdnss *rdnss_opt;
+	size_t nd_opt_len = opt->nd_opt_len;
+	uint64_t lifetime;
+
+	if (nd_opt_len < 3 /* too short per RFC */
+			|| (nd_opt_len & 1) == 0) /* bad (even) length */
+		return;
+	
+	rdnss_opt = (struct nd_opt_rdnss *) opt;
+	
+	{
+		struct timespec ts;
+		mono_gettime (&ts);
+		now = ts.tv_sec;
+	}
+	
+	lifetime = (uint64_t)now +
+	           (uint64_t)ntohl(rdnss_opt->nd_opt_rdnss_lifetime);
+	/* This should fit in a time_t */
+	if (lifetime > INT32_MAX)
+		lifetime = INT32_MAX;
+	
+	for (struct in6_addr *addr = (struct in6_addr *) (rdnss_opt + 1);
+			 nd_opt_len >= 2; addr++, nd_opt_len -= 2)
+		rdnss_update(addr, ifindex, lifetime);
+}
+
 int parse_nd_opts (const struct nd_opt_hdr *opt, size_t opts_len, unsigned int ifindex)
 {
 	for (; opts_len >= sizeof(struct nd_opt_hdr);
 	     opts_len -= opt->nd_opt_len << 3,
 	     opt = (const struct nd_opt_hdr *)
 		   ((const uint8_t *) opt + (opt->nd_opt_len << 3))) {
-		struct nd_opt_rdnss *rdnss_opt;
-		size_t nd_opt_len = opt->nd_opt_len;
-		uint64_t lifetime;
 
-		if (nd_opt_len == 0 || opts_len < (nd_opt_len << 3))
+		if (opt->nd_opt_len == 0 || opts_len < (opt->nd_opt_len << 3))
 			return -1;
 
-		if (opt->nd_opt_type != ND_OPT_RDNSS)
-			continue;
-
-		if (nd_opt_len < 3 /* too short per RFC */
-			|| (nd_opt_len & 1) == 0) /* bad (even) length */
-			continue;
-
-		rdnss_opt = (struct nd_opt_rdnss *) opt;
-
+		switch (opt->nd_opt_type)
 		{
-			struct timespec ts;
-			mono_gettime (&ts);
-			now = ts.tv_sec;
+		case ND_OPT_RDNSS:
+			parse_rdnss(opt, ifindex);
+			break;
+			
+		default:
+			continue;
 		}
-
-		lifetime = (uint64_t)now +
-		           (uint64_t)ntohl(rdnss_opt->nd_opt_rdnss_lifetime);
-		/* This should fit in a time_t */
-		if (lifetime > INT32_MAX)
-			lifetime = INT32_MAX;
-
-		for (struct in6_addr *addr = (struct in6_addr *) (rdnss_opt + 1);
-		     nd_opt_len >= 2; addr++, nd_opt_len -= 2)
-			rdnss_update(addr, ifindex, lifetime);
 
 	}
 
