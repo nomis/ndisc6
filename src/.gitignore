@@ -1,0 +1,10 @@
+addr2name
+dnssort
+name2addr
+ndisc6
+rdisc6
+rltraceroute6
+tcpspray
+tcpspray6
+tcptraceroute6
+tracert6

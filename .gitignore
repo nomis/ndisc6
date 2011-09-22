@@ -1,0 +1,16 @@
+*.a
+*.cache
+*.o
+.deps
+ABOUT-NLS
+aclocal.m4
+admin
+config.h
+config.h.in
+config.log
+config.status
+configure
+INSTALL
+Makefile
+Makefile.in
+stamp-*
