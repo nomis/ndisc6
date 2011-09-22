@@ -1,6 +1,5 @@
 /*
  * gettime.h - compatibility wrapper around clock_gettime()
- * $Id$
  */
 
 /*************************************************************************

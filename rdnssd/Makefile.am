@@ -1,5 +1,4 @@
 # Makefile.am - rdnssd/ directory Makefile for ndisc6
-# $Id$
 
 # Copyright © 2006-2007 Rémi Denis-Courmont
 # This file is distributed under the same license as the ndisc6 package.

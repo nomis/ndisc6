@@ -1,6 +1,5 @@
 #!/bin/sh
 # VCS package rebuild script
-# $Id$
 
 # *************************************************************************
 # *  Copyright © 2006 Rémi Denis-Courmont.                                *

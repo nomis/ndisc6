@@ -1,6 +1,5 @@
 /*
  * tcptraceroute.c - tcptraceroute-like wrapper around rltraceroute6
- * $Id$
  */
 
 /*************************************************************************

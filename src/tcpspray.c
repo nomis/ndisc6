@@ -1,7 +1,6 @@
 /*
  * tcpspray.c - Address family independant complete rewrite of tcpspray
  * Plus, this file has a clear copyright statement.
- * $Id$
  */
 
 /*************************************************************************

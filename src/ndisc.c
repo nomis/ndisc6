@@ -1,6 +1,5 @@
 /*
  * ndisc.c - ICMPv6 neighbour discovery command line tool
- * $Id$
  */
 
 /*************************************************************************

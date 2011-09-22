@@ -1,6 +1,5 @@
 /**
  * rdnssd.h - daemon for DNS configuration from ICMPv6 RA
- * $Id$
  */
 
 /*************************************************************************

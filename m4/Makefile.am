@@ -1,5 +1,4 @@
 # Makefile.am - m4 Makefile for ndisc6
-# $Id$
 
 # Copyright © 2006 Rémi Denis-Courmont
 # This file is distributed under the same license as the ndisc6 package.

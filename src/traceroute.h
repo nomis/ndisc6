@@ -1,6 +1,5 @@
 /*
  * traceroute.h - TCP/IPv6 traceroute tool common header
- * $Id$
  */
 
 /*************************************************************************

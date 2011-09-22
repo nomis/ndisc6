@@ -1,8 +1,7 @@
 #! @PERL@
 #
 # Perl script to sort DNS names
-# 
-# $Id$
+#
 
 # *************************************************************************
 # *  Copyright © 2004-2006 Rémi Denis-Courmont.                           *

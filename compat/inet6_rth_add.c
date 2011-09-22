@@ -1,6 +1,5 @@
 /*
  * inet6_rth_add.c - inet6_rth_* replacement for Routing Header type 0
- * $Id$
  */
 
 /*************************************************************************

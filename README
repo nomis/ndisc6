@@ -1,6 +1,5 @@
 NDisc6 : IPv6 diagnostic tools
 ===============================
-$Id$
 Copyright © 2005-2006 Rémi Denis-Courmont.
 
   This package gathers a few diagnostic tools for IPv6 networks:

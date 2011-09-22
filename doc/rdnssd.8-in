@@ -99,6 +99,4 @@ resolv.conf(5), rdisc6(8), ipv6(7)
 .SH AUTHOR
 Pierre Ynard <linkfanel at yahoo.fr>
 
-$Id$
-
 http://www.remlab.net/ndisc6/
