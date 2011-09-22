@@ -59,6 +59,13 @@
 # define IPV6_RECVHOPLIMIT IPV6_HOPLIMIT
 #endif
 
+/* BSD-like systems define ND_RA_FLAG_HA instead of ND_RA_FLAG_HOME_AGENT */
+#ifndef ND_RA_FLAG_HOME_AGENT
+# ifdef ND_RA_FLAG_HA
+#  define ND_RA_FLAG_HOME_AGENT ND_RA_FLAG_HA
+# endif
+#endif
+
 #ifndef AI_IDN
 # define AI_IDN 0
 #endif
