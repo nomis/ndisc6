@@ -17,28 +17,29 @@ SUBDIRS = po doc compat src rdnssd
 DIST_SUBDIRS = m4 $(SUBDIRS)
 noinst_HEADERS = include/gettext.h
 
-DISTCLEANFILES = stamp-svn
+DISTCLEANFILES = stamp-git
 
 distclean-local:
 	test "$(top_srcdir)" = "$(top_builddir)" || rm -f ChangeLog
 
-dist-hook: stamp-svn
+dist-hook: stamp-git
 
-stamp-svn:
-	@rev=$$(LANG=C svnversion "$(srcdir)" 2>/dev/null || echo exported) ; \
-	oldrev=$$(cat stamp-svn 2>/dev/null || true) ; \
+stamp-git:
+	@LANG=C ; \
+	rev=$$(cd "$(scrdir)" && git describe || echo exported) ; \
+	oldrev=$$(cat stamp-git 2>/dev/null || true) ; \
 	if test "$$rev" != "$$oldrev"; then \
-		echo "New SVN revision is $$rev." ; \
+		echo "New revision is: $$rev" ; \
 		if test "$$rev" != "exported"; then \
 			echo -n "Rebuilding ChangeLog... " ; \
-			LANG=C svn -v --non-interactive log "$(srcdir)" > ChangeLog || exit $$? ; \
+			(cd "$(srcdir)" && git log) > ChangeLog || exit $$? ; \
 			echo "OK" ; \
 		fi ; \
-		echo "$$rev" > $@ ; \
 	fi
+	echo "$$rev" > stamp-git
 
 ChangeLog:
-	$(MAKE) $(AM_MAKEFLAGS) stamp-svn
+	$(MAKE) $(AM_MAKEFLAGS) stamp-git
 	touch $@
 
-.PHONY: stamp-svn
+.PHONY: stamp-git
