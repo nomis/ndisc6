@@ -1,5 +1,5 @@
 #!/bin/sh
-# SVN package rebuild script
+# VCS package rebuild script
 # $Id$
 
 # *************************************************************************
@@ -18,7 +18,7 @@
 # *************************************************************************
 
 if test ! -f doc/rdisc6.8 ; then
-	echo "You must run this script from your ndisc6 SVN directory."
+	echo "You must run this script from your ndisc6 source directory."
 	exit 1
 fi
 
