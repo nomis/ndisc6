@@ -19,9 +19,6 @@ noinst_HEADERS = include/gettext.h
 
 DISTCLEANFILES = stamp-svn
 
-distcheck-hook:
-	cd doc && $(MAKE) $(AM_MAKEFLAGS) distcheck-hook
-
 distclean-local:
 	test "$(top_srcdir)" = "$(top_builddir)" || rm -f ChangeLog
 

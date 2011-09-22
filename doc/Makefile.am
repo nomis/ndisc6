@@ -45,9 +45,3 @@ uninstall-hook:
 	done
 	unlink "$(DESTDIR)$(man1dir)/tcpspray6.1"
 	unlink "$(DESTDIR)$(man1dir)/name2addr.1"
-
-# Make sure manpages are plain ASCII
-distcheck-hook:
-	cd "$(srcdir)" && \
-	cat $(SOURCES_MAN) | grep -ve '\.\\"' | \
-		iconv -f ASCII >/dev/null
