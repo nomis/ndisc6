@@ -50,6 +50,11 @@
 #include <arpa/inet.h> /* inet_ntop() */
 #include <net/if.h> /* if_nametoindex() */
 
+#ifndef __linux__
+# include <net/if_dl.h> /* Link-Level sockaddr structure sockaddr_dl */
+# include <ifaddrs.h> /* getifaddrs and freeifaddrs*/
+#endif
+
 #include <netinet/in.h>
 #include <netinet/icmp6.h>
 
@@ -169,6 +174,20 @@ getmacaddress (const char *ifname, uint8_t *addr)
 	memcpy (addr, req.ifr_hwaddr.sa_data, 6);
 	return 0;
 # else
+	/* No SIOCGIFHWADDR, which seems Linux specific. */
+	struct ifaddrs *ifa = NULL, *ifp;
+	getifaddrs(&ifa);
+	ifp = ifa;    /* preserve the address of ifa to free memory later */
+	while (ifp != NULL) {
+		if (ifp->ifa_addr->sa_family == AF_LINK && strcmp(ifp->ifa_name, ifname) == 0) {
+			const struct sockaddr_dl* sdl = (const struct sockaddr_dl*) ifp->ifa_addr;
+			memcpy(addr, sdl->sdl_data + sdl->sdl_nlen, 6);
+			freeifaddrs(ifa);
+			return 0;
+		}
+		ifp = ifp->ifa_next;
+	}
+	freeifaddrs(ifa);
 	(void)ifname;
 	(void)addr;
 	return -1;
