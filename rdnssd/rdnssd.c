@@ -62,6 +62,14 @@ typedef struct
 	time_t          expiry;
 } rdnss_t;
 
+#define MAX_DOMAINLEN 256 // Maximum length according to resolv.conf(5)
+
+typedef struct
+{
+	char          domain[MAX_DOMAINLEN + 1];
+	time_t        expiry;
+} dnssl_t;
+
 #define MAX_RDNSS MAXNS
 
 static struct
@@ -69,6 +77,12 @@ static struct
 	size_t  count;
 	rdnss_t list[MAX_RDNSS];
 } servers = { .count = 0 };
+
+static struct
+{
+	size_t  count;
+	dnssl_t list[MAXDNSRCH]; // MAXDNSRCH defined in resolv.h
+} domains = { .count = 0 };
 
 /* The code */
 
@@ -85,6 +99,10 @@ static void write_resolv(const char *resolvpath)
 	if (! resolv) {
 		syslog (LOG_ERR, _("Cannot write %s: %m"), tmpfile);
 		return;
+	}
+
+	for (size_t i = 0; i < domains.count; i++) {
+		fprintf(resolv, "search %s\n", domains.list[i].domain);
 	}
 
 	for (size_t i = 0; i < servers.count; i++) {
@@ -110,9 +128,25 @@ static void write_resolv(const char *resolvpath)
 
 static void trim_expired (void)
 {
+	while (domains.count > 0
+	       && domains.list[domains.count - 1].expiry <= now)
+		domains.count--;
+
 	while (servers.count > 0
 	       && servers.list[servers.count - 1].expiry <= now)
 		servers.count--;
+}
+
+static int dnssl_older (const void *a, const void *b)
+{
+	time_t ta = ((const dnssl_t *)a)->expiry;
+	time_t tb = ((const dnssl_t *)b)->expiry;
+
+	if (ta < tb)
+		return 1;
+	if (ta > tb)
+		return -1;
+	return 0;
 }
 
 static int rdnss_older (const void *a, const void *b)
@@ -125,6 +159,51 @@ static int rdnss_older (const void *a, const void *b)
 	if (ta > tb)
 		return -1;
 	return 0;
+}
+
+static void dnssl_update (const char *domain, time_t expiry)
+{
+	size_t i;
+
+	/* Does this entry already exist? */
+	for (i = 0; i < domains.count; i++)
+	{
+		if (strcmp (domain, domains.list[i].domain) == 0)
+			break;
+	}
+
+	/* Add a new entry */
+	if (i == domains.count)
+	{
+		if (expiry == now)
+			return; /* Do not add already expired entry! */
+
+		if (domains.count < MAXDNSRCH)
+			i = domains.count++;
+		else
+		{
+			/* No more room? replace the most obsolete entry */
+			if ((expiry - servers.list[MAXDNSRCH - 1].expiry) >= 0)
+				i = MAXDNSRCH - 1;
+			else
+				/* Do not write after end of the table */
+				return;
+		}
+	}
+
+	/* MAX_DOMAINLEN added only as "to be sure" check, such entry should not get here */
+	strncpy (domains.list[i].domain, domain, MAX_DOMAINLEN);
+	domains.list[i].expiry = expiry;
+
+	qsort (domains.list, domains.count, sizeof (dnssl_t), dnssl_older);
+
+#ifndef NDEBUG
+	for (unsigned i = 0; i < domains.count; i++)
+	{
+		syslog (LOG_DEBUG, "%u: %s expires at %u\n", i, domains.list[i].domain,
+		        (unsigned)servers.list[i].expiry);
+	}
+#endif
 }
 
 static void rdnss_update (const struct in6_addr *addr, unsigned int ifindex, time_t expiry)
@@ -186,24 +265,118 @@ void parse_rdnss (const struct nd_opt_hdr *opt, unsigned int ifindex)
 	if (nd_opt_len < 3 /* too short per RFC */
 			|| (nd_opt_len & 1) == 0) /* bad (even) length */
 		return;
-	
+
 	rdnss_opt = (struct nd_opt_rdnss *) opt;
-	
+
 	{
 		struct timespec ts;
 		mono_gettime (&ts);
 		now = ts.tv_sec;
 	}
-	
+
 	lifetime = (uint64_t)now +
 	           (uint64_t)ntohl(rdnss_opt->nd_opt_rdnss_lifetime);
 	/* This should fit in a time_t */
 	if (lifetime > INT32_MAX)
 		lifetime = INT32_MAX;
-	
+
 	for (struct in6_addr *addr = (struct in6_addr *) (rdnss_opt + 1);
 			 nd_opt_len >= 2; addr++, nd_opt_len -= 2)
 		rdnss_update(addr, ifindex, lifetime);
+}
+
+void parse_dnssl (const struct nd_opt_hdr *opt, unsigned int ifindex)
+{
+	struct nd_opt_dnssl *dnssl_opt;
+	size_t nd_opt_len = opt->nd_opt_len;
+	uint64_t lifetime;
+	char *dom_list;
+	size_t last_dom_len = 0;
+
+	dnssl_opt = (struct nd_opt_dnssl *) opt;
+
+	if (nd_opt_len < 2) /* too short per RFC */
+		return;
+
+	{
+		struct timespec ts;
+		mono_gettime (&ts);
+		now = ts.tv_sec;
+	}
+
+	lifetime = (uint64_t)now +
+		(uint64_t)ntohl(dnssl_opt->nd_opt_dnssl_lifetime);
+
+	if (lifetime > INT32_MAX)
+		lifetime = INT32_MAX;
+
+	/* We need exact length of the option in bytes */
+	nd_opt_len = (nd_opt_len - 1) << 3;
+	/* We jump right after the header where the domain names are */
+	dom_list = (char *) (dnssl_opt + 1);
+
+	while (nd_opt_len > 0)
+	{
+		char domain[MAX_DOMAINLEN];
+		size_t total_length = 0;
+		while (*dom_list != '\0')
+		{
+			/* extract the length of next label */
+			size_t len = * (uint8_t *) dom_list;
+			dom_list++;
+			nd_opt_len--;
+
+			/* exit if longer than option */
+			if(len > nd_opt_len)
+			{
+				syslog (LOG_ERR, _("Incorrect option length."));
+				return;
+			}
+
+			/* check the space in domain[] */
+			if((total_length + len + 1) > MAX_DOMAINLEN)
+			{
+				syslog (LOG_ERR, _("Domain name too long."));
+				return;
+			}
+
+			/* if this is not the first label */
+			if (total_length > 0)
+			{
+				/* put dot before the label */
+				domain[total_length] = '.';
+				/* be sure to make room for a dot */
+				total_length++;
+				/* it will be put instead of the trailing zero byte
+				 * character but for that we will reallocate now anyway */
+			}
+
+			/* copy next label */
+			strncpy(domain + total_length, dom_list, len);
+
+			/* move all the pointers and numbers */
+			total_length += len;
+			dom_list += len;
+			nd_opt_len -= len;
+		}
+
+		/* if the length was zero */
+		if (total_length == 0)
+		{
+			/* move to next byte */
+			nd_opt_len--;
+			dom_list++;
+		}
+		else
+		{ /* otherwise we actually extracted something, so
+			 * we put zero byte at the end of the domain name instead of dot */
+			domain[total_length] = '\0';
+			/* and update the table */
+			dnssl_update(domain, lifetime);
+		}
+
+	}
+
 }
 
 int parse_nd_opts (const struct nd_opt_hdr *opt, size_t opts_len, unsigned int ifindex)
@@ -221,7 +394,11 @@ int parse_nd_opts (const struct nd_opt_hdr *opt, size_t opts_len, unsigned int i
 		case ND_OPT_RDNSS:
 			parse_rdnss(opt, ifindex);
 			break;
-			
+
+		case ND_OPT_DNSSL:
+			parse_dnssl(opt, ifindex);
+			break;
+
 		default:
 			continue;
 		}
@@ -701,7 +878,7 @@ int main (int argc, char *argv[])
 	val = rdnssd (username, resolvpath, hookpath);
 
 	closelog ();
-	/* Unlink *before* close, i.e. unlink while still holding the 
+	/* Unlink *before* close, i.e. unlink while still holding the
 	 * advisory lock. Otherwise there would be a race condition whereby
 	 * we could remove another instance's PID file. */
 	unlink (pidpath);
