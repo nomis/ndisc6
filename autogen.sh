@@ -16,10 +16,7 @@
 # *  along with this program. If not, see <http://www.gnu.org/licenses/>. *
 # *************************************************************************
 
-if test ! -f doc/rdisc6.8 ; then
-	echo "You must run this script from your ndisc6 source directory."
-	exit 1
-fi
+cd "$(dirname "$0")" || exit 1
 
 echo "Creating admin directory ..."
 test -d admin || mkdir admin || exit 1
