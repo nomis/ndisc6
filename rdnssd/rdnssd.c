@@ -101,8 +101,14 @@ static void write_resolv(const char *resolvpath)
 		return;
 	}
 
-	for (size_t i = 0; i < domains.count; i++) {
-		fprintf(resolv, "search %s\n", domains.list[i].domain);
+	if (domains.count > 0) {
+		fprintf(resolv, "search");
+
+		for (size_t i = 0; i < domains.count; i++) {
+			fprintf(resolv, " %s", domains.list[i].domain);
+		}
+
+		fprintf(resolv, "\n");
 	}
 
 	for (size_t i = 0; i < servers.count; i++) {
