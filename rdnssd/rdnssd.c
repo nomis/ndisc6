@@ -189,7 +189,7 @@ static void dnssl_update (const char *domain, time_t expiry)
 		else
 		{
 			/* No more room? replace the most obsolete entry */
-			if ((expiry - servers.list[MAXDNSRCH - 1].expiry) >= 0)
+			if ((expiry - domains.list[MAXDNSRCH - 1].expiry) >= 0)
 				i = MAXDNSRCH - 1;
 			else
 				/* Do not write after end of the table */
@@ -207,7 +207,7 @@ static void dnssl_update (const char *domain, time_t expiry)
 	for (unsigned i = 0; i < domains.count; i++)
 	{
 		syslog (LOG_DEBUG, "%u: %s expires at %u\n", i, domains.list[i].domain,
-		        (unsigned)servers.list[i].expiry);
+		        (unsigned)domains.list[i].expiry);
 	}
 #endif
 }
