@@ -431,6 +431,56 @@ parserdnss (const uint8_t *opt)
 
 
 static int
+parsednssl (const uint8_t *opt)
+{
+	const uint8_t *base;
+	uint8_t optlen = opt[1];
+	if (optlen < 2)
+		return -1;
+
+	printf (_(" DNS search list          : "));
+
+	optlen *= 8;
+	optlen -= 8;
+	base = opt + 8;
+
+	for (unsigned i = 0; i < optlen; i++)
+	{
+		char str[256];
+
+		if (!base[i])
+			break;
+
+		do
+		{
+			if (base[i] + i + 1 >= optlen)
+			{
+				printf("\n");
+				return -1;
+			}
+
+			memcpy (str, &base[i + 1], base[i]);
+			str[base[i]] = 0;
+
+			i += base[i] + 1;
+
+			printf ("%s%s", str, base[i] ? "." : "");
+
+		} while (base[i]);
+
+		printf (" ");
+
+	}
+
+	printf("\n");
+
+	fputs (_("  DNS search list lifetime: "), stdout);
+	print32time (((const uint32_t *)opt)[1]);
+	return 0;
+}
+
+
+static int
 parseadv (const uint8_t *buf, size_t len, const struct sockaddr_in6 *tgt,
           bool verbose)
 {
@@ -541,6 +591,10 @@ parseadv (const uint8_t *buf, size_t len, const struct sockaddr_in6 *tgt,
 
 			case 25: // RFC5006
 				parserdnss (ptr);
+				break;
+
+			case 31: // RFC6106
+				parsednssl (ptr);
 				break;
 		}
 		/* skips unrecognized option */
