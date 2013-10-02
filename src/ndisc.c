@@ -656,24 +656,27 @@ static ssize_t
 recvadv (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
          unsigned flags)
 {
-	struct timespec now, end;
+	struct timespec end;
 	unsigned responses = 0;
 
 	/* computes deadline time */
-	mono_gettime (&now);
+	mono_gettime (&end);
 	{
 		div_t d;
 		
 		d = div (wait_ms, 1000);
-		end.tv_sec = now.tv_sec + d.quot;
-		end.tv_nsec = now.tv_nsec + (d.rem * 1000000);
+		end.tv_sec += d.quot;
+		end.tv_nsec += d.rem * 1000000;
 	}
 
 	/* receive loop */
 	for (;;)
 	{
 		/* waits for reply until deadline */
+		struct timespec now;
 		ssize_t val = 0;
+
+		mono_gettime (&now);
 		if (end.tv_sec >= now.tv_sec)
 		{
 			val = (end.tv_sec - now.tv_sec) * 1000
@@ -728,7 +731,6 @@ recvadv (int fd, const struct sockaddr_in6 *tgt, unsigned wait_ms,
 			if (flags & NDISC_SINGLE)
 				return 1 /* = responses */;
 		}
-		mono_gettime (&now);
 	}
 
 	return -1; /* error */
