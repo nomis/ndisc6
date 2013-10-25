@@ -127,6 +127,22 @@ sethoplimit (int fd, int value)
 	                    &value, sizeof (value))) ? -1 : 0;
 }
 
+static int
+setsourceip (int fd, const char *src, const char *ifname, int flags)
+{
+	struct sockaddr_in6 addr;
+
+	if (getipv6byname (src, ifname, (flags & NDISC_NUMERIC) ? 1 : 0, &addr))
+		return -1;
+
+	if (bind (fd, (const struct sockaddr *)&addr, sizeof (addr)))
+	{
+		perror (src);
+		return -1;
+	}
+	return 0;
+}
+
 
 static void
 printmacaddress (const uint8_t *ptr, size_t len)
@@ -741,7 +757,7 @@ static int fd;
 
 static int
 ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
-       unsigned wait_ms)
+       unsigned wait_ms, const char *source)
 {
 	struct sockaddr_in6 tgt;
 
@@ -768,6 +784,10 @@ ndisc (const char *name, const char *ifname, unsigned flags, unsigned retry,
 	sethoplimit (fd, 255);
 	setsockopt (fd, IPPROTO_IPV6, IPV6_RECVHOPLIMIT,
 	            &(int){ 1 }, sizeof (int));
+
+	/* sets source address */
+	if ((source != NULL) && setsourceip (fd, source, ifname, flags))
+		goto error;
 
 	/* resolves target's IPv6 address */
 	if (getipv6byname (name, ifname, (flags & NDISC_NUMERIC) ? 1 : 0, &tgt))
@@ -852,6 +872,7 @@ usage (const char *path)
 "  -n, --numeric  don't resolve host names\n"
 "  -q, --quiet    only print the %s (mainly for scripts)\n"
 "  -r, --retry    maximum number of attempts (default: 3)\n"
+"  -s, --source   specify source IPv6 address\n"
 "  -V, --version  display program version and exit\n"
 "  -v, --verbose  verbose display (this is the default)\n"
 "  -w, --wait     how long to wait for a response [ms] (default: 1000)\n"
@@ -887,6 +908,7 @@ static const struct option opts[] =
 	{ "numeric",  no_argument,       NULL, 'n' },
 	{ "quiet",    no_argument,       NULL, 'q' },
 	{ "retry",    required_argument, NULL, 'r' },
+	{ "source",   required_argument, NULL, 's' },
 	{ "version",  no_argument,       NULL, 'V' },
 	{ "verbose",  no_argument,       NULL, 'v' },
 	{ "wait",     required_argument, NULL, 'w' },
@@ -911,9 +933,9 @@ main (int argc, char *argv[])
 
 	int val;
 	unsigned retry = 3, flags = ndisc_default, wait_ms = nd_delay_ms;
-	const char *hostname, *ifname;
+	const char *hostname, *ifname, *source = NULL;
 
-	while ((val = getopt_long (argc, argv, "1hmnqr:Vvw:", opts, NULL)) != EOF)
+	while ((val = getopt_long (argc, argv, "1hmnqr:s:Vvw:", opts, NULL)) != EOF)
 	{
 		switch (val)
 		{
@@ -947,6 +969,10 @@ main (int argc, char *argv[])
 				retry = l;
 				break;
 			}
+
+			case 's':
+				source = optarg;
+				break;
 				
 			case 'V':
 				return version ();
@@ -999,6 +1025,6 @@ main (int argc, char *argv[])
 		return quick_usage (argv[0]);
 
 	errno = errval; /* restore socket() error value */
-	return -ndisc (hostname, ifname, flags, retry, wait_ms);
+	return -ndisc (hostname, ifname, flags, retry, wait_ms, source);
 }
 
