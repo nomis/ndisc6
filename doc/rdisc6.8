@@ -16,8 +16,8 @@
 .SH NAME
 rdisc \- ICMPv6 Router Discovery tool
 .SH SYNOPSIS
-.BR "rdisc6" " [" "-qv" "] [" "-r attempts" "] [" "-w wait_ms" "]"
-.BR "" "[" "IPv6 address" "] <" "iface" ">"
+.BR "rdisc6" " [" "-qv" "] [" "-r attempts" "] [" "-s source_ip" "]"
+.BR "" "[" "-w wait_ms" "] [" "IPv6 address" "] <" "iface" ">"
 
 .SH DESCRIPTON
 .B RDisc6
@@ -60,6 +60,11 @@ That is mostly useful when calling the program from a shell script.
 Send ICMPv6 Router Discovery that many times until a reply is
 received, or abort. By default, rdisc6 will try 3 times before aborting
 (MAX_RTR_SOLICITATIONS from RFC2461).
+
+.TP
+.BR "\-s source_ip" " or " "\-\-source source_ip"
+Specify the IPv6 address to be used as the source for the router
+solicitation packets.
 
 .TP
 .BR "\-V" " or " "\-\-version"

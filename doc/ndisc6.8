@@ -16,8 +16,8 @@
 .SH NAME
 ndisc6 \- ICMPv6 Neighbor Discovery tool
 .SH SYNOPSIS
-.BR "ndisc6" " [" "-1mnqv" "] [" "-r attempts" "] [" "-w wait_ms" "]"
-.BR "" "<" "IPv6 address" "> <" "iface" ">"
+.BR "ndisc6" " [" "-1mnqv" "] [" "-r attempts" "] [" "-s source_ip" "]"
+.BR "" "[" "-w wait_ms" "] <" "IPv6 address" "> <" "iface" ">"
 
 .SH DESCRIPTON
 .B NDisc6
@@ -58,6 +58,11 @@ That is mostly useful when calling the program from a shell script.
 Send ICMPv6 Neighbor Discovery that many times until a reply is
 received, or abort. By default, ndisc6 will try 3 times before aborting
 (MAX_MULTICAST_SOLICIT and MAX_UNICAST_SOLICIT from RFC2461).
+
+.TP
+.BR "\-s source_ip" " or " "\-\-source source_ip"
+Specify the IPv6 address to be used as the source for the neighbor
+solicitation packets.
 
 .TP
 .BR "\-V" " or " "\-\-version"
