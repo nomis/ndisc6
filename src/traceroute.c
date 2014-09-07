@@ -175,7 +175,7 @@ recv_payload (int fd, void *buf, size_t len,
 	     cmsg = CMSG_NXTHDR (&hdr, cmsg))
 		if ((cmsg->cmsg_level == IPPROTO_IPV6)
 		 && (cmsg->cmsg_type == IPV6_HOPLIMIT))
-			memcpy (hlim, CMSG_DATA (cmsg), sizeof (hlim));
+			memcpy (hlim, CMSG_DATA (cmsg), sizeof (*hlim));
 
 	return val;
 }
