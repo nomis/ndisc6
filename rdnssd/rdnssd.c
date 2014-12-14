@@ -338,10 +338,7 @@ void parse_dnssl (const struct nd_opt_hdr *opt, unsigned int ifindex)
 
 			/* check the space in domain[] */
 			if((total_length + len + 1) > MAX_DOMAINLEN)
-			{
-				syslog (LOG_ERR, _("Domain name too long."));
 				return;
-			}
 
 			/* if this is not the first label */
 			if (total_length > 0)
