@@ -57,7 +57,7 @@ fi
 	sed -e "/$RE_NSV4OR6/d" < $resolvconf
         [ $limit -gt 0 ] && sed -e "${limit}q" < $myresolvconf
 	sed -ne "/$RE_NSV4/p" < $resolvconf
-} >| $resolvconf.tmp
+} | awk '!a[$0]++' > $resolvconf.tmp
 
 mv -f $resolvconf.tmp $resolvconf
 
