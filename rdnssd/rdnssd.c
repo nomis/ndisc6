@@ -334,10 +334,7 @@ void parse_dnssl (const struct nd_opt_hdr *opt, unsigned int ifindex)
 
 			/* exit if longer than option */
 			if(len > nd_opt_len)
-			{
-				syslog (LOG_ERR, _("Incorrect option length."));
 				return;
-			}
 
 			/* check the space in domain[] */
 			if((total_length + len + 1) > MAX_DOMAINLEN)
