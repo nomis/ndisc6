@@ -194,7 +194,7 @@ msgstr ""
 "Bietet angebundene IPv6-Router an (Router-Erkundung)\n"
 
 #: src/ndisc.c:279
-msgid "advertised prefixes"
+msgid "advertized prefixes"
 msgstr "angekündigte Präfixe"
 
 #: src/ndisc.c:304

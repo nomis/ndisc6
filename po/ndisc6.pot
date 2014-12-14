@@ -165,7 +165,7 @@ msgid ""
 msgstr ""
 
 #: src/ndisc.c:279
-msgid "advertised prefixes"
+msgid "advertized prefixes"
 msgstr ""
 
 #: src/ndisc.c:304

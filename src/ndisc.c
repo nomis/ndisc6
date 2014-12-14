@@ -311,7 +311,7 @@ static const unsigned ndisc_default = NDISC_VERBOSE1;
 static const char ndisc_usage[] = N_(
 	"Usage: %s [options] [IPv6 address] <interface>\n"
 	"Solicits on-link IPv6 routers (Router Discovery)\n");
-static const char ndisc_dataname[] = N_("advertised prefixes");
+static const char ndisc_dataname[] = N_("advertized prefixes");
 
 typedef struct nd_router_solicit solicit_packet;
 

@@ -197,7 +197,7 @@ msgstr ""
 "Dožaduje se IPv6 routerů na připojené lince (Router Discovery)\n"
 
 #: src/ndisc.c:279
-msgid "advertised prefixes"
+msgid "advertized prefixes"
 msgstr "oznamovaná předpona"
 
 #: src/ndisc.c:304
