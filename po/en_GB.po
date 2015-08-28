@@ -164,7 +164,6 @@ msgid ""
 msgstr ""
 
 #: src/ndisc.c:314
-#, fuzzy
 msgid "advertized prefixes"
 msgstr "advertised prefixes"
 
@@ -384,7 +383,7 @@ msgid "No response."
 msgstr ""
 
 #: src/ndisc.c:868
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "\n"
 "  -1, --single   display first response and exit\n"
@@ -406,6 +405,7 @@ msgstr ""
 "  -n, --numeric  don’t resolve host names\n"
 "  -q, --quiet    only print the %s (mainly for scripts)\n"
 "  -r, --retry    maximum number of attempts (default: 3)\n"
+"  -s, --source   specify source IPv6 address\n"
 "  -V, --version  display program version and exit\n"
 "  -v, --verbose  verbose display (this is the default)\n"
 "  -w, --wait     how long to wait for a response [ms] (default: 1000)\n"
