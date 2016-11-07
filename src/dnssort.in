@@ -51,8 +51,7 @@ foreach (@ARGV)
 	while(<FD>)
 	{
 		chomp;
-		split /\./;
-		push @names, join('.', reverse @_);
+		push @names, join('.', reverse split /\./);
 	}
 	close FD;
 }
@@ -67,7 +66,6 @@ if ($opt_r)
 # Print results
 foreach (@names)
 {
-	split /\./;
-	print join('.', reverse @_)."\n";
+	print join('.', reverse split /\./)."\n";
 }
 
