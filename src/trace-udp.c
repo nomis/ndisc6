@@ -22,7 +22,7 @@
 #endif
 
 #undef _GNU_SOURCE
-#define _BSD_SOURCE 1
+#define _DEFAULT_SOURCE 1
 
 #include <string.h>
 #include <stdbool.h>
