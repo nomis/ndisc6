@@ -19,7 +19,7 @@ gen_alias = transform="$(transform)" ${SHELL} $(srcdir)/gen-alias
 
 alias_verbose = $(alias_verbose_$(V))
 alias_verbose_ = $(alias_verbose_$(AM_DEFAULT_VERBOSITY))
-alias_verbose_0 = @echo "  ALIAS  $@";
+alias_verbose_0 = @echo "  ALIAS    $@";
 
 # ndisc6
 ndisc6_SOURCES = src/ndisc.c

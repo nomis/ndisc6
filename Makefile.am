@@ -29,7 +29,7 @@ noinst_HEADERS = include/gettext.h
 
 sed_verbose = $(sed_verbose_$(V))
 sed_verbose_ = $(sed_verbose_$(AM_DEFAULT_VERBOSITY))
-sed_verbose_0 = @echo "  SED    $@";
+sed_verbose_0 = @echo "  SED      $@";
 
 subst_script = sed \
 	-e 's,[@]LOCALSTATEDIR[@],$(localstatedir),g' \
