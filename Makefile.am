@@ -19,17 +19,27 @@ DISTCLEANFILES = stamp-git
 CLEANFILES =
 MOSTLYCLEANFILES =
 
+AM_CPPFLAGS = -I$(top_srcdir)/include \
+	-DLOCALEDIR=\"$(localedir)\"
+AM_LIBADD = libcompat.a
+
 noinst_HEADERS = include/gettext.h
 
 sed_verbose = $(sed_verbose_$(V))
 sed_verbose_ = $(sed_verbose_$(AM_DEFAULT_VERBOSITY))
 sed_verbose_0 = @echo "  SED    $@";
 
+subst_script = sed \
+	-e 's,[@]PERL[@],$(PERL),g' \
+	-e 's,[@]PACKAGE[@],$(PACKAGE),g' \
+	-e 's,[@]VERSION[@],$(VERSION),g'
+
 include m4/Makefile.am
 include doc/Makefile.am
 include compat/Makefile.am
+include src/Makefile.am
 
-SUBDIRS = po . src rdnssd
+SUBDIRS = po . rdnssd
 
 distclean-local:
 	test "$(top_srcdir)" = "$(top_builddir)" || rm -f ChangeLog

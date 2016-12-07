@@ -17,8 +17,6 @@
 # *  http://www.gnu.org/copyleft/gpl.html                               *
 # ***********************************************************************
 
-AM_CPPFLAGS = -I@top_srcdir@
-
 noinst_LIBRARIES = libcompat.a
 libcompat_a_SOURCES = compat/fixups.h compat/dummy.c
 libcompat_a_LIBADD = $(LIBOBJS)
