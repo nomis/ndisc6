@@ -17,37 +17,38 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>. *
  *************************************************************************/
 
-#include <sys/times.h> /* times() fallback */
+#include <unistd.h>
+#include <errno.h>
 
-#if defined (CLOCK_HIGHRES) && !defined (CLOCK_MONOTONIC)
-# define CLOCK_MONOTONIC CLOCK_HIGHRES
-#endif
-
-static inline void mono_gettime (struct timespec *ts)
+static inline int mono_gettime (struct timespec *ts)
 {
-#ifdef CLOCK_MONOTONIC
-	if (clock_gettime (CLOCK_MONOTONIC, ts))
-#endif
-	{
-		static long freq = 0;
-		if (freq == 0)
-			freq = sysconf (_SC_CLK_TCK);
+	int rc;
 
-		struct tms dummy;
-		clock_t t = times (&dummy);
-		ts->tv_sec = t / freq;
-		ts->tv_nsec = (t % freq) * (1000000000 / freq);
-	}
+#if (_POSIX_MONOTONIC_CLOCK >= 0)
+	rc = clock_gettime (CLOCK_MONOTONIC, ts);
+#endif
+#if (_POSIX_MONOTONIC_CLOCK == 0)
+	if (errno == EINVAL)
+#endif
+#if (_POSIX_MONOTONIC_CLOCK <= 0)
+		rc = clock_gettime (CLOCK_REALTIME, ts);
+#endif
+	return rc;
 }
 
 
 static inline int mono_nanosleep (const struct timespec *ts)
 {
-#ifdef CLOCK_MONOTONIC
-	int rc = clock_nanosleep (CLOCK_MONOTONIC, 0, ts, NULL);
-	if (rc != EINVAL)
-		return rc;
-#endif
+	int rc;
 
-	return clock_nanosleep (CLOCK_REALTIME, 0, ts, NULL);
+#if (_POSIX_MONOTONIC_CLOCK >= 0)
+	rc = clock_nanosleep (CLOCK_MONOTONIC, 0, ts, NULL);
+#endif
+#if (_POSIX_MONOTONIC_CLOCK == 0)
+	if (rc == EINVAL)
+#endif
+#if (_POSIX_MONOTONIC_CLOCK <= 0)
+		rc = clock_nanosleep (CLOCK_REALTIME, 0, ts, NULL);
+#endif
+	return rc;
 }
