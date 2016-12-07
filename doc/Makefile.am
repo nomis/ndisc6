@@ -3,20 +3,16 @@
 # Copyright © 2006-2007 Rémi Denis-Courmont
 # This file is distributed under the same license as the ndisc6 package.
 
-man1_MANS = addr2name.1 dnssort.1 tcpspray.1
-man8_MANS = ndisc6.8 rdisc6.8 rltraceroute6.8 rdnssd.8
+man1_MANS = doc/addr2name.1 doc/dnssort.1 doc/tcpspray.1
+man8_MANS = doc/ndisc6.8 doc/rdisc6.8 doc/rltraceroute6.8 doc/rdnssd.8
 SOURCES_MAN = \
-	ndisc6.8 rdisc6.8 \
-	rltraceroute6.8 \
-	rdnssd.8-in \
+	doc/ndisc6.8 doc/rdisc6.8 \
+	doc/rltraceroute6.8 \
+	doc/rdnssd.8-in \
 	$(man1_MANS)
 
-EXTRA_DIST = $(SOURCES_MAN)
-CLEANFILES = rdnssd.8
-
-sed_verbose = $(sed_verbose_$(V))
-sed_verbose_ = $(sed_verbose_$(AM_DEFAULT_VERBOSITY))
-sed_verbose_0 = @echo "  SED    $@";
+EXTRA_DIST += $(SOURCES_MAN)
+CLEANFILES += doc/rdnssd.8
 
 edit = sed \
 	-e 's,@localstatedir\@,$(localstatedir),g' \
@@ -24,6 +20,7 @@ edit = sed \
 
 .8-in.8:
 	$(AM_V_at)rm -f -- $@
+	$(AM_V_at)mkdir -p doc
 	$(sed_verbose)$(edit) $< > $@
 
 install-data-hook:

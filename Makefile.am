@@ -14,11 +14,21 @@ AUTOMAKE_OPTIONS = \
 	subdir-objects \
 	-Wall
 
-SUBDIRS = po doc compat src rdnssd
-DIST_SUBDIRS = m4 $(SUBDIRS)
+EXTRA_DIST =
+DISTCLEANFILES = stamp-git
+CLEANFILES =
+MOSTLYCLEANFILES =
+
 noinst_HEADERS = include/gettext.h
 
-DISTCLEANFILES = stamp-git
+sed_verbose = $(sed_verbose_$(V))
+sed_verbose_ = $(sed_verbose_$(AM_DEFAULT_VERBOSITY))
+sed_verbose_0 = @echo "  SED    $@";
+
+include doc/Makefile.am
+
+SUBDIRS = po compat src rdnssd
+DIST_SUBDIRS = m4 $(SUBDIRS)
 
 distclean-local:
 	test "$(top_srcdir)" = "$(top_builddir)" || rm -f ChangeLog
