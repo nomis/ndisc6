@@ -72,6 +72,9 @@ dnl                    [Define to the canonical host-system name])
 AS_MESSAGE([checking header files...])
 AC_HEADER_ASSERT
 
+AH_BOTTOM([#ifdef __APPLE__
+# define __APPLE_USE_RFC_3542
+#endif])
 
 # Checks for typedefs, structures, and compiler characteristics.
 dnl AS_MESSAGE([checking target characteristics...])
