@@ -119,7 +119,6 @@ AH_BOTTOM([
 # END
 AS_MESSAGE(writing results...)
 AC_CONFIG_FILES([Makefile
-	m4/Makefile
 	po/Makefile.in
 	compat/Makefile
 	src/Makefile

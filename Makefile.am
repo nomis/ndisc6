@@ -25,10 +25,10 @@ sed_verbose = $(sed_verbose_$(V))
 sed_verbose_ = $(sed_verbose_$(AM_DEFAULT_VERBOSITY))
 sed_verbose_0 = @echo "  SED    $@";
 
+include m4/Makefile.am
 include doc/Makefile.am
 
 SUBDIRS = po compat src rdnssd
-DIST_SUBDIRS = m4 $(SUBDIRS)
 
 distclean-local:
 	test "$(top_srcdir)" = "$(top_builddir)" || rm -f ChangeLog
