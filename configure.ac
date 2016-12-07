@@ -85,10 +85,6 @@ dnl RDC_STRUCT_SOCKADDR_LEN
 # Checks for library functions.
 AS_MESSAGE([checking library functions...])
 RDC_REPLACE_FUNC_GETOPT_LONG
-LIBS_save="$LIBS"
-LIBS="$LIBRT $LIBS"
-AC_CHECK_FUNCS([clock_nanosleep])
-LIBS="$LIBS_save"
 AC_REPLACE_FUNCS([fdatasync inet6_rth_add ppoll])
 
 # Network stuff
@@ -110,10 +106,6 @@ AC_MSG_RESULT([${enable_suid_install}])
 # Defines for <config.h>
 AH_BOTTOM([
 #include "compat/fixups.h"
-
-#ifndef HAVE_CLOCK_NANOSLEEP
-# define clock_nanosleep( c, f, d, r ) nanosleep( d, r )
-#endif
 
 #define _( str )		gettext (str)
 #define N_( str )		gettext_noop (str)
