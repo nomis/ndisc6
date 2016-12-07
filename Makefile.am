@@ -27,8 +27,9 @@ sed_verbose_0 = @echo "  SED    $@";
 
 include m4/Makefile.am
 include doc/Makefile.am
+include compat/Makefile.am
 
-SUBDIRS = po compat src rdnssd
+SUBDIRS = po . src rdnssd
 
 distclean-local:
 	test "$(top_srcdir)" = "$(top_builddir)" || rm -f ChangeLog

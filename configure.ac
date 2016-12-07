@@ -27,6 +27,7 @@ AS_MESSAGE(checking system...)
 AC_CONFIG_SRCDIR(configure.ac)
 AC_CONFIG_AUX_DIR(admin)
 AC_CONFIG_MACRO_DIR(m4)
+AC_CONFIG_LIBOBJ_DIR(compat)
 AC_CONFIG_HEADERS(config.h)
 
 AC_DEFINE_UNQUOTED(PACKAGE_CONFIGURE_INVOCATION, "$INVOCATION",
@@ -120,7 +121,6 @@ AH_BOTTOM([
 AS_MESSAGE(writing results...)
 AC_CONFIG_FILES([Makefile
 	po/Makefile.in
-	compat/Makefile
 	src/Makefile
 	rdnssd/Makefile
 ])

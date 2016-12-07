@@ -20,6 +20,6 @@
 AM_CPPFLAGS = -I@top_srcdir@
 
 noinst_LIBRARIES = libcompat.a
-libcompat_a_SOURCES = fixups.h dummy.c
+libcompat_a_SOURCES = compat/fixups.h compat/dummy.c
 libcompat_a_LIBADD = $(LIBOBJS)
 

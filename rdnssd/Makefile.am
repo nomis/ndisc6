@@ -31,7 +31,7 @@ rdnssd_SOURCES = rdnssd.c rdnssd.h \
 	icmp.c \
 	netlink.c
 rdnssd_LDADD = $(LIBRT) \
-		@top_builddir@/compat/libcompat.a
+		@top_builddir@/libcompat.a
 
 # merge-hook
 merge-hook: merge-hook.in Makefile.in $(top_builddir)/config.status
