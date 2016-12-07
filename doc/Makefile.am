@@ -23,7 +23,7 @@ edit = sed \
 	$(AM_V_at)mkdir -p doc
 	$(sed_verbose)$(edit) $< > $@
 
-install-data-hook:
+install-data-hook::
 	inst=`echo rltraceroute6 | sed '$(transform)'`; \
 	cd "$(DESTDIR)$(man8dir)" && \
 	for a in tcptraceroute6 tracert6; do \
@@ -36,7 +36,7 @@ install-data-hook:
 	cd "$(DESTDIR)$(man1dir)" && \
 	ln -sf -- "$${inst}.1" "name2addr.1"
 
-uninstall-hook:
+uninstall-hook::
 	for a in tcptraceroute6 tracert6; do \
 		unlink "$(DESTDIR)$(man8dir)/$$a.8" ; \
 	done

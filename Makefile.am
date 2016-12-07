@@ -20,7 +20,9 @@ CLEANFILES =
 MOSTLYCLEANFILES =
 
 AM_CPPFLAGS = -I$(top_srcdir)/include \
-	-DLOCALEDIR=\"$(localedir)\"
+	-DLOCALEDIR=\"$(localedir)\" \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DLOCALSTATEDIR=\"$(localstatedir)\"
 AM_LIBADD = libcompat.a
 
 noinst_HEADERS = include/gettext.h
@@ -30,6 +32,8 @@ sed_verbose_ = $(sed_verbose_$(AM_DEFAULT_VERBOSITY))
 sed_verbose_0 = @echo "  SED    $@";
 
 subst_script = sed \
+	-e 's,[@]LOCALSTATEDIR[@],$(localstatedir),g' \
+	-e 's,[@]SYSCONFDIR[@],$(sysconfdir),g' \
 	-e 's,[@]PERL[@],$(PERL),g' \
 	-e 's,[@]PACKAGE[@],$(PACKAGE),g' \
 	-e 's,[@]VERSION[@],$(VERSION),g'
@@ -38,8 +42,9 @@ include m4/Makefile.am
 include doc/Makefile.am
 include compat/Makefile.am
 include src/Makefile.am
+include rdnss/Makefile.am
 
-SUBDIRS = po . rdnssd
+SUBDIRS = po
 
 distclean-local:
 	test "$(top_srcdir)" = "$(top_builddir)" || rm -f ChangeLog

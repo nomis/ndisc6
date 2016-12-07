@@ -1,4 +1,4 @@
-rdnssd/rdnssd.c
+rdnss/rdnssd.c
 src/addrinfo.c
 src/ndisc.c
 src/tcpspray.c
