@@ -427,7 +427,7 @@ static int drop_privileges (const char *username)
 	}
 	if (initgroups (username, pw->pw_gid))
 	{
-		syslog (LOG_CRIT, _("Fatal error (%s): %m"), "setgid");
+		syslog (LOG_CRIT, _("Fatal error (%s): %m"), "initgroups");
 		return -1;
 	}
 	if (setuid (pw->pw_uid))
