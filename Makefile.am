@@ -11,6 +11,7 @@ AUTOMAKE_OPTIONS = \
 	no-dist-gzip \
 	no-exeext \
 	std-options \
+	subdir-objects \
 	-Wall
 
 SUBDIRS = po doc compat src rdnssd
