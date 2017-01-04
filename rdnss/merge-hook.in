@@ -3,7 +3,7 @@
 # resolv.conf merge hook for rdnssd
 
 # *************************************************************************
-# *  Copyright © 2007-2009 Pierre Ynard.                                  *
+# *  Copyright © 2007-2009, 2017 Pierre Ynard.                            *
 # *  This program is free software: you can redistribute and/or modify    *
 # *  it under the terms of the GNU General Public License as published by *
 # *  the Free Software Foundation, versions 2 or 3 of the license.        *
@@ -51,13 +51,18 @@ if [ $limit -lt $room ]; then
 	limit=$room
 fi
 
-# Merge and write the result
+# Merge and write the result. Let rdnssd assume ownership of all IPv6
+# nameservers, and remove extraneous IPv6 entries as expired. However
+# DHCPv4 most often sets up search list entries, and rdnssd cannot
+# clobber these lest it causes counterintuitive breakage. There is no
+# easy way to properly merge and manage DNSSL entries here, so just drop
+# them.
 
 {
 	sed -e "/$RE_NSV4OR6/d" < $resolvconf
-        [ $limit -gt 0 ] && sed -e "${limit}q" < $myresolvconf
+	grep -m $limit "$RE_NSV4OR6" < $myresolvconf || [ $? -le 1 ]
 	sed -ne "/$RE_NSV4/p" < $resolvconf
-} | awk '!a[$0]++' > $resolvconf.tmp
+} > $resolvconf.tmp
 
 mv -f $resolvconf.tmp $resolvconf
 
