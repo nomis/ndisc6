@@ -60,7 +60,7 @@ send_syn_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 	memset (&packet, 0, sizeof (packet));
 	packet.th.th_sport = sport;
 	packet.th.th_dport = port;
-	packet.th.th_seq = htonl ((ttl << 24) | (n << 16) | getpid ());
+	packet.th.th_seq = htonl ((ttl << 24) | (n << 16) | (uint16_t)getpid ());
 	packet.th.th_off = sizeof (packet.th) / 4;
 	packet.th.th_flags = TH_SYN | (ecn ? (TH_ECE | TH_CWR) : 0);
 	packet.th.th_win = htons (TCP_WINDOW);
@@ -85,7 +85,7 @@ parse_syn_resp (const void *data, size_t len, int *ttl, unsigned *n,
 		return -1;
 
 	seq = ntohl (pth->th_ack) - 1;
-	if ((seq & 0xffff) != (unsigned)getpid ())
+	if ((seq & 0xffff) != (uint16_t)getpid ())
 		return -1;
 
 	*ttl = seq >> 24;
@@ -107,7 +107,7 @@ parse_syn_error (const void *data, size_t len, int *ttl, unsigned *n,
 		return -1;
 
 	seq = ntohl (pth->th_seq);
-	if ((seq & 0xffff) != (unsigned)getpid ())
+	if ((seq & 0xffff) != (uint16_t)getpid ())
 		return -1;
 
 	*ttl = seq >> 24;
@@ -137,7 +137,7 @@ send_ack_probe (int fd, unsigned ttl, unsigned n, size_t plen, uint16_t port)
 	memset (&packet, 0, sizeof (packet));
 	packet.th.th_sport = sport;
 	packet.th.th_dport = port;
-	packet.th.th_ack = htonl ((ttl << 24) | (n << 16) | getpid ());
+	packet.th.th_ack = htonl ((ttl << 24) | (n << 16) | (uint16_t)getpid ());
 	packet.th.th_off = sizeof (packet.th) / 4;
 	packet.th.th_flags = TH_ACK;
 	packet.th.th_win = htons (TCP_WINDOW);
@@ -163,7 +163,7 @@ parse_ack_resp (const void *data, size_t len, int *ttl, unsigned *n,
 		return -1;
 
 	seq = ntohl (pth->th_seq);
-	if ((seq & 0xffff) != (unsigned)getpid ())
+	if ((seq & 0xffff) != (uint16_t)getpid ())
 		return -1;
 
 	*ttl = seq >> 24;
@@ -185,7 +185,7 @@ parse_ack_error (const void *data, size_t len, int *ttl, unsigned *n,
 		return -1;
 
 	seq = ntohl (pth->th_ack);
-	if ((seq & 0xffff) != (unsigned)getpid ())
+	if ((seq & 0xffff) != (uint16_t)getpid ())
 		return -1;
 
 	*ttl = seq >> 24;
